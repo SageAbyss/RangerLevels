@@ -1,0 +1,267 @@
+# === Eventos de Pixelmon ===
+pixelmonEvents:
+
+  onCapture:
+    enable: true
+    expRange: [25, 40]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.oncapture"
+    specificRangePermissions:
+      enable: false
+      permissions:
+        - "rangerlevels.earnexp.oncapture.vip.30-50"
+        - "rangerlevels.earnexp.oncapture.vip+.40-60"
+        - "rangerlevels.earnexp.oncapture.vip++.60-80"
+
+  raidParticipation:
+    enable: true
+    expRange: [30, 60]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.raid"
+    specificRangePermissions:
+      enable: false
+      permissions:
+        - "rangerlevels.earnexp.raid.vip.40-80"
+
+  levelUp:
+    enable: true
+    expRange: [1, 3]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  rareCandy:
+    enable: true
+    expRange: [1, 2]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  eggHatch:
+    enable: true
+    expRange: [30, 50]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  evolve:
+    enable: true
+    expRange: [40, 80]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  pokeStop:
+    enable: true
+    expRange: [50, 150]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  apricornPick:
+    enable: true
+    expRange: [1, 5]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  advancement:
+    enable: true
+    expRange: [15, 50]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  pokedexEntry:
+    enable: true
+    expRange: [30, 90]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  comboBonus:
+    enable: true
+    expRange: [1, 5]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  beatWild:
+    enable: true
+    expRangeWild: [10, 30]
+    expRangeShiny: [60, 120]
+    expRangeLegendary: [150, 300]
+    expRangeBoss: [70, 250]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  beatTrainer:
+    enable: true
+    expRange: [20, 60]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  arceusPlayFlute:
+    enable: true
+    expRange: [150, 450]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  playerActivateShrine:
+    enable: true
+    expRange: [100, 200]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  timespaceAltarSpawn:
+    enable: true
+    expRange: [150, 250]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  pokeLootDrop:
+    enable: true
+    expRange: [10, 20]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+# === Eventos de Minecraft ===
+minecraftEvents:
+
+  itemFished:
+    enable: true
+    expRange: [15, 30]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.fish"
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  cropBreak:
+    enable: true
+    expRange: [1, 5]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.crop"
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  spawnerBreak:
+    enable: true
+    expRange: [50, 120]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.spawner"
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  logBreak:
+    enable: true
+    expRange: [1, 2]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.log"
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  melonPumpkinBreak:
+    enable: true
+    expRange: [3, 5]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.melon"
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  coalOreBreak:
+    enable: true
+    expRange: [3, 5]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.coal"
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  ironOreBreak:
+    enable: true
+    expRange: [3, 7]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.iron"
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  goldOreBreak:
+    enable: true
+    expRange: [3, 10]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.gold"
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  diamondEmeraldBreak:
+    enable: true
+    expRange: [5, 15]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.diamond"
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
+  playerKill:
+    enable: true
+    expRange: [1, 5]
+    requiresPermission: true
+    permissions:
+      - "rangerlevels.earnexp.playerkill"
+    specificRangePermissions:
+      enable: false
+      permissions: []

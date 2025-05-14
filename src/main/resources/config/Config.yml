@@ -1,0 +1,81 @@
+# Configuración del mod RangerLevels
+# Database: flatfile o mysql, con parámetros en database.mysql
+# multipliers: global, playerDefault y por evento
+# Levels: nivel inicial y nivel máximo
+# AutoSave: activar y frecuencia en segundos
+# Limiter: limitar EXP por X horas
+# Worlds: activar mod por mundos, con whitelist o blacklist
+
+database:
+  type: flatfile
+  mysql:
+    host: localhost
+    port: 3306
+    database: rangerlevels
+    username: root
+    password: ""
+    useSSL: false
+    tablePrefix: rl_
+
+multipliers:
+  global: 1.0
+  playerDefault: 1.0
+  events:
+    raidParticipation: 1.0
+    onCapture: 1.0
+    levelUp: 1.0
+    rareCandy: 1.0
+    eggHatch: 1.0
+    evolve: 1.0
+    pokeStop: 1.0
+    apricornPick: 1.0
+    advancement: 1.0
+    pokedexEntry: 1.0
+    comboBonus: 1.0
+    beatWild: 1.0
+    beatTrainer: 1.0
+    beatBoss: 1.0
+    arceusPlayFlute: 1.0
+    playerActivateShrine: 1.0
+    timespaceAltarSpawn: 1.0
+    pokeLootDrop: 1.0
+    itemFished: 1.0
+    cropBreak: 1.0
+    spawnerBreak: 1.0
+    logBreak: 1.0
+    melonPumpkinBreak: 1.0
+    coalOreBreak: 1.0
+    ironOreBreak: 1.0
+    diamondEmeraldBreak: 1.0
+    playerKill: 1.0
+
+levels:
+  starting:
+    level: 1
+    experience: 0
+  max:
+    level: 100
+
+autoSave:
+  enable: true
+  interval: 600
+
+limiter:
+  enable: true
+  expAmount: 100000
+  timer: "24h"
+
+worlds:
+  enable: false
+  whitelist: true
+  list:
+    - overworld
+    - nether
+    - the_end
+    - ultra_space
+    - drowned
+
+passBuyUrls:
+  super: "https://tuservidor.com/super"
+  ultra: "https://tuservidor.com/ultra"
+  master: "https://tuservidor.com/master"
