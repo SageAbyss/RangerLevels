@@ -97,7 +97,7 @@ public class MainMenuContainer extends ChestContainer {
                         // sp.openMenu(new HelpProvider());
                         break;
                     case "buy_pass_menu":
-                        BuyPassContainer.open(sp);
+                        sp.openMenu(new BuyPassProvider());
                         break;
                     case "close":
                         sp.closeContainer();

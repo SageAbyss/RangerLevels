@@ -43,7 +43,7 @@ public class MainMenu {
                 "§aComprar Pase",
                 Arrays.asList("Ver beneficios y opciones de compra"),
                 Items.EMERALD,
-                "buy",
+                "buy_pass_menu",
                 16
         ));
 
