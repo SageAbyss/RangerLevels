@@ -1,26 +1,29 @@
 package rl.sage.rangerlevels.gui;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.ChestContainer;
 import net.minecraft.inventory.container.ClickType;
+import net.minecraft.inventory.container.SimpleNamedContainerProvider;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.network.play.server.SSetSlotPacket;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import rl.sage.rangerlevels.pass.PassManager;
 
 public class BuyPassContainer extends ChestContainer {
+    private static final ITextComponent TITLE = new StringTextComponent("Comprar Pase");
     private final Inventory menuInv;
 
     public BuyPassContainer(int windowId, PlayerInventory playerInv, Inventory menuInventory) {
         super(ContainerType.GENERIC_9x3, windowId, playerInv, menuInventory, 3);
         this.menuInv = menuInventory;
         this.menuInv.startOpen(playerInv.player);
-
         // Reemplaza todos los slots por MenuSlot
         for (int i = 0; i < menuInv.getContainerSize(); i++) {
             Slot old = this.slots.get(i);
@@ -30,9 +33,21 @@ public class BuyPassContainer extends ChestContainer {
         }
     }
 
+    /** Abre este menú desde cualquier sitio del servidor */
+    public static void open(ServerPlayerEntity player) {
+        player.openMenu(new SimpleNamedContainerProvider(
+                (windowId, inv, plyr) -> {
+                    Inventory menuInv = new Inventory(3 * 9);
+                    // initMenuItems(menuInv, player); // si tienes lógica de llenado
+                    return new BuyPassContainer(windowId, inv, menuInv);
+                },
+                TITLE
+        ));
+    }
+
     @Override
     public boolean stillValid(PlayerEntity playerIn) {
-        return true;  // No se cierra solo
+        return true;  // Nunca se cierra por distancia
     }
 
     @Override
@@ -58,33 +73,20 @@ public class BuyPassContainer extends ChestContainer {
 
     @Override
     public ItemStack clicked(int slotId, int dragType, ClickType clickTypeIn, PlayerEntity player) {
-        if (slotId >= 0 && slotId < menuInv.getContainerSize()) {
+        if (slotId >= 0 && slotId < menuInv.getContainerSize() && player instanceof ServerPlayerEntity) {
             Slot slot = this.slots.get(slotId);
             ItemStack stack = slot.getItem();
-            if (isMenuItem(stack) && player instanceof ServerPlayerEntity) {
-                String id = stack.getTag().getString("MenuButtonID");
+            if (isMenuItem(stack)) {
                 ServerPlayerEntity sp = (ServerPlayerEntity) player;
-
+                String id = stack.getTag().getString("MenuButtonID");
                 switch (id) {
-                    case "super":
-                        sp.sendMessage(PassManager.PassType.SUPER.getGradientDisplayName()
-                                        .append(new StringTextComponent("\nBeneficios: ...\nCompra: www.tu-tienda.com/super")),
-                                sp.getUUID());
-                        break;
-                    case "ultra":
-                        sp.sendMessage(PassManager.PassType.ULTRA.getGradientDisplayName()
-                                        .append(new StringTextComponent("\nBeneficios: ...\nCompra: www.tu-tienda.com/ultra")),
-                                sp.getUUID());
-                        break;
-                    case "master":
-                        sp.sendMessage(PassManager.PassType.MASTER.getGradientDisplayName()
-                                        .append(new StringTextComponent("\nBeneficios: ...\nCompra: www.tu-tienda.com/master")),
-                                sp.getUUID());
-                        break;
+                    case "super":  sendInfo(sp, PassManager.PassType.SUPER); break;
+                    case "ultra":  sendInfo(sp, PassManager.PassType.ULTRA); break;
+                    case "master": sendInfo(sp, PassManager.PassType.MASTER); break;
                     case "current":
-                        PassManager.PassType current = PassManager.getPass(sp);
-                        sp.sendMessage(current.getGradientDisplayName()
-                                        .append(new StringTextComponent("\nTu pase actual con tier " + current.getTier())),
+                        PassManager.PassType curr = PassManager.getPass(sp);
+                        sp.sendMessage(curr.getGradientDisplayName()
+                                        .append(new StringTextComponent("\nNivel: " + curr.getTier())),
                                 sp.getUUID());
                         break;
                 }
@@ -93,17 +95,22 @@ public class BuyPassContainer extends ChestContainer {
             ItemStack original = slot.getItem().copy();
             slot.set(original);
             slot.setChanged();
-            if (player instanceof ServerPlayerEntity) {
-                ((ServerPlayerEntity) player).inventory.setCarried(ItemStack.EMPTY);
-            }
+            ((ServerPlayerEntity)player).inventory.setCarried(ItemStack.EMPTY);
             this.broadcastChanges();
             return ItemStack.EMPTY;
         }
         return super.clicked(slotId, dragType, clickTypeIn, player);
     }
 
+    private static void sendInfo(ServerPlayerEntity sp, PassManager.PassType type) {
+        sp.sendMessage(
+                type.getGradientDisplayName()
+                        .append(new StringTextComponent("\nCompra: " + type.getPurchaseUrl())),
+                sp.getUUID()
+        );
+    }
+
     private boolean isMenuItem(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return false;
         CompoundNBT tag = stack.getTag();
         return tag != null && tag.contains("MenuButtonID") && tag.contains("MenuSlot");
     }
