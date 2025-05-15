@@ -75,6 +75,7 @@ mixin {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
+    maven { url 'https://jitpack.io' }
     mavenCentral()
     flatDir {
         dirs 'libs'

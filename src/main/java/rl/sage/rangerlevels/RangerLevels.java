@@ -28,6 +28,7 @@ import rl.sage.rangerlevels.events.PixelmonEventHandler;
 import rl.sage.rangerlevels.limiter.LimiterWorldData;
 import rl.sage.rangerlevels.limiter.LimiterManager;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.setup.ModContainers;
 import rl.sage.rangerlevels.util.GradientText;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,6 +55,10 @@ public class RangerLevels {
 
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(this::setup);
+
+        ModContainers.CONTAINERS.register(
+                FMLJavaModLoadingContext.get().getModEventBus()
+        );
 
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new CommandRegistry());
