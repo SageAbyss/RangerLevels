@@ -10,6 +10,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import rl.sage.rangerlevels.pass.PassManager.PassType;
+import rl.sage.rangerlevels.setup.ModContainers;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +20,7 @@ public class MainMenuContainer extends BaseMenuContainer {
     public MainMenuContainer(int windowId,
                              PlayerInventory playerInv,
                              Inventory menuInventory) {
-        super(ContainerType.GENERIC_9x3, windowId, menuInventory, playerInv, 3);
+        super(ModContainers.MAIN_MENU.get(), windowId, menuInventory, playerInv, 3);
 
         // Replace first 27 slots with MenuSlot
         for (int i = 0; i < menuInventory.getContainerSize(); i++) {
