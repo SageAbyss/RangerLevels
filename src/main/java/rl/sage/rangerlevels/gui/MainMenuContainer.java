@@ -12,6 +12,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.play.server.SSetSlotPacket;
 
+import static rl.sage.rangerlevels.gui.RangerMenuUtils.sendComprarPaseMessage;
+
 public class MainMenuContainer extends ChestContainer {
     private final Inventory menuInv;
 
@@ -81,7 +83,26 @@ public class MainMenuContainer extends ChestContainer {
                 // limpia cursor en cliente y servidor
                 clearPlayerCursor(sp);
                 sp.inventory.setCarried(ItemStack.EMPTY);
+
+                switch (id) {
+                    case "info":
+                        break;
+                        // tu lógica de información
+
+                    case "help":  // si quieres que “info” o “help” abran la ayuda
+                        // Aquí llamas a tu nuevo menú de ayuda
+                        rl.sage.rangerlevels.gui.HelpButtonUtils.sendHelpMenu(sp);
+                        sp.closeContainer();
+
+                        break;
+                    case "buy":
+                        sendComprarPaseMessage(sp);
+                        sp.closeContainer();
+                        break;
+                    // ...otros botones
+                }
             }
+
 
             // restaurar y sincronizar
             slot.set(original.copy());

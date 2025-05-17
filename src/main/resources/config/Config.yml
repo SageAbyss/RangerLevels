@@ -79,3 +79,9 @@ passBuyUrls:
   super: "https://tuservidor.com/super"
   ultra: "https://tuservidor.com/ultra"
   master: "https://tuservidor.com/master"
+
+Purge:
+  enable: true
+  timer: 30d
+  reminder: "El pase actual está por terminar... Aprovecha los últimos momentos de esta temporada!"
+  broadcast: "¡El pase actual ha terminado! Gracias por jugar con RangerLevels!"

@@ -28,6 +28,8 @@ public class ExpConfig {
     public Database database = new Database();
     public Multipliers multipliers = new Multipliers();
     public LevelsConfig levels = LevelsConfig.createDefault();
+    public PurgeConfig purge = new PurgeConfig();
+
     public AutoSave autoSave = new AutoSave();
     public Limiter limiter = new Limiter();
     public WorldsConfig worlds = new WorldsConfig();
@@ -157,6 +159,14 @@ public class ExpConfig {
 
         return cfg;
     }
+
+    public static class PurgeConfig {
+        public boolean Enable = true;
+        public String Timer = "30d"; // Ejemplo de duración: 30 días
+        public String Reminder = "¡El pase está por terminar! Aprovecha sus ultimos momentos para subir de nivel!";
+        public String Broadcast = "El pase ha terminado! La obtención de Exp queda bloqueada hasta el nuevo pase.";
+    }
+
 
     // === Estructuras internas ===
 

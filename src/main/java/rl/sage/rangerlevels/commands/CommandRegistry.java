@@ -14,9 +14,16 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.play.server.SPlaySoundEffectPacket;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.SectionPos;
 import net.minecraft.util.text.*;
 
 import net.minecraft.util.text.event.ClickEvent;
+import net.minecraft.util.text.event.HoverEvent;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -26,11 +33,16 @@ import rl.sage.rangerlevels.config.ConfigLoader;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.capability.LevelProvider;
+import rl.sage.rangerlevels.gui.HelpButtonUtils;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.multiplier.MultiplierState;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.purge.PurgeData;
 import rl.sage.rangerlevels.util.GradientText;
 import rl.sage.rangerlevels.util.TimeUtil;
+
+import java.util.Map;
+import java.util.UUID;
 
 import static rl.sage.rangerlevels.RangerLevels.PREFIX;
 
@@ -76,7 +88,10 @@ public class CommandRegistry {
                                 )
                                 .then(Commands.literal("buy")
                                         .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
-                                        .executes(ctx -> showPassBuyLinks(ctx.getSource().getPlayerOrException()))
+                                        .executes(ctx -> {
+                                            ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+                                            return showPassBuyLinks(player);
+                                        })
                                 )
                         )
                         // stats
@@ -223,6 +238,63 @@ public class CommandRegistry {
                                     return 1;
                                 })
                         )
+                        .then(Commands.literal("purga")
+                                .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
+                                .executes(ctx -> {
+                                    ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+                                    ServerWorld world = player.getLevel(); // obtiene el mundo actual del jugador
+
+                                    PurgeData data = PurgeData.get(world);
+
+                                    long secondsLeft = data.getRemainingSeconds();
+                                    if (data.hasPurgeEnded()) {
+                                        player.sendMessage(new StringTextComponent("§cLa purga ha terminado."), player.getUUID());
+                                    } else if (secondsLeft <= 0) {
+                                        player.sendMessage(new StringTextComponent("§eLa purga está activa ahora mismo."), player.getUUID());
+                                    } else {
+                                        long days = secondsLeft / 86400;
+                                        long hours = (secondsLeft % 86400) / 3600;
+                                        long minutes = (secondsLeft % 3600) / 60;
+                                        long seconds = secondsLeft % 60;
+
+                                        String msg = String.format("§aTiempo restante para la purga: §f%dd %02dh %02dm %02ds", days, hours, minutes, seconds);
+                                        player.sendMessage(new StringTextComponent(msg), player.getUUID());
+
+                                    }
+
+                                    return 1;
+                                })
+                        )
+                        .then(Commands.literal("click_evento_1")
+                                .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
+                                .executes(ctx -> {
+                                    ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+
+                                    // Coordenadas desde SectionPos
+                                    SectionPos sp = player.getLastSectionPos();
+                                    double x = sp.getX();
+                                    double y = sp.getY();
+                                    double z = sp.getZ();
+
+                                    // Ahora sí, usamos el SoundEvent directamente
+                                    SPlaySoundEffectPacket packet = new SPlaySoundEffectPacket(
+                                            SoundEvents.UI_BUTTON_CLICK,  // <— SoundEvent, no String
+                                            SoundCategory.PLAYERS,
+                                            x, y, z,
+                                            1.0f,  // volumen
+                                            1.0f   // tono
+                                    );
+
+                                    // Envío al jugador
+                                    player.connection.send(packet);
+
+                                    // Tu lógica extra
+                                    //HelpButtonUtils.sendHelpMenu(player);
+                                    return 1;
+                                })
+                        )
+
+
         );
 
         // alias /rlv
@@ -273,44 +345,76 @@ public class CommandRegistry {
 
 
     private static int showPassBuyLinks(ServerPlayerEntity player) {
-        // Título
+        UUID uuid = player.getUUID();
+        Map<String, String> urls = ExpConfig.get().getPassBuyUrls();
+
+        // ╔════════════════════════════════╗
+        IFormattableTextComponent header = GradientText.of(
+                " ╔═══════ ❖ Compra de Pases ❖ ═══════╗ ",
+                "#FFEB99", // pastel amarillo
+                "#FFD1DC", // pastel rosa
+                "#C3E0E5"  // pastel azul
+        ).withStyle(Style.EMPTY.withBold(true));
+        player.sendMessage(header.append(new StringTextComponent("\n")), uuid);
+
+        // ║   • Super Pass
+        sendDecoratedPass(player, PassManager.PassType.SUPER,
+                urls.getOrDefault("super", ""), uuid);
+
+        // ╟────────────────────────────────╢
         player.sendMessage(
-                new StringTextComponent("» Compra de Pases")
-                        .withStyle(Style.EMPTY.withColor(TextFormatting.GOLD)),
-                player.getUUID()
+                new StringTextComponent(" ╟────────────────────────────────╢\n")
+                        .withStyle(Style.EMPTY.withColor(TextFormatting.GRAY)),
+                uuid
         );
 
-        java.util.Map<String, String> urls = ExpConfig.get().getPassBuyUrls();
+        // ║   • Ultra Pass
+        sendDecoratedPass(player, PassManager.PassType.ULTRA,
+                urls.getOrDefault("ultra", ""), uuid);
 
-        // Super Pass
-        String superUrl = urls.getOrDefault("super", "");
-        IFormattableTextComponent superComp = PassManager.PassType.SUPER
-                .getGradientDisplayName().copy();
-        Style superStyle = superComp.getStyle()
-                .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, superUrl));
-        superComp.setStyle(superStyle);
-        player.sendMessage(superComp, player.getUUID());
+        // ╟────────────────────────────────╢
+        player.sendMessage(
+                new StringTextComponent(" ╟────────────────────────────────╢\n")
+                        .withStyle(Style.EMPTY.withColor(TextFormatting.GRAY)),
+                uuid
+        );
 
-        // Ultra Pass
-        String ultraUrl = urls.getOrDefault("ultra", "");
-        IFormattableTextComponent ultraComp = PassManager.PassType.ULTRA
-                .getGradientDisplayName().copy();
-        Style ultraStyle = ultraComp.getStyle()
-                .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, ultraUrl));
-        ultraComp.setStyle(ultraStyle);
-        player.sendMessage(ultraComp, player.getUUID());
+        // ║   • Master Pass
+        sendDecoratedPass(player, PassManager.PassType.MASTER,
+                urls.getOrDefault("master", ""), uuid);
 
-        // Master Pass
-        String masterUrl = urls.getOrDefault("master", "");
-        IFormattableTextComponent masterComp = PassManager.PassType.MASTER
-                .getGradientDisplayName().copy();
-        Style masterStyle = masterComp.getStyle()
-                .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, masterUrl));
-        masterComp.setStyle(masterStyle);
-        player.sendMessage(masterComp, player.getUUID());
+        // ╚════════════════════════════════╝
+        player.sendMessage(
+                new StringTextComponent(" ╚════════════════════════════════╝")
+                        .withStyle(Style.EMPTY.withColor(TextFormatting.GRAY)),
+                uuid
+        );
 
         return 1;
     }
+
+    /** Envía una línea de pase con viñeta, hover y click decorados */
+    private static void sendDecoratedPass(ServerPlayerEntity player, PassManager.PassType type, String url, UUID uuid) {
+        // Viñeta y espacio
+        IFormattableTextComponent line = new StringTextComponent(" ║   • ")
+                .append(type.getGradientDisplayName().copy());
+
+        // Hover + Click
+        Style style = Style.EMPTY
+                .withHoverEvent(new HoverEvent(
+                        HoverEvent.Action.SHOW_TEXT,
+                        new StringTextComponent("§e" + type.getDescription() + "\n§eClick para abrir")
+                ))
+                .withClickEvent(new ClickEvent(
+                        ClickEvent.Action.OPEN_URL,
+                        url
+                ));
+        line.setStyle(style);
+
+        // Envía la línea con salto de línea al final
+        player.sendMessage(line.append(new StringTextComponent("\n")), uuid);
+    }
+
 
 
     // ----------------------------
