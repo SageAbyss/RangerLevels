@@ -16,41 +16,40 @@ public class PurgeData extends WorldSavedData {
         super(DATA_NAME);
     }
 
-    // Constructor adicional requerido en 1.16.5
+    // Constructor adicional (1.16.5)
     public PurgeData(String name) {
         super(name);
     }
 
     @Override
     public void load(CompoundNBT nbt) {
-        this.remainingSeconds = nbt.getLong("remainingSeconds");
-        this.reminderSent = nbt.getBoolean("reminderSent");
-        this.purgeEnded = nbt.getBoolean("purgeEnded");
+        this.remainingSeconds   = nbt.getLong("remainingSeconds");
+        this.reminderSent       = nbt.getBoolean("reminderSent");
+        this.purgeEnded         = nbt.getBoolean("purgeEnded");
         this.configTotalSeconds = nbt.getLong("configTotalSeconds");
     }
 
     @Override
     public CompoundNBT save(CompoundNBT nbt) {
-        nbt.putLong("remainingSeconds", remainingSeconds);
-        nbt.putBoolean("reminderSent", reminderSent);
-        nbt.putBoolean("purgeEnded", purgeEnded);
+        nbt.putLong("remainingSeconds",   remainingSeconds);
+        nbt.putBoolean("reminderSent",    reminderSent);
+        nbt.putBoolean("purgeEnded",      purgeEnded);
         nbt.putLong("configTotalSeconds", configTotalSeconds);
         return nbt;
     }
 
-    public long getRemainingSeconds() { return remainingSeconds; }
+    public long getRemainingSeconds()     { return remainingSeconds; }
     public void setRemainingSeconds(long s) { this.remainingSeconds = s; setDirty(); }
 
-    public boolean isReminderSent() { return reminderSent; }
+    public boolean isReminderSent()       { return reminderSent; }
     public void setReminderSent(boolean b) { this.reminderSent = b; setDirty(); }
 
-    public boolean hasPurgeEnded() { return purgeEnded; }
-    public void setPurgeEnded(boolean b) { this.purgeEnded = b; setDirty(); }
+    public boolean hasPurgeEnded()        { return purgeEnded; }
+    public void setPurgeEnded(boolean b)  { this.purgeEnded = b; setDirty(); }
 
-    public long getConfigTotalSeconds() { return configTotalSeconds; }
+    public long getConfigTotalSeconds()   { return configTotalSeconds; }
     public void setConfigTotalSeconds(long s) { this.configTotalSeconds = s; setDirty(); }
 
-    /** Obtiene o crea la instancia en el mundo. */
     public static PurgeData get(ServerWorld world) {
         return world.getDataStorage().computeIfAbsent(PurgeData::new, DATA_NAME);
     }

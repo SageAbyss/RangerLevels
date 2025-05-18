@@ -162,10 +162,19 @@ public class ExpConfig {
 
     public static class PurgeConfig {
         public boolean Enable = true;
-        public String Timer = "30d"; // Ejemplo de duración: 30 días
-        public String Reminder = "¡El pase está por terminar! Aprovecha sus ultimos momentos para subir de nivel!";
-        public String Broadcast = "El pase ha terminado! La obtención de Exp queda bloqueada hasta el nuevo pase.";
+        public String  Timer = "30d";
+
+        // De String a List<String> para permitir varias líneas
+        public List<String> Reminder   = Arrays.asList(
+                "#FF5555 ¡El pase está por terminar!",
+                "#AAAAAA Aprovecha sus últimos momentos para subir de nivel!"
+        );
+        public List<String> Broadcast  = Arrays.asList(
+                "#FF0000 El pase ha terminado!",
+                "#CCCCCC La obtención de EXP queda bloqueada hasta la nueva temporada."
+        );
     }
+
 
 
     // === Estructuras internas ===

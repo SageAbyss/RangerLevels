@@ -7,30 +7,31 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.network.NetworkRegistry;
+import net.minecraftforge.fml.network.simple.SimpleChannel;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
-import rl.sage.rangerlevels.capability.LevelProvider;
-import rl.sage.rangerlevels.capability.LimiterProvider;
-import rl.sage.rangerlevels.commands.CommandRegistry;
-import rl.sage.rangerlevels.config.ConfigLoader;
-import rl.sage.rangerlevels.config.ExpConfig;
-import rl.sage.rangerlevels.database.AutoSaveTask;
-import rl.sage.rangerlevels.database.IPlayerDataManager;
-import rl.sage.rangerlevels.database.JSONBackupManager;
-import rl.sage.rangerlevels.database.MySQLManager;
-import rl.sage.rangerlevels.events.ExpEventHandler;
-import rl.sage.rangerlevels.events.PixelmonEventHandler;
-import rl.sage.rangerlevels.limiter.LimiterWorldData;
-import rl.sage.rangerlevels.limiter.LimiterManager;
-import rl.sage.rangerlevels.pass.PassManager;
-import rl.sage.rangerlevels.util.GradientText;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import rl.sage.rangerlevels.commands.CommandRegistry;
+import rl.sage.rangerlevels.capability.*;  // incluye IPassCapability, PassStorage, PassCapability, PassCapabilityProvider
+import rl.sage.rangerlevels.config.ConfigLoader;
+import rl.sage.rangerlevels.config.ExpConfig;
+import rl.sage.rangerlevels.database.*;
+import rl.sage.rangerlevels.events.ExpEventHandler;
+import rl.sage.rangerlevels.events.PixelmonEventHandler;
+import rl.sage.rangerlevels.limiter.LimiterManager;
+import rl.sage.rangerlevels.limiter.LimiterWorldData;
+import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.util.GradientText;
+import rl.sage.rangerlevels.util.TimeUtil;
 
 @Mod(RangerLevels.MODID)
 public class RangerLevels {
@@ -38,31 +39,40 @@ public class RangerLevels {
     public static final IFormattableTextComponent PREFIX =
             GradientText.of("RangerLevels", "#C397F1", "#A4DDE1", "#A671BD")
                     .withStyle(Style.EMPTY.withBold(true));
-
     private static final Logger LOGGER = LogManager.getLogger(MODID);
     public static RangerLevels INSTANCE;
 
-    private IPlayerDataManager dataManager;
-    private IPlayerDataManager backupManager;
-    private MySQLManager mysqlManager;
+    // Managers y tasks...
     private AutoSaveTask autoSaveTask;
-
+    private IPlayerDataManager dataManager, backupManager;
+    private MySQLManager mysqlManager;
 
     public RangerLevels() {
         INSTANCE = this;
-        ExpConfig.load();
+        ExpConfig.load();  // Pre-carga de config
 
+        // 1) Listener de setup
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(this::setup);
 
-
-        MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(new CommandRegistry());
+        // 2) Registra al bus de Forge tus handlers (no repitas PassCapabilityProvider)
+        MinecraftForge.EVENT_BUS.register(this);                       // FMLServerStoppingEvent
         MinecraftForge.EVENT_BUS.register(ExpEventHandler.class);
-        Pixelmon.EVENT_BUS.register(new PixelmonEventHandler());
+        MinecraftForge.EVENT_BUS.register(CommandRegistry.class);
+        Pixelmon.EVENT_BUS.register(PixelmonEventHandler.class);
+        // El PassCapabilityProvider solo necesita la anotación @EventBusSubscriber
     }
 
     private void setup(final FMLCommonSetupEvent event) {
+        // **Aquí** registramos la capability, garantizando que la inyección ya ocurra
+        LOGGER.info("Registrando capacidad de pase...");
+        CapabilityManager.INSTANCE.register(
+                IPassCapability.class,
+                new PassStorage(),
+                PassCapability::new
+        );
+
+        // Carga configs, data managers, providers y permisos
         ConfigLoader.load();
         ExpConfig.load();
         initializeDataManagers();
@@ -71,38 +81,33 @@ public class RangerLevels {
         LimiterProvider.register();
         PassManager.registerPermissions();
 
+        // Tarea de autosave
         this.autoSaveTask = new AutoSaveTask(this);
         MinecraftForge.EVENT_BUS.register(this.autoSaveTask);
 
-        LOGGER.info("§7§m▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-        LOGGER.info(PREFIX.copy().append(new StringTextComponent(" §7- §aInicio del servidor")).getString());
-        LOGGER.info("§aCARGANDO §eSISTEMA DE NIVELES §ay §eCONFIGURACIONES...");
-        LOGGER.info("§d¡LISTOS PARA LA ACCIÓN!");
-        LOGGER.info("§7§m▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+        LOGGER.info("¡RangerLevels listo!");
     }
 
     private void initializeDataManagers() {
         String dbType = ExpConfig.get().getDatabaseType().toLowerCase();
         if ("mysql".equals(dbType)) {
             mysqlManager = new MySQLManager(this);
-            dataManager  = mysqlManager;
-            LOGGER.info("[RangerLevels] Usando MySQL para almacenamiento");
+            dataManager = mysqlManager;
+            LOGGER.info("Usando MySQL como almacenamiento");
         } else {
             dataManager = new JSONBackupManager(this);
-            LOGGER.info("[RangerLevels] Usando JSON local para almacenamiento");
+            LOGGER.info("Usando JSON local como almacenamiento");
         }
         backupManager = new JSONBackupManager(this);
-        LOGGER.info("[RangerLevels] Sistema de respaldo JSON activo");
+        LOGGER.info("Sistema de respaldo JSON activo");
     }
 
     @SubscribeEvent
     public void onServerStopping(FMLServerStoppingEvent event) {
-        shutdownSystems();
-        LOGGER.info("§7§m▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-        LOGGER.info(PREFIX.copy().append(new StringTextComponent(" §7- §aCierre del servidor")).getString());
-        LOGGER.info("§6LIBERANDO §eRECURSOS §6Y §eGUARDANDO §6DATOS...");
-        LOGGER.info("§a¡MISIÓN CUMPLIDA! §7Nos vemos la proxima!");
-        LOGGER.info("§7§m▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+        if (dataManager   != null) dataManager.close();
+        if (backupManager != null) backupManager.close();
+        if (mysqlManager  != null) mysqlManager.close();
+        LOGGER.info("Servidor detenido, recursos liberados y datos guardados.");
     }
 
     private void shutdownSystems() {

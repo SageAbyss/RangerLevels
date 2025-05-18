@@ -1,6 +1,7 @@
 package rl.sage.rangerlevels.limiter;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -8,11 +9,23 @@ import net.minecraftforge.common.util.LazyOptional;
 import rl.sage.rangerlevels.capability.ILimiter;
 import rl.sage.rangerlevels.capability.LimiterProvider;
 import rl.sage.rangerlevels.capability.LevelProvider;
+import rl.sage.rangerlevels.purge.PlayerPurgeNotifier;
+import rl.sage.rangerlevels.purge.PurgeManager;
 import rl.sage.rangerlevels.util.GradientText;
 
 public class LimiterHelper {
 
     public static void giveExpWithLimit(ServerPlayerEntity player, int amount) {
+        if (PurgeManager.isPurgeEnded()) {
+            if (!PlayerPurgeNotifier.hasNotified(player)) {
+                player.sendMessage(
+                        new StringTextComponent("§cEl pase ha finalizado. Ya no puedes obtener EXP."),
+                        Util.NIL_UUID
+                );
+                PlayerPurgeNotifier.markNotified(player);
+            }
+            return;
+        }
         if (!LimiterManager.isEnabled()) {
             LevelProvider.giveExpAndNotify(player, amount);
             return;

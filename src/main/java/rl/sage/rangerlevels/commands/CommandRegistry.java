@@ -28,7 +28,9 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import net.minecraftforge.server.permission.PermissionAPI;
 import rl.sage.rangerlevels.RangerLevels;
+import rl.sage.rangerlevels.capability.PassCapabilities;
 import rl.sage.rangerlevels.config.ConfigLoader;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.RewardConfig;
@@ -93,6 +95,29 @@ public class CommandRegistry {
                                             return showPassBuyLinks(player);
                                         })
                                 )
+                                .then(Commands.literal("set")
+                                        .requires(src ->
+                                                src.hasPermission(2)
+                                                        || (src.getEntity() instanceof ServerPlayerEntity
+                                                        && PermissionAPI.hasPermission(
+                                                        (ServerPlayerEntity) src.getEntity(),
+                                                        "rangerlevels.admin"
+                                                ))
+                                        )
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .then(Commands.argument("tier", StringArgumentType.word())
+                                                        .suggests((ctx, sb) -> {
+                                                            for (PassManager.PassType t : PassManager.PassType.values()) {
+                                                                sb.suggest(t.name().toLowerCase());
+                                                            }
+                                                            return sb.buildFuture();
+                                                        })
+                                                        // Aquí estaba el error: antes era CommandRegister
+                                                        .executes(CommandRegistry::setPassTier)
+                                                )
+                                        )
+                                )
+
                         )
                         // stats
                         .then(Commands.literal("stats")
@@ -238,6 +263,14 @@ public class CommandRegistry {
                                     return 1;
                                 })
                         )
+                        .then(Commands.literal("rewards")
+                                .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
+                                .executes(ctx -> {
+                                    ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+                                    rl.sage.rangerlevels.gui.rewards.RewardsMenu.open(player);
+                                    return 1;
+                                })
+                        )
                         .then(Commands.literal("purga")
                                 .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
                                 .executes(ctx -> {
@@ -316,7 +349,8 @@ public class CommandRegistry {
         );
     }
     private static int showPassInfo(ServerPlayerEntity player) {
-        PassManager.PassType pass = PassManager.getPass(player);
+        int tier = PassCapabilities.get(player).getTier();
+        PassManager.PassType pass = PassManager.PassType.values()[tier];
 
         // Encabezado con gradiente
         IFormattableTextComponent header = pass.getGradientDisplayName()
@@ -363,7 +397,7 @@ public class CommandRegistry {
 
         // ╟────────────────────────────────╢
         player.sendMessage(
-                new StringTextComponent(" ╟────────────────────────────────╢\n")
+                new StringTextComponent(" ╟───────────────────────────────╢\n")
                         .withStyle(Style.EMPTY.withColor(TextFormatting.GRAY)),
                 uuid
         );
@@ -374,7 +408,7 @@ public class CommandRegistry {
 
         // ╟────────────────────────────────╢
         player.sendMessage(
-                new StringTextComponent(" ╟────────────────────────────────╢\n")
+                new StringTextComponent(" ╟───────────────────────────────╢\n")
                         .withStyle(Style.EMPTY.withColor(TextFormatting.GRAY)),
                 uuid
         );
@@ -385,7 +419,7 @@ public class CommandRegistry {
 
         // ╚════════════════════════════════╝
         player.sendMessage(
-                new StringTextComponent(" ╚════════════════════════════════╝")
+                new StringTextComponent(" ╚═══════════════════════════════╝")
                         .withStyle(Style.EMPTY.withColor(TextFormatting.GRAY)),
                 uuid
         );
@@ -413,6 +447,29 @@ public class CommandRegistry {
 
         // Envía la línea con salto de línea al final
         player.sendMessage(line.append(new StringTextComponent("\n")), uuid);
+    }
+
+    private static int setPassTier(CommandContext<CommandSource> ctx) throws CommandSyntaxException {
+        ServerPlayerEntity target = EntityArgument.getPlayer(ctx, "target");
+        String tierName = StringArgumentType.getString(ctx, "tier").toUpperCase();
+
+        PassManager.PassType chosen;
+        try {
+            chosen = PassManager.PassType.valueOf(tierName);
+        } catch (IllegalArgumentException e) {
+            ctx.getSource().sendFailure(new StringTextComponent("Tier inválido: " + tierName));
+            return 0;
+        }
+
+        PassCapabilities.get(target).setTier(chosen.ordinal());
+        ctx.getSource().sendSuccess(
+                new StringTextComponent(
+                        "Tier de pase de " + target.getName().getString()
+                                + " establecido a " + chosen.name().toLowerCase()
+                ),
+                true
+        );
+        return 1;
     }
 
 

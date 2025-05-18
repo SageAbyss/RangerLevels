@@ -11,6 +11,8 @@ import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.play.server.SSetSlotPacket;
+import rl.sage.rangerlevels.gui.rewards.RewardsMenu;
+import rl.sage.rangerlevels.gui.rewards.RewardsMenuContainer;
 
 import static rl.sage.rangerlevels.gui.RangerMenuUtils.sendComprarPaseMessage;
 
@@ -72,22 +74,25 @@ public class MainMenuContainer extends ChestContainer {
      */
     @Override
     public ItemStack clicked(int slotId, int dragType, ClickType clickTypeIn, PlayerEntity player) {
+        // Solo interceptamos los slots de nuestro menú
         if (slotId >= 0 && slotId < menuInv.getContainerSize()) {
             Slot slot = this.slots.get(slotId);
             ItemStack original = slot.getItem();
 
-            if (isMenuItem(original) && player instanceof ServerPlayerEntity) {
-                String id = original.getTag().getString("MenuButtonID");
+            // Si es un ServerPlayerEntity, vaciamos cursor y abrimos submenú si toca
+            if (player instanceof ServerPlayerEntity) {
                 ServerPlayerEntity sp = (ServerPlayerEntity) player;
+                String id = original.hasTag() ? original.getTag().getString("MenuButtonID") : "";
 
-                // limpia cursor en cliente y servidor
-                clearPlayerCursor(sp);
+                // Limpia el cursor en cliente
+                sp.connection.send(new SSetSlotPacket(-1, 0, ItemStack.EMPTY));
                 sp.inventory.setCarried(ItemStack.EMPTY);
 
+                // Acción según ID
                 switch (id) {
                     case "info":
                         break;
-                        // tu lógica de información
+                    // tu lógica de información
 
                     case "help":  // si quieres que “info” o “help” abran la ayuda
                         // Aquí llamas a tu nuevo menú de ayuda
@@ -99,28 +104,35 @@ public class MainMenuContainer extends ChestContainer {
                         sendComprarPaseMessage(sp);
                         sp.closeContainer();
                         break;
+
+                    case "rewards":
+                        sp.closeContainer();
+                        RewardsMenu.open(sp);
+                        break;
                     // ...otros botones
                 }
+
+                // Restaurar el ítem en el servidor
+                slot.set(original.copy());
+                slot.setChanged();
+                this.broadcastChanges();
+
+                // Enviar paquete para actualizar el slot **ahora mismo** en el cliente
+                sp.connection.send(new SSetSlotPacket(this.containerId, slotId, original.copy()));
+
+                // Devolver la copia para que Forge intente ponerla en cursor,
+                // pero como ya lo vaciamos, el jugador no la retendrá.
+                return original.copy();
             }
 
-
-            // restaurar y sincronizar
+            // Si no es jugador de servidor, igual restauramos y devolvemos EMPTY
             slot.set(original.copy());
             slot.setChanged();
             this.broadcastChanges();
-
-            return original.copy();
-        }
-
-        // bloquea otros clics peligrosos
-        if (clickTypeIn == ClickType.SWAP
-                || clickTypeIn == ClickType.THROW
-                || clickTypeIn == ClickType.QUICK_MOVE
-                || clickTypeIn == ClickType.CLONE
-                || clickTypeIn == ClickType.PICKUP_ALL) {
             return ItemStack.EMPTY;
         }
 
+        // Para slots fuera de nuestro menú, comportamiento por defecto
         return super.clicked(slotId, dragType, clickTypeIn, player);
     }
 

@@ -6,6 +6,7 @@ import net.minecraft.util.text.*;
 import net.minecraft.util.text.event.HoverEvent;
 import net.minecraft.world.server.ServerWorld;
 import rl.sage.rangerlevels.config.ExpConfig;
+import rl.sage.rangerlevels.limiter.LimiterWorldData;
 import rl.sage.rangerlevels.purge.PurgeData;
 import rl.sage.rangerlevels.util.GradientText;
 
@@ -19,7 +20,7 @@ public class HelpButtonUtils {
     public static void sendHelpMenu(ServerPlayerEntity player) {
         // Título con gradiente pastel y decoración
         IFormattableTextComponent msg = GradientText.of(
-                " ◎ Menú de Ayuda RangerLevels ◎ ",
+                " ╔═══ ◎ Menú de Ayuda RangerLevels ◎ ═══╗",
                 "#90E96D", // pastel rosa
                 "#D5DB4F", // pastel melocotón
                 "#E5B157"  // pastel lavanda
@@ -55,7 +56,10 @@ public class HelpButtonUtils {
                 "§f§l✦ Limitador Activo",
                 buildLimiterHover(player)
         ));
-        msg.append(new StringTextComponent("\n"));
+        msg.append(GradientText.of("╚═══════════════════════════════╝",
+                "#90E96D",
+                "#D5DB4F",
+                "#E5B157"));
 
         player.sendMessage(msg, player.getUUID());
     }
@@ -74,7 +78,7 @@ public class HelpButtonUtils {
 
     /** Construye el componente con la lista de eventos y multiplicadores. */
     private static ITextComponent buildEventosHover() {
-        IFormattableTextComponent hover = new StringTextComponent("§dEventos Activos y multiplicadores:\n");
+        IFormattableTextComponent hover = new StringTextComponent("§aEventos Activos:\n");
         for (Map.Entry<String, Float> e : ExpConfig.get().multipliers.events.entrySet()) {
             hover.append(new StringTextComponent(" §7» §f" + e.getKey() + ": §b" + e.getValue() + "x\n"));
         }
@@ -108,16 +112,15 @@ public class HelpButtonUtils {
         if (!lim.enable) {
             return new StringTextComponent("§7Limitador Desactivado");
         }
-        // Calcula tiempo hasta el próximo reset basado en world time y timer config (ej. "24h")
+
         ServerWorld world = (ServerWorld) player.level;
-        // Tiempo de mundo en segundos
-        long currentSec = world.getGameTime() / 20;
-        // Parse timer, espera formato "Nh"
-        String t = lim.timer.toLowerCase().replace("h", "");
-        long hours = 24;
-        try { hours = Long.parseLong(t); } catch (Exception ex) { /*fallback*/ }
-        long resetInterval = hours * 3600;
-        long secondsToReset = resetInterval - (currentSec % resetInterval);
+        LimiterWorldData data = LimiterWorldData.get(world);
+
+        // Obtén el timestamp en segundos de cuando toca el siguiente reset
+        long nextReset = data.getNextResetTime();
+        long nowSec    = System.currentTimeMillis() / 1_000L;
+        long secondsToReset = Math.max(0, nextReset - nowSec);
+
         String formatted = formatDuration(secondsToReset);
 
         IFormattableTextComponent hover = new StringTextComponent("§7Diario: §f" + lim.expAmount + " §7EXP\n");

@@ -9,8 +9,9 @@ import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
-import rl.sage.rangerlevels.capability.ILevel;
+import rl.sage.rangerlevels.capability.PassCapabilities;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.capability.ILevel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,15 +24,15 @@ public class PlayerInfoUtils {
         tag.putString("MenuButtonID", "info");
         tag.putInt("MenuSlot", slotIndex);
 
-        // Solo el nombre del jugador
+        // Nombre del jugador
         ITextComponent nameComp = new StringTextComponent(player.getName().getString());
         CompoundNBT display = new CompoundNBT();
         display.putString("Name", ITextComponent.Serializer.toJson(nameComp));
 
         // Obtener datos de ILevel
-        ILevel cap = player.getCapability(ILevel.CAPABILITY).orElse(null);
-        int lvl  = cap != null ? cap.getLevel() : 0;
-        int exp  = cap != null ? cap.getExp()   : 0;
+        ILevel lvlCap = player.getCapability(ILevel.CAPABILITY).orElse(null);
+        int lvl  = lvlCap != null ? lvlCap.getLevel() : 0;
+        int exp  = lvlCap != null ? lvlCap.getExp()   : 0;
         int next = 50 * (lvl + 1) * (lvl + 1);
         int perc = next > 0 ? (int)(exp * 100.0 / next) : 0;
 
@@ -47,7 +48,11 @@ public class PlayerInfoUtils {
             }
         }
 
-        // Lore
+        // Obtener tier de pase y tipo de pase via capability
+        int tier = PassCapabilities.get(player).getTier();
+        PassManager.PassType passType = PassManager.PassType.values()[tier];
+
+        // Construir lore
         List<ITextComponent> lore = new ArrayList<>();
         lore.add(new StringTextComponent(TextFormatting.GRAY + "Nivel: "
                 + TextFormatting.WHITE + lvl));
@@ -59,10 +64,11 @@ public class PlayerInfoUtils {
                 + TextFormatting.GREEN + perc + "%"
                 + TextFormatting.GRAY + "]"));
         lore.add(new StringTextComponent(bar.toString()));
-        lore.add(PassManager.getPass(player).getGradientDisplayName()
+        // Aquí usamos el passType obtenido de la capability
+        lore.add(passType.getGradientDisplayName()
                 .append(new StringTextComponent(TextFormatting.GRAY + " (Pase Actual)")));
 
-        // Serializar lore
+        // Serializar lore a NBT
         ListNBT loreList = new ListNBT();
         for (ITextComponent line : lore) {
             loreList.add(StringNBT.valueOf(ITextComponent.Serializer.toJson(line)));
