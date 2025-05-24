@@ -4,7 +4,7 @@ pixelmonEvents:
   onCapture:
     enable: true
     expRange: [25, 40]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.oncapture"
     specificRangePermissions:
@@ -17,7 +17,7 @@ pixelmonEvents:
   raidParticipation:
     enable: true
     expRange: [30, 60]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.raid"
     specificRangePermissions:
@@ -169,7 +169,7 @@ minecraftEvents:
   itemFished:
     enable: true
     expRange: [15, 30]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.fish"
     specificRangePermissions:
@@ -179,7 +179,7 @@ minecraftEvents:
   cropBreak:
     enable: true
     expRange: [1, 5]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.crop"
     specificRangePermissions:
@@ -189,7 +189,7 @@ minecraftEvents:
   spawnerBreak:
     enable: true
     expRange: [50, 120]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.spawner"
     specificRangePermissions:
@@ -199,7 +199,7 @@ minecraftEvents:
   logBreak:
     enable: true
     expRange: [1, 2]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.log"
     specificRangePermissions:
@@ -209,7 +209,7 @@ minecraftEvents:
   melonPumpkinBreak:
     enable: true
     expRange: [3, 5]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.melon"
     specificRangePermissions:
@@ -219,7 +219,7 @@ minecraftEvents:
   coalOreBreak:
     enable: true
     expRange: [3, 5]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.coal"
     specificRangePermissions:
@@ -229,7 +229,7 @@ minecraftEvents:
   ironOreBreak:
     enable: true
     expRange: [3, 7]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.iron"
     specificRangePermissions:
@@ -239,17 +239,27 @@ minecraftEvents:
   goldOreBreak:
     enable: true
     expRange: [3, 10]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.gold"
     specificRangePermissions:
       enable: false
       permissions: []
 
+  lapisRedstoneBreak:
+    enable: true
+    expRange: [ 5, 10 ]
+    requiresPermission: false
+    permissions:
+      - "rangerlevels.earnexp.lapis"
+    specificRangePermissions:
+      enable: false
+      permissions: [ ]
+
   diamondEmeraldBreak:
     enable: true
     expRange: [5, 15]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.diamond"
     specificRangePermissions:
@@ -285,7 +295,7 @@ minecraftEvents:
   playerKill:
     enable: true
     expRange: [1, 5]
-    requiresPermission: true
+    requiresPermission: false
     permissions:
       - "rangerlevels.earnexp.playerkill"
     specificRangePermissions:

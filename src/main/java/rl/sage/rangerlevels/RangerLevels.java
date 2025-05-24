@@ -29,6 +29,7 @@ import rl.sage.rangerlevels.events.PixelmonEventHandler;
 import rl.sage.rangerlevels.limiter.LimiterManager;
 import rl.sage.rangerlevels.limiter.LimiterWorldData;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.permissions.PermissionRegistrar;
 import rl.sage.rangerlevels.util.GradientText;
 
 @Mod(RangerLevels.MODID)
@@ -79,6 +80,7 @@ public class RangerLevels {
         RewardConfig.load();
         initializeDataManagers();
 
+        PermissionRegistrar.registerAll();
         LevelProvider.register();
         LimiterProvider.register();
         PassManager.registerPermissions();

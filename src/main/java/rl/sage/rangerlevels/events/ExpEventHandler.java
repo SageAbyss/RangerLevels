@@ -179,6 +179,8 @@ public class ExpEventHandler {
             key = "coalOreBreak";
         } else if (block == Blocks.IRON_ORE) {
             key = "ironOreBreak";
+        } else if (block == Blocks.LAPIS_ORE || block == Blocks.REDSTONE_ORE) {
+            key = "lapisRedstoneBreak";
         } else if (block == Blocks.DIAMOND_ORE || block == Blocks.EMERALD_ORE) {
             key = "diamondEmeraldBreak";
             // --- Pixelmon gem ores ---

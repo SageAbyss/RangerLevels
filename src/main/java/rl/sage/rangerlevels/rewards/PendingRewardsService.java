@@ -10,7 +10,6 @@ import rl.sage.rangerlevels.config.RewardConfig;
 public class PendingRewardsService {
 
     public static void unlockRewards(ServerPlayerEntity player, int level) {
-        System.out.println("[Rewards] unlockRewards → nivel: " + level);
 
         LazyOptional<IPlayerRewards> opt = player.getCapability(PlayerRewardsProvider.REWARDS_CAP);
         opt.ifPresent(cap -> {
@@ -70,6 +69,5 @@ public class PendingRewardsService {
     }
 
     private static void log(ServerPlayerEntity player, String key) {
-        System.out.println("[Rewards] " + player.getName().getString() + " → " + key + " PENDING");
     }
 }

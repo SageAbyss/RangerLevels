@@ -38,9 +38,11 @@ import rl.sage.rangerlevels.config.LevelsConfig;
 import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.capability.LevelProvider;
 import rl.sage.rangerlevels.gui.HelpButtonUtils;
+import rl.sage.rangerlevels.gui.help.HelpMenu;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.multiplier.MultiplierState;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.permissions.PermissionRegistrar;
 import rl.sage.rangerlevels.purge.PurgeData;
 import rl.sage.rangerlevels.rewards.RewardManager;
 import rl.sage.rangerlevels.util.GradientText;
@@ -75,39 +77,41 @@ public class CommandRegistry {
                 Commands.literal("rangerlevels")
                         // help
                         .then(Commands.literal("help")
+                                .requires(PermissionRegistrar.requireAny(
+                                        PermissionRegistrar.USER,
+                                        PermissionRegistrar.HELP,
+                                        PermissionRegistrar.ADMIN
+                                ))
                                 .executes(ctx -> {
-                                    ctx.getSource().sendSuccess(
-                                            new StringTextComponent(
-                                                    TextFormatting.AQUA + "➤ Usa " +
-                                                            TextFormatting.YELLOW + "/rlv addexp | setexp | removeexp | " +
-                                                            "addlevel | setlevel | removelevel | reset | stats | reload | " +
-                                                            "multipliers | multiplier set|add global|private | pass info | pass buy"
-                                            ), false
-                                    );
+                                    ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+                                    HelpMenu.open(player);
                                     return 1;
                                 })
                         )
                         .then(Commands.literal("pass")
                                 .then(Commands.literal("info")
-                                        .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
+                                        .requires(PermissionRegistrar.requireAny(
+                                                PermissionRegistrar.USER,
+                                                PermissionRegistrar.PASS_INFO,
+                                                PermissionRegistrar.ADMIN
+                                        ))
                                         .executes(ctx -> showPassInfo(ctx.getSource().getPlayerOrException()))
                                 )
                                 .then(Commands.literal("buy")
-                                        .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
-                                        .executes(ctx -> {
+                                        .requires(PermissionRegistrar.requireAny(
+                                                PermissionRegistrar.USER,
+                                                PermissionRegistrar.PASS_BUY,
+                                                PermissionRegistrar.ADMIN
+                                        ))                                        .executes(ctx -> {
                                             ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                             return showPassBuyLinks(player);
                                         })
                                 )
                                 .then(Commands.literal("set")
-                                        .requires(src ->
-                                                src.hasPermission(2)
-                                                        || (src.getEntity() instanceof ServerPlayerEntity
-                                                        && PermissionAPI.hasPermission(
-                                                        (ServerPlayerEntity) src.getEntity(),
-                                                        "rangerlevels.admin"
-                                                ))
-                                        )
+                                        .requires(PermissionRegistrar.requireAny(
+                                                PermissionRegistrar.PASS_SET,
+                                                PermissionRegistrar.ADMIN
+                                        ))
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .then(Commands.argument("tier", StringArgumentType.word())
                                                         .suggests((ctx, sb) -> {
@@ -125,12 +129,21 @@ public class CommandRegistry {
                         )
                         // stats
                         .then(Commands.literal("stats")
+                                .requires(PermissionRegistrar.requireAny(
+                                        PermissionRegistrar.USER,
+                                        PermissionRegistrar.STATS,
+                                        PermissionRegistrar.ADMIN
+                                ))
                                 .executes(CommandRegistry::showStats)
                         )
                         // addexp / setexp / removeexp
                         .then(Commands.literal("addexp")
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
+                                                .requires(PermissionRegistrar.requireAny(
+                                                        PermissionRegistrar.ADDEXP,
+                                                        PermissionRegistrar.ADMIN
+                                                ))
                                                 .executes(ctx -> modifyExp(ctx, Mode.ADD))
                                         )
                                 )
@@ -139,6 +152,10 @@ public class CommandRegistry {
                         .then(Commands.literal("setexp")
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
+                                                .requires(PermissionRegistrar.requireAny(
+                                                        PermissionRegistrar.SETEXP,
+                                                        PermissionRegistrar.ADMIN
+                                                ))
                                                 .executes(ctx -> modifyExp(ctx, Mode.SET))
                                         )
                                 )
@@ -146,6 +163,10 @@ public class CommandRegistry {
                         .then(Commands.literal("removeexp")
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
+                                                .requires(PermissionRegistrar.requireAny(
+                                                        PermissionRegistrar.REMOVEEXP,
+                                                        PermissionRegistrar.ADMIN
+                                                ))
                                                 .executes(ctx -> modifyExp(ctx, Mode.REMOVE))
                                         )
                                 )
@@ -154,6 +175,10 @@ public class CommandRegistry {
                         .then(Commands.literal("addlevel")
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
+                                                .requires(PermissionRegistrar.requireAny(
+                                                        PermissionRegistrar.ADDLEVEL,
+                                                        PermissionRegistrar.ADMIN
+                                                ))
                                                 .executes(ctx -> modifyLevel(ctx, Mode.ADD))
                                         )
                                 )
@@ -161,6 +186,10 @@ public class CommandRegistry {
                         .then(Commands.literal("setlevel")
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
+                                                .requires(PermissionRegistrar.requireAny(
+                                                        PermissionRegistrar.SETLEVEL,
+                                                        PermissionRegistrar.ADMIN
+                                                ))
                                                 .executes(ctx -> modifyLevel(ctx, Mode.SET))
                                         )
                                 )
@@ -168,6 +197,10 @@ public class CommandRegistry {
                         .then(Commands.literal("removelevel")
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
+                                                .requires(PermissionRegistrar.requireAny(
+                                                        PermissionRegistrar.REMOVELEVEL,
+                                                        PermissionRegistrar.ADMIN
+                                                ))
                                                 .executes(ctx -> modifyLevel(ctx, Mode.REMOVE))
                                         )
                                 )
@@ -175,12 +208,19 @@ public class CommandRegistry {
                         // reset
                         .then(Commands.literal("reset")
                                 .then(Commands.argument("player", EntityArgument.player())
+                                        .requires(PermissionRegistrar.requireAny(
+                                                PermissionRegistrar.RESET,
+                                                PermissionRegistrar.ADMIN
+                                        ))
                                         .executes(CommandRegistry::resetStats)
                                 )
                         )
                         // reload
                         .then(Commands.literal("reload")
-                                .requires(src -> src.hasPermission(2))
+                                .requires(PermissionRegistrar.requireAny(
+                                        PermissionRegistrar.RELOAD,
+                                        PermissionRegistrar.ADMIN
+                                ))
                                 .executes(ctx -> {
                                     ConfigLoader.load();
                                     ExpConfig.reload();
@@ -201,9 +241,11 @@ public class CommandRegistry {
                         )
 
                         // setmultiplier
-                        .then(Commands.literal("setmultiplier")
-                                .requires(src -> src.hasPermission(2))
-                                // GLOBAL
+                        .then(Commands.literal("SETmultiplier")
+                                .requires(PermissionRegistrar.requireAny(
+                                        PermissionRegistrar.SETMULTIPLIER,
+                                        PermissionRegistrar.ADMIN
+                                ))                                // GLOBAL
                                 .then(Commands.literal("global")
                                         .then(Commands.argument("value", DoubleArgumentType.doubleArg(0.0))
                                                 .suggests(valueSuggestions)
@@ -230,7 +272,7 @@ public class CommandRegistry {
                                                 )
                                         )
                                 )
-                                .then(Commands.literal("add")
+                                .then(Commands.literal("addmultiplier")
                                         .then(Commands.literal("global")
                                                 .then(Commands.argument("value", DoubleArgumentType.doubleArg(0.0))
                                                         .suggests(valueSuggestions)
@@ -258,27 +300,40 @@ public class CommandRegistry {
                         )
                         // multipliers
                         .then(Commands.literal("multipliers")
+                                .requires(PermissionRegistrar.requireAny(
+                                        PermissionRegistrar.USER,
+                                        PermissionRegistrar.MULTIPLIERS,
+                                        PermissionRegistrar.ADMIN
+                                ))
                                 .executes(CommandRegistry::showMultipliers)
                         )
                         .then(Commands.literal("menu")
-                                .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
-                                .executes(ctx -> {
+                                .requires(PermissionRegistrar.requireAny(
+                                        PermissionRegistrar.USER,
+                                        PermissionRegistrar.MENU,
+                                        PermissionRegistrar.ADMIN
+                                ))                                .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     rl.sage.rangerlevels.gui.MainMenu.open(player);
                                     return 1;
                                 })
                         )
                         .then(Commands.literal("rewards")
-                                .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
-                                .executes(ctx -> {
+                                .requires(PermissionRegistrar.requireAny(
+                                        PermissionRegistrar.USER,
+                                        PermissionRegistrar.REWARDS,
+                                        PermissionRegistrar.ADMIN
+                                ))                                .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     rl.sage.rangerlevels.gui.rewards.RewardsMenu.open(player);
                                     return 1;
                                 })
                         )
                         .then(Commands.literal("purga")
-                                .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
-                                .executes(ctx -> {
+                                .requires(PermissionRegistrar.requireAny(
+                                        PermissionRegistrar.PURGA,
+                                        PermissionRegistrar.ADMIN
+                                ))                                .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     ServerWorld world = player.getLevel(); // obtiene el mundo actual del jugador
 
@@ -304,7 +359,10 @@ public class CommandRegistry {
                                 })
                         )
                         .then(Commands.literal("click_evento_1")
-                                .requires(src -> src.getEntity() instanceof ServerPlayerEntity)
+                                .requires(PermissionRegistrar.requireAny(
+                                        PermissionRegistrar.CLICK_EVENTO,
+                                        PermissionRegistrar.ADMIN
+                                ))
                                 .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
 
@@ -351,6 +409,15 @@ public class CommandRegistry {
         dispatcher.register(
                 Commands.literal("nivel")
                         .executes(CommandRegistry::showStats)
+        );
+
+        // justo después de tu registro de "rlv"
+        dispatcher.register(
+                Commands.literal("rewards")
+                        // aquí podrías repetir tu .requires(...) de permisos si lo usas
+                        .redirect(dispatcher.getRoot()
+                                .getChild("rangerlevels")   // /rangerlevels
+                                .getChild("rewards"))       // /rangerlevels rewards
         );
     }
     private static int showPassInfo(ServerPlayerEntity player) {
@@ -853,8 +920,17 @@ public class CommandRegistry {
                         .withStyle(style -> style.setStrikethrough(true).withColor(Color.fromRgb(0xFFA500))));
         player.sendMessage(header, player.getUUID());
 
-        // ✨ Nuevo: multiplicador por pase actual
-        rl.sage.rangerlevels.pass.PassManager.PassType pass = PassManager.getPass(player);
+        // ✨ Nuevo: multiplicador por pase actual desde Capability
+        int tierOrdinal = PassCapabilities.get(player).getTier();
+        PassManager.PassType pass;
+        // Convertimos ordinal a PassType, si está fuera de rango, fallback a FREE
+        PassManager.PassType[] types = PassManager.PassType.values();
+        if (tierOrdinal >= 0 && tierOrdinal < types.length) {
+            pass = types[tierOrdinal];
+        } else {
+            pass = PassManager.PassType.FREE;
+        }
+
         double passMul;
         switch (pass) {
             case SUPER:  passMul = 1.25; break;
@@ -865,7 +941,7 @@ public class CommandRegistry {
         player.sendMessage(
                 new StringTextComponent(TextFormatting.GRAY + "Pase: ")
                         .append(pass.getGradientDisplayName())
-                        .append(new StringTextComponent(TextFormatting.GRAY + " (x" + passMul + ")")),
+                        .append(new StringTextComponent(TextFormatting.GRAY + " (×" + passMul + ")")),
                 player.getUUID()
         );
 
