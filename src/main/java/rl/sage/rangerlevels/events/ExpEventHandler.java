@@ -1,5 +1,6 @@
 package rl.sage.rangerlevels.events;
 
+import com.pixelmonmod.pixelmon.api.registries.PixelmonBlocks;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.CropsBlock;
@@ -180,6 +181,32 @@ public class ExpEventHandler {
             key = "ironOreBreak";
         } else if (block == Blocks.DIAMOND_ORE || block == Blocks.EMERALD_ORE) {
             key = "diamondEmeraldBreak";
+            // --- Pixelmon gem ores ---
+        } else if (block == PixelmonBlocks.ruby_ore
+                || block == PixelmonBlocks.sapphire_ore
+                || block == PixelmonBlocks.amethyst_ore
+                || block == PixelmonBlocks.crystal_ore
+                || block == PixelmonBlocks.silicon_ore) {
+            key = "pixelmonGemOreBreak";
+
+// --- Pixelmon metal ores ---
+        } else if (block == PixelmonBlocks.bauxite_ore
+                || block == PixelmonBlocks.silver_ore
+                || block == PixelmonBlocks.platinum_ore) {
+            key = "pixelmonMetalOreBreak";
+
+// --- Pixelmon evolution stone ores ---
+        } else if (block == PixelmonBlocks.moon_stone_ore
+                || block == PixelmonBlocks.fire_stone_ore
+                || block == PixelmonBlocks.water_stone_ore
+                || block == PixelmonBlocks.thunder_stone_ore
+                || block == PixelmonBlocks.leaf_stone_ore
+                || block == PixelmonBlocks.shiny_stone_ore
+                || block == PixelmonBlocks.sun_stone_ore
+                || block == PixelmonBlocks.ice_stone_ore
+                || block == PixelmonBlocks.dusk_stone_ore
+                || block == PixelmonBlocks.dawn_stone_ore) {
+            key = "pixelmonEvolutionOreBreak";
         } else {
             return;
         }

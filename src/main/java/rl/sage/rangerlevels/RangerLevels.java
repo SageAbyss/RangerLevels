@@ -1,9 +1,9 @@
 package rl.sage.rangerlevels;
 
 import com.pixelmonmod.pixelmon.Pixelmon;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.MinecraftForge;
@@ -14,16 +14,15 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import rl.sage.rangerlevels.commands.CommandRegistry;
-import rl.sage.rangerlevels.capability.*;  // incluye IPassCapability, PassStorage, PassCapability, PassCapabilityProvider
+import rl.sage.rangerlevels.capability.*;  // incluye IPassCapability, PassStorage, PassCapability, PassCapabilityProvider, PlayerRewardsProvider
 import rl.sage.rangerlevels.config.ConfigLoader;
 import rl.sage.rangerlevels.config.ExpConfig;
+import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.database.*;
 import rl.sage.rangerlevels.events.ExpEventHandler;
 import rl.sage.rangerlevels.events.PixelmonEventHandler;
@@ -31,7 +30,6 @@ import rl.sage.rangerlevels.limiter.LimiterManager;
 import rl.sage.rangerlevels.limiter.LimiterWorldData;
 import rl.sage.rangerlevels.pass.PassManager;
 import rl.sage.rangerlevels.util.GradientText;
-import rl.sage.rangerlevels.util.TimeUtil;
 
 @Mod(RangerLevels.MODID)
 public class RangerLevels {
@@ -60,11 +58,11 @@ public class RangerLevels {
         MinecraftForge.EVENT_BUS.register(ExpEventHandler.class);
         MinecraftForge.EVENT_BUS.register(CommandRegistry.class);
         Pixelmon.EVENT_BUS.register(PixelmonEventHandler.class);
-        // El PassCapabilityProvider solo necesita la anotación @EventBusSubscriber
+        // El PassCapabilityProvider y PlayerRewardsAttach solo necesitan la anotación @EventBusSubscriber
     }
 
     private void setup(final FMLCommonSetupEvent event) {
-        // **Aquí** registramos la capability, garantizando que la inyección ya ocurra
+        // **Aquí** registramos las capabilities, garantizando que la inyección ya ocurra
         LOGGER.info("Registrando capacidad de pase...");
         CapabilityManager.INSTANCE.register(
                 IPassCapability.class,
@@ -72,14 +70,19 @@ public class RangerLevels {
                 PassCapability::new
         );
 
+        LOGGER.info("Registrando capacidad de recompensas...");
+        PlayerRewardsProvider.register();
+
         // Carga configs, data managers, providers y permisos
         ConfigLoader.load();
         ExpConfig.load();
+        RewardConfig.load();
         initializeDataManagers();
 
         LevelProvider.register();
         LimiterProvider.register();
         PassManager.registerPermissions();
+        // No es necesario registrar de nuevo PlayerRewardsAttach, está anotado con @EventBusSubscriber
 
         // Tarea de autosave
         this.autoSaveTask = new AutoSaveTask(this);

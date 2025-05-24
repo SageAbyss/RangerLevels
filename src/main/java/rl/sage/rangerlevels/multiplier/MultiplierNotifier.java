@@ -26,8 +26,12 @@ public class MultiplierNotifier {
 
     /** Para no repetir el aviso global de 59s */
     private static boolean warnedGlobal59 = false;
+    private static boolean warnedGlobal1 = false;
+
     /** Para no repetir avisos privados de 59s (clave = nombre de jugador) */
     private static final Set<String> warnedPrivate59 = new HashSet<>();
+    private static final Set<String> warnedPrivate1 = new HashSet<>();
+
 
     /** Contador de ticks para agrupar cada ~20 ticks = 1 segundo */
     private static int tickCounter = 0;
@@ -56,9 +60,24 @@ public class MultiplierNotifier {
 
             warnedGlobal59 = true;
         }
+        // ——— AVISO GLOBAL 59s ———
+        if (globalVal > 1.0 && globalRem == 1 && !warnedGlobal1) {
+            IFormattableTextComponent msg = PREFIX.copy()
+                    .append(new StringTextComponent(" El multiplicador GLOBAL finalizó")
+                            .withStyle(Style.EMPTY.withColor(TextFormatting.RED)));
+
+            ServerLifecycleHooks.getCurrentServer()
+                    .getPlayerList().getPlayers()
+                    .forEach(p -> p.sendMessage(msg, p.getUUID()));
+
+            warnedGlobal1 = true;
+        }
 
         // Reset del flag si baja de 59s o vuelve indefinido/expirado
         if (globalRem != 59 && warnedGlobal59) {
+            warnedGlobal59 = false;
+        }
+        if (globalRem != 1 && warnedGlobal59) {
             warnedGlobal59 = false;
         }
 
@@ -85,9 +104,21 @@ public class MultiplierNotifier {
                 warnedPrivate59.add(name);
             }
 
+            if (personalVal > 1.0 && personalRem == 1 && !warnedPrivate1.contains(name)) {
+                IFormattableTextComponent msg = PREFIX.copy()
+                        .append(new StringTextComponent(" Tu multiplicador PRIVADO finalizó.")
+                                .withStyle(Style.EMPTY.withColor(TextFormatting.YELLOW)));
+
+                player.sendMessage(msg, player.getUUID());
+                warnedPrivate1.add(name);
+            }
+
             // Reset del aviso si cambia de 59s
             if (personalRem != 59 && warnedPrivate59.contains(name)) {
                 warnedPrivate59.remove(name);
+            }
+            if (personalRem != 1 && warnedPrivate1.contains(name)) {
+                warnedPrivate1.remove(name);
             }
 
             // Expiración privada

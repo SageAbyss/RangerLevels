@@ -256,6 +256,32 @@ minecraftEvents:
       enable: false
       permissions: []
 
+  # --- NUEVAS CATEGORÍAS PIXELMON ---
+
+  pixelmonGemOreBreak:
+    enable: true
+    expRange: [10,20]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+
+  pixelmonMetalOreBreak:
+    enable: true
+    expRange: [15,25]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+
+  pixelmonEvolutionOreBreak:
+    enable: true
+    expRange: [5,15]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+
   playerKill:
     enable: true
     expRange: [1, 5]

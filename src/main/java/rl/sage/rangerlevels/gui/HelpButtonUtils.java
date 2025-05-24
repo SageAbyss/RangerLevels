@@ -77,7 +77,7 @@ public class HelpButtonUtils {
     }
 
     /** Construye el componente con la lista de eventos y multiplicadores. */
-    private static ITextComponent buildEventosHover() {
+    public static ITextComponent buildEventosHover() {
         IFormattableTextComponent hover = new StringTextComponent("§aEventos Activos:\n");
         for (Map.Entry<String, Float> e : ExpConfig.get().multipliers.events.entrySet()) {
             hover.append(new StringTextComponent(" §7» §f" + e.getKey() + ": §b" + e.getValue() + "x\n"));
@@ -86,19 +86,19 @@ public class HelpButtonUtils {
     }
 
     /** Construye el componente con el mini tutorial de compra. */
-    private static ITextComponent buildCompraHover() {
+    public static ITextComponent buildCompraHover() {
         IFormattableTextComponent hover = new StringTextComponent("");
-        hover.append(GradientText.of(" ▶ Tutorial de Compra ◀ ", "#FFB3BA", "#FFDFBA", "#FFFFBA"))
+        hover.append(GradientText.of(" §3▶ Tutorial de Compra ◀ ", "#FFB3BA", "#FFDFBA", "#FFFFBA"))
                 .append(new StringTextComponent("\n"));
-        hover.append(new StringTextComponent("(1) §7Entra al enlace del pase que quieras comprar\n"));
-        hover.append(new StringTextComponent("(2) §7Sigue las instrucciones de compra de la página\n"));
-        hover.append(new StringTextComponent("(3) §7En menos de 10 minutos recibirás el pase\n"));
-        hover.append(new StringTextComponent("(4) §7Revisa tu pase con /rlv pass info"));
+        hover.append(new StringTextComponent("§f(1) §7Entra al enlace del pase que quieras comprar\n"));
+        hover.append(new StringTextComponent("§f(2) §7Sigue las instrucciones de compra de la página\n"));
+        hover.append(new StringTextComponent("§f(3) §7En menos de 10 minutos recibirás el pase\n"));
+        hover.append(new StringTextComponent("§f(4) §7Revisa tu pase con /rlv pass info"));
         return hover;
     }
 
     /** Construye el componente con el tiempo restante hasta el reinicio del pase. */
-    private static ITextComponent buildReinicioHover(ServerPlayerEntity player) {
+    public static ITextComponent buildReinicioHover(ServerPlayerEntity player) {
         ServerWorld world = (ServerWorld) player.level;
         PurgeData data = PurgeData.get(world);
         long seconds = data.getRemainingSeconds();
@@ -107,7 +107,7 @@ public class HelpButtonUtils {
     }
 
     /** Construye el componente con el tiempo restante hasta el próximo reset del limitador. */
-    private static ITextComponent buildLimiterHover(ServerPlayerEntity player) {
+    public static ITextComponent buildLimiterHover(ServerPlayerEntity player) {
         ExpConfig.Limiter lim = ExpConfig.get().limiter;
         if (!lim.enable) {
             return new StringTextComponent("§7Limitador Desactivado");

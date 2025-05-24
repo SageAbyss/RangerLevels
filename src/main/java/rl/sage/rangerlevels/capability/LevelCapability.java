@@ -1,5 +1,10 @@
 package rl.sage.rangerlevels.capability;
 
+import rl.sage.rangerlevels.config.ExpConfig;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class LevelCapability implements ILevel {
     private int level = 1;
     private int exp = 0;
@@ -27,10 +32,46 @@ public class LevelCapability implements ILevel {
     }
 
     @Override
-    public boolean addExp(int amount) {
+    public List<Integer> addExp(int amount) {
         exp += amount;
-        return checkLevelUp();
+        List<Integer> nivelesSubidos = new ArrayList<>();
+        while (true) {
+            int siguiente = level + 1;
+            int needed = getExpNeededFor(siguiente);
+            if (exp >= needed && level < ExpConfig.get().getMaxLevel()) {
+                exp -= needed;
+                level++;
+                nivelesSubidos.add(level);
+            } else {
+                break;
+            }
+        }
+        return nivelesSubidos;
     }
+
+    @Override
+    public List<Integer> addLevel(int amount) {
+        List<Integer> niveles = new ArrayList<>();
+        int maxLvl = ExpConfig.get().getMaxLevel();
+
+        int relExp = exp; // Guardamos la experiencia relativa actual
+
+        for (int i = 0; i < amount; i++) {
+            int current = getLevel();
+            if (current >= maxLvl) break;
+
+            level++; // Subimos nivel directamente
+            niveles.add(level); // Registramos el nuevo nivel
+        }
+
+        exp = relExp; // Restauramos la experiencia relativa que tenía el jugador
+
+        return niveles;
+    }
+
+
+
+
 
     private boolean checkLevelUp() {
         boolean leveledUp = false;
@@ -48,8 +89,8 @@ public class LevelCapability implements ILevel {
     }
 
     private int getExpNeededFor(int lvl) {
-        // Curva progresiva: por ejemplo, 50 * lvl²
-        return 50 * lvl * lvl;
+        // Curva progresiva: 18% mas cada nivel
+        return ExpConfig.get().getLevels().getExpForLevel(lvl);
     }
 
     // Métodos nuevos para el multiplicador

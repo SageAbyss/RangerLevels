@@ -29,7 +29,7 @@ public class RewardsMenu {
                 "§6Recompensas por Nivel",
                 Arrays.asList("Ver recompensas desbloqueadas por nivel"),
                 Items.EXPERIENCE_BOTTLE,
-                "reward_level",
+                "reward_everylevel",
                 12
         ));
 
@@ -47,6 +47,15 @@ public class RewardsMenu {
                 Items.PAPER,
                 "reward_exact",
                 16
+        ));
+
+        // Botón de Volver al menú principal
+        inv.setItem(22, MenuItemBuilder.createButton(
+                "§cVolver",
+                Arrays.asList("§6Regresa al menú principal"),
+                Items.ARROW,
+                "back",
+                22
         ));
 
         // Abrir menú

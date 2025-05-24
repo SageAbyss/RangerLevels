@@ -61,4 +61,29 @@ public class LevelsConfig {
     public int getMaxLevel() {
         return max.getLevel();
     }
+
+    // ===== NUEVO: experiencia por nivel =====
+
+    /**
+     * Devuelve la experiencia requerida para subir al siguiente nivel.
+     * Puedes ajustar esta fórmula si quieres una progresión diferente.
+     */
+    public int getExpForLevel(int level) {
+        if (level <= 0) return 0;
+
+        // Ejemplo: fórmula escalonada
+        return (int)(100 * Math.pow(1.18, level - 1));
+    }
+
+    /**
+     * Devuelve la experiencia total acumulada para alcanzar el nivel dado.
+     * Ejemplo: para nivel 3, devuelve la suma de exp para nivel 1 + 2.
+     */
+    public int getTotalExpForLevel(int level) {
+        int total = 0;
+        for (int i = 1; i < level; i++) {
+            total += getExpForLevel(i);
+        }
+        return total;
+    }
 }

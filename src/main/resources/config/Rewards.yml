@@ -1,0 +1,72 @@
+# === EveryLevel Rewards ===
+EveryLevel:
+  Free:
+    Enable: true
+    items:
+      - minecraft:emerald 1
+    commands:
+      - tell {PLAYER} ¡Subiste un nivel! (Free)
+  Super:
+    Enable: true
+    items:
+      - minecraft:diamond 1
+    commands:
+      - tell {PLAYER} ¡Subiste un nivel! (Super)
+  Ultra:
+    Enable: false
+    items: []
+    commands: []
+  Master:
+    Enable: true
+    items:
+      - minecraft:netherite_ingot 1
+    commands:
+      - tell {PLAYER} ¡Subiste un nivel! (Master)
+
+# === Exact Level Rewards ===
+Exact:
+  "5":
+    Free:
+      items:
+        - minecraft:paper 5
+      commands:
+        - tell {PLAYER} ¡Desbloqueaste el nivel 5 (Free)!
+    # Super:
+    #   items:
+    #     - minecraft:golden_apple 1
+    #   commands:
+    #     - tell {PLAYER} ¡Desbloqueaste el nivel 5 (Super)!
+    # Ultra:
+    #   items:
+    #     - minecraft:diamond 1
+    #   commands:
+    #     - tell {PLAYER} ¡Desbloqueaste el nivel 5 (Ultra)!
+    Master:
+      items:
+        - minecraft:netherite_scrap 2
+      commands:
+        - tell {PLAYER} ¡Desbloqueaste el nivel 5 (Master)!
+
+# === Package Rewards ===
+Packages:
+  "5":
+    Free:
+      items:
+        - minecraft:iron_ingot 10
+      commands:
+        - tell {PLAYER} ¡Recibiste paquete por 5 niveles! (Free)
+    Super:
+      items:
+        - minecraft:gold_ingot 5
+      commands:
+        - tell {PLAYER} ¡Recibiste paquete por 5 niveles! (Super)
+    Ultra:
+      items:
+        - minecraft:diamond 2
+      commands:
+        - tell {PLAYER} ¡Recibiste paquete por 5 niveles! (Ultra)
+    # Master:
+    #   items:
+    #     - minecraft:netherite_ingot 1
+    #   commands:
+    #     - tell {PLAYER} ¡Recibiste paquete por 5 niveles! (Master)

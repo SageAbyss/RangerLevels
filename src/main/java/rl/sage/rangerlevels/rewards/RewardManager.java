@@ -1,166 +1,99 @@
-// src/main/java/rl/sage/rangerlevels/rewards/RewardManager.java
 package rl.sage.rangerlevels.rewards;
 
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundEvent;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.registries.ForgeRegistries;
+import rl.sage.rangerlevels.capability.IPassCapability;
+import rl.sage.rangerlevels.capability.PassCapabilityProvider;
 import rl.sage.rangerlevels.config.RewardConfig;
-import java.util.ArrayList;
+
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class RewardManager {
+    // Orden de rutas de pase (se usa en routeAllowed)
+    private static final List<String> ROUTES = Arrays.asList("Free", "Super", "Ultra", "Master");
 
     /**
-     * Se llama al subir de nivel para ejecutar las recompensas según configuración.
+     * Al subir de nivel, marca todas las recompensas correspondientes
+     * (EveryLevel, Exact y Packages) como PENDING en el capability.
      */
-    public static void handleLevelUp(ServerPlayerEntity player, int newLevel) {
-        RewardConfig cfg = RewardConfig.get();
-        String playerName = player.getName().getString();
-        MinecraftServer server = player.getCommandSenderWorld().getServer();
-
-        // EveryLevel
-        if (cfg.EveryLevel) {
-            executeRewards(playerName, server, cfg.Rewards.EveryLevel);
-        }
-
-        // Exact
-        RewardConfig.LevelRewards exact = cfg.Rewards.Exact.get(String.valueOf(newLevel));
-        if (exact != null) {
-            executeRewards(playerName, server, exact);
-        }
-
-        // Packages
-        if (cfg.Packages) {
-            for (Map.Entry<String, RewardConfig.LevelRewards> entry : cfg.Rewards.Packages.entrySet()) {
-                int interval;
-                try {
-                    interval = Integer.parseInt(entry.getKey());
-                } catch (NumberFormatException e) {
-                    continue;
-                }
-                if (interval > 0 && newLevel % interval == 0) {
-                    executeRewards(playerName, server, entry.getValue());
-                }
-            }
-        }
+    public static void handleLevelUp(ServerPlayerEntity player, int level) {
+        PendingRewardsService.unlockRewards(player, level);
     }
 
     /**
-     * Ejecuta el bloque de recompensas (dar items + comandos).
-     */
-    public static void executeRewards(String playerName, MinecraftServer server, RewardConfig.LevelRewards rewards) {
-        List<String> given = new ArrayList<>();
-
-        // Dar ítems
-        for (String def : rewards.items) {
-            String[] parts = def.split(" ");
-            String itemId = parts[0];
-            String qty    = parts.length > 1 ? parts[1] : "1";
-            server.getCommands().performCommand(
-                    server.createCommandSourceStack(),
-                    "give " + playerName + " " + itemId + " " + qty
-            );
-            given.add(itemId + " x" + qty);
-        }
-
-        String itemsList = String.join(", ", given);
-
-        // Ejecutar comandos
-        for (String tmpl : rewards.commands) {
-            String cmd = tmpl
-                    .replace("{PLAYER}", playerName)
-                    .replace("{ITEMS}", itemsList);
-            server.getCommands().performCommand(
-                    server.createCommandSourceStack(),
-                    cmd
-            );
-        }
-    }
-
-    /**
-     * Devuelve las definiciones de EveryLevel (lista de strings).
-     */
-    public static List<String> getUnlockedEveryLevel(ServerPlayerEntity player, int level) {
-        RewardConfig cfg = RewardConfig.get();
-        if (!cfg.EveryLevel) {
-            return new ArrayList<String>();
-        }
-        return new ArrayList<String>(cfg.Rewards.EveryLevel.items);
-    }
-
-    /**
-     * Devuelve las definiciones de ExactLevel para el nivel dado.
-     */
-    public static List<String> getUnlockedExactLevel(ServerPlayerEntity player, int level) {
-        RewardConfig.LevelRewards exact = RewardConfig.get().Rewards.Exact.get(String.valueOf(level));
-        if (exact == null) {
-            return new ArrayList<String>();
-        }
-        return new ArrayList<String>(exact.items);
-    }
-
-    /**
-     * Devuelve las definiciones de Packages para el nivel dado.
-     */
-    public static List<String> getUnlockedPackages(ServerPlayerEntity player, int level) {
-        RewardConfig cfg = RewardConfig.get();
-        List<String> out = new ArrayList<String>();
-        if (!cfg.Packages) {
-            return out;
-        }
-        for (Map.Entry<String, RewardConfig.LevelRewards> entry : cfg.Rewards.Packages.entrySet()) {
-            int interval;
-            try {
-                interval = Integer.parseInt(entry.getKey());
-            } catch (NumberFormatException e) {
-                continue;
-            }
-            if (interval > 0 && level % interval == 0) {
-                out.addAll(entry.getValue().items);
-            }
-        }
-        return out;
-    }
-
-    /**
-     * ¿Hay al menos una recompensa desbloqueada de cualquier tipo?
-     */
-    public static boolean hasAnyUnlocked(ServerPlayerEntity player, int level) {
-        return !getUnlockedEveryLevel(player, level).isEmpty()
-                || !getUnlockedExactLevel(player, level).isEmpty()
-                || !getUnlockedPackages(player, level).isEmpty();
-    }
-
-    /**
-     * Reclama todas las recompensas (EveryLevel + Exact + Packages) de una sola vez.
+     * Método opcional para reclamar todas las recompensas vía código.
      */
     public static void claimAll(ServerPlayerEntity player, int level) {
-        RewardConfig cfg = RewardConfig.get();
-        String playerName = player.getName().getString();
-        MinecraftServer server = player.getCommandSenderWorld().getServer();
+        handleLevelUp(player, level);
+    }
 
-        // EveryLevel
-        if (cfg.EveryLevel) {
-            executeRewards(playerName, server, cfg.Rewards.EveryLevel);
-        }
-        // Exact
-        RewardConfig.LevelRewards exact = cfg.Rewards.Exact.get(String.valueOf(level));
-        if (exact != null) {
-            executeRewards(playerName, server, exact);
-        }
-        // Packages
-        if (cfg.Packages) {
-            for (Map.Entry<String, RewardConfig.LevelRewards> entry : cfg.Rewards.Packages.entrySet()) {
-                int interval;
-                try {
-                    interval = Integer.parseInt(entry.getKey());
-                } catch (NumberFormatException e) {
-                    continue;
-                }
-                if (interval > 0 && level % interval == 0) {
-                    executeRewards(playerName, server, entry.getValue());
-                }
+    /**
+     * Verifica si el jugador tiene al menos la ruta de pase solicitada.
+     */
+    static boolean routeAllowed(ServerPlayerEntity player, String route) {
+        // Nivel de pase del jugador (0 = Free)
+        final int[] playerTier = {0};
+        LazyOptional<IPassCapability> capOpt =
+                player.getCapability(PassCapabilityProvider.PASS_CAP);
+        capOpt.ifPresent(cap -> playerTier[0] = cap.getTier());
+        int routeTier = ROUTES.indexOf(route);
+        return routeTier >= 0 && playerTier[0] >= routeTier;
+    }
+
+    /**
+     * Ejecuta ítems y comandos de una ruta, luego reproduce el sonido que toque.
+     */
+    public static void executeRouteRewards(ServerPlayerEntity player,
+                                           MinecraftServer server,
+                                           RewardConfig.RouteRewards rr,
+                                           String rewardType) {
+        String playerName = player.getName().getString();
+
+        // 1) Dar ítems
+        if (rr.items != null) {
+            for (String def : rr.items) {
+                String[] parts = def.split(" ");
+                String itemId = parts[0];
+                String qty    = parts.length > 1 ? parts[1] : "1";
+                server.getCommands().performCommand(
+                        server.createCommandSourceStack(),
+                        "give " + playerName + " " + itemId + " " + qty
+                );
             }
+        }
+
+        // 2) Ejecutar comandos
+        if (rr.commands != null) {
+            for (String tmpl : rr.commands) {
+                String cmd = tmpl.replace("{PLAYER}", playerName);
+                server.getCommands().performCommand(
+                        server.createCommandSourceStack(),
+                        cmd
+                );
+            }
+        }
+
+        // 3) Reproducir sonido según tipo de recompensa
+        String soundName;
+        switch (rewardType) {
+            case "Exact":
+                soundName = RewardConfig.get().Sounds.Exact;
+                break;
+            case "Packages":
+                soundName = RewardConfig.get().Sounds.Packages;
+                break;
+            default:
+                soundName = RewardConfig.get().Sounds.EveryLevel;
+                break;
+        }
+        SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation(soundName));
+        if (sound != null) {
+            player.playSound(sound, 1.0F, 1.0F);
         }
     }
 }

@@ -85,3 +85,17 @@ Purge:
   timer: 30d
   reminder: "El pase actual está por terminar... Aprovecha los últimos momentos de esta temporada!"
   broadcast: "¡El pase actual ha terminado! Gracias por jugar con RangerLevels!"
+
+maxLevelBroadcast:
+  enable: true
+  message:
+    - "§6═══════════════════════════"
+    - "§e§l¡Atención aventureros! §r§a%PLAYER% §aha alcanzado el §6§lNIVEL MÁXIMO§a§r (§f%LEVEL%§r)"
+    - "§6═══════════════════════════"
+  gradientColors:
+    - "#FF0000"
+    - "#FFFF00"
+    - "#00FF00"
+  soundEvent: "minecraft:ui.toast.challenge_complete"
+  volume: 1.3
+  pitch: 0.5

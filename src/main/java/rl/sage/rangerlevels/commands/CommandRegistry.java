@@ -18,6 +18,7 @@ import net.minecraft.network.play.server.SPlaySoundEffectPacket;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.SectionPos;
 import net.minecraft.util.text.*;
 
@@ -33,6 +34,7 @@ import rl.sage.rangerlevels.RangerLevels;
 import rl.sage.rangerlevels.capability.PassCapabilities;
 import rl.sage.rangerlevels.config.ConfigLoader;
 import rl.sage.rangerlevels.config.ExpConfig;
+import rl.sage.rangerlevels.config.LevelsConfig;
 import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.capability.LevelProvider;
 import rl.sage.rangerlevels.gui.HelpButtonUtils;
@@ -40,9 +42,11 @@ import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.multiplier.MultiplierState;
 import rl.sage.rangerlevels.pass.PassManager;
 import rl.sage.rangerlevels.purge.PurgeData;
+import rl.sage.rangerlevels.rewards.RewardManager;
 import rl.sage.rangerlevels.util.GradientText;
 import rl.sage.rangerlevels.util.TimeUtil;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -131,6 +135,7 @@ public class CommandRegistry {
                                         )
                                 )
                         )
+
                         .then(Commands.literal("setexp")
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
@@ -620,68 +625,103 @@ public class CommandRegistry {
     // -----------------------------------
     private static int showStats(CommandContext<CommandSource> ctx) throws CommandSyntaxException {
         ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+
         player.getCapability(LevelProvider.LEVEL_CAP).ifPresent(cap -> {
             int lvl = cap.getLevel();
             int exp = cap.getExp();
-            int next = 50 * (lvl + 1) * (lvl + 1);
+
+            // 1) EXP necesaria para el siguiente nivel usando la curva exponencial
+            int next = ExpConfig.get().getLevels().getExpForLevel(lvl + 1);
+
+            // 2) Porcentaje de progreso en este nivel
             int perc = (int) (exp * 100.0 / next);
-            int bars = 20, filled = perc * bars / 100;
+            perc = MathHelper.clamp(perc, 0, 100);
+
+            // 3) Barra de progreso
+            int bars = 20;
+            int filled = perc * bars / 100;
             StringBuilder bar = new StringBuilder();
             for (int i = 0; i < bars; i++) {
                 bar.append(i < filled
-                        ? TextFormatting.GREEN + "░"
-                        : TextFormatting.DARK_GRAY + "░");
+                        ? TextFormatting.GREEN.toString() + "░"
+                        : TextFormatting.DARK_GRAY.toString() + "░");
             }
 
-            // Línea superior con strikethrough + PREFIX
+            // 4) Header decorativo
             IFormattableTextComponent header = new StringTextComponent("")
-                    // parte izquierda de strikethrough
                     .append(new StringTextComponent(TextFormatting.DARK_GRAY.toString()
                             + TextFormatting.STRIKETHROUGH.toString()
                             + "                    "))
-                    // tu PREFIX con degradado y negrita
                     .append(PREFIX.copy())
-                    // parte derecha de strikethrough (no reseteamos color: STRIKETHROUGH no toca color)
                     .append(new StringTextComponent(TextFormatting.DARK_GRAY.toString()
                             + TextFormatting.STRIKETHROUGH.toString()
                             + "                    "));
 
-            // Ahora vamos montando el cuerpo línea a línea
+            // 5) Cuerpo con stats
             IFormattableTextComponent body = new StringTextComponent("")
-                    .append(new StringTextComponent(TextFormatting.GRAY + "         ☻ Jugador: "))
-                    .append(new StringTextComponent(TextFormatting.WHITE.toString() + player.getName().getString()))
+                    .append(new StringTextComponent(TextFormatting.GRAY.toString()
+                            + "         ☻ Jugador: "))
+                    .append(new StringTextComponent(TextFormatting.WHITE.toString()
+                            + player.getName().getString()))
                     .append(new StringTextComponent("\n"))
-                    .append(new StringTextComponent(TextFormatting.GRAY + "         ⚔ Nivel: "))
-                    .append(new StringTextComponent(TextFormatting.WHITE.toString() + lvl))
+                    .append(new StringTextComponent(TextFormatting.GRAY.toString()
+                            + "         ⚔ Nivel: "))
+                    .append(new StringTextComponent(TextFormatting.WHITE.toString()
+                            + lvl))
                     .append(new StringTextComponent("\n"))
-                    .append(new StringTextComponent(TextFormatting.GRAY + "         ❖ Exp: "))
-                    .append(new StringTextComponent(TextFormatting.AQUA.toString() + exp))
-                    .append(new StringTextComponent(TextFormatting.WHITE + "/" + TextFormatting.AQUA + next))
-                    .append(new StringTextComponent(TextFormatting.GRAY + " [" + TextFormatting.GREEN + perc + "%" + TextFormatting.GRAY + "]"))
+                    .append(new StringTextComponent(TextFormatting.GRAY.toString()
+                            + "         ❖ Exp: "))
+                    .append(new StringTextComponent(TextFormatting.AQUA.toString()
+                            + exp))
+                    .append(new StringTextComponent(TextFormatting.WHITE.toString()
+                            + "/"
+                            + TextFormatting.AQUA.toString()
+                            + next))
+                    .append(new StringTextComponent(TextFormatting.GRAY.toString()
+                            + " ["
+                            + TextFormatting.GREEN.toString()
+                            + perc
+                            + "%"
+                            + TextFormatting.GRAY.toString()
+                            + "]"))
                     .append(new StringTextComponent("\n"))
-                    .append(new StringTextComponent(TextFormatting.WHITE + "     " + bar.toString()))
+                    .append(new StringTextComponent(TextFormatting.WHITE.toString()
+                            + "     "
+                            + bar.toString()))
                     .append(new StringTextComponent("\n"))
                     .append(new StringTextComponent(TextFormatting.DARK_GRAY.toString()
                             + TextFormatting.STRIKETHROUGH.toString()
                             + "                                                           "));
 
-            // Enviamos primero header, luego body
+            // 6) Envío
             player.sendMessage(header, player.getUUID());
             player.sendMessage(body,   player.getUUID());
         });
+
         return 1;
     }
+
 
 
     private static int modifyExp(CommandContext<CommandSource> ctx, Mode mode) throws CommandSyntaxException {
         ServerPlayerEntity target = EntityArgument.getPlayer(ctx, "player");
         int amt = IntegerArgumentType.getInteger(ctx, "amount");
+
         target.getCapability(LevelProvider.LEVEL_CAP).ifPresent(cap -> {
             switch (mode) {
-                case ADD:    cap.addExp(amt);     break;
-                case REMOVE: cap.addExp(-amt);    break;
-                case SET:    cap.setExp(amt);     break;
+                case ADD:
+                    LevelProvider.giveExpAndNotify(target, amt);  // Usa tu método especial
+                    break;
+                case REMOVE:
+                    int currentExp = cap.getExp();
+                    int newExp = Math.max(0, currentExp - amt);   // Evita negativos
+                    cap.setExp(newExp);
+                    break;
+                case SET:
+                    cap.setExp(amt);
+                    break;
             }
+
             target.sendMessage(new StringTextComponent(
                     TextFormatting.LIGHT_PURPLE + "☑ EXP de " +
                             TextFormatting.GOLD + target.getName().getString() +
@@ -689,27 +729,93 @@ public class CommandRegistry {
                             TextFormatting.AQUA + cap.getExp()
             ), target.getUUID());
         });
+
         return 1;
     }
+
+
 
     private static int modifyLevel(CommandContext<CommandSource> ctx, Mode mode) throws CommandSyntaxException {
         ServerPlayerEntity target = EntityArgument.getPlayer(ctx, "player");
         int amt = IntegerArgumentType.getInteger(ctx, "amount");
+
         target.getCapability(LevelProvider.LEVEL_CAP).ifPresent(cap -> {
+            int currentLevel = cap.getLevel();
+            int newLevel = currentLevel;
+
+            // Calculamos el nuevo nivel según el modo
             switch (mode) {
-                case ADD:    cap.setLevel(cap.getLevel() + amt); break;
-                case REMOVE: cap.setLevel(cap.getLevel() - amt); break;
-                case SET:    cap.setLevel(amt);                  break;
+                case ADD:
+                    newLevel += amt;
+                    break;
+                case REMOVE:
+                    newLevel -= amt;
+                    break;
+                case SET:
+                    newLevel = amt;
+                    break;
             }
-            target.sendMessage(new StringTextComponent(
-                    TextFormatting.LIGHT_PURPLE + "☑ Nivel de " +
-                            TextFormatting.GOLD + target.getName().getString() +
-                            TextFormatting.LIGHT_PURPLE + " ahora es " +
-                            TextFormatting.YELLOW + cap.getLevel()
-            ), target.getUUID());
+
+            int maxLevel = ExpConfig.get().getMaxLevel();
+            int minLevel = ExpConfig.get().getLevels().getStartingLevel();
+            newLevel = MathHelper.clamp(newLevel, minLevel, maxLevel);
+
+            LevelsConfig levelsCfg = ExpConfig.get().getLevels();
+
+            if (mode == Mode.ADD) {
+                // --- Opción 2: subimos 'amt' niveles directamente
+                List<Integer> nivelesSubidos = cap.addLevel(amt);
+                for (int lvl : nivelesSubidos) {
+                    // 1) Marca recompensas PENDING
+                    RewardManager.handleLevelUp(target, lvl);
+
+                    // 2) Mensajes y sonido para este nivel
+                    IFormattableTextComponent sep = GradientText.of(
+                            "                                                                      ",
+                            "#FF0000","#FF7F00","#FFFF00",
+                            "#00FF00","#0000FF","#4B0082","#9400D3"
+                    ).withStyle(TextFormatting.STRIKETHROUGH);
+
+                    IFormattableTextComponent title = new StringTextComponent(
+                            TextFormatting.GOLD +
+                                    (lvl >= maxLevel
+                                            ? "¡Alcanzaste el Nivel Máximo! ¡Felicidades!"
+                                            : "Subiste a Nivel §7(§f" + lvl + "§7)")
+                    );
+
+                    target.displayClientMessage(sep, false);
+                    target.displayClientMessage(title, false);
+                    target.displayClientMessage(sep, false);
+
+                    target.displayClientMessage(
+                            new StringTextComponent("§e⇧ §3Nivel Ranger " + lvl),
+                            true
+                    );
+
+                    target.level.playSound(
+                            null, target.blockPosition(),
+                            SoundEvents.PLAYER_LEVELUP, SoundCategory.PLAYERS,
+                            1.0f, 1.0f
+                    );
+                }
+            } else {
+                // REMOVE y SET: ajustamos nivel y EXP acumulada
+                int targetTotalExp = levelsCfg.getTotalExpForLevel(newLevel);
+                cap.setLevel(newLevel);
+                cap.setExp(targetTotalExp);
+
+                target.sendMessage(new StringTextComponent(
+                        TextFormatting.LIGHT_PURPLE + "☑ Nivel de " +
+                                TextFormatting.GOLD + target.getName().getString() +
+                                TextFormatting.LIGHT_PURPLE + " ahora es " +
+                                TextFormatting.YELLOW + newLevel
+                ), target.getUUID());
+            }
         });
+
         return 1;
     }
+
 
     private static int resetStats(CommandContext<CommandSource> ctx) throws CommandSyntaxException {
         ServerPlayerEntity target = EntityArgument.getPlayer(ctx, "player");

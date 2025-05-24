@@ -1,4 +1,3 @@
-// src/main/java/rl/sage/rangerlevels/config/RewardConfig.java
 package rl.sage.rangerlevels.config;
 
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -7,33 +6,67 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.representer.Representer;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
- * Configuración de recompensas en rewards.yml.
+ * Configuración de recompensas en rewards.yml para Minecraft Forge 1.16.5 (Java 8).
+ * Server‑side únicamente.
  */
 public class RewardConfig {
-    // Switches raíz
+
+    // Activos globales
     public boolean Exact      = true;
     public boolean Packages   = true;
     public boolean EveryLevel = true;
 
+    /** Sonidos configurables por tipo de recompensa */
+    public SoundsBlock Sounds = new SoundsBlock();
+
+    /** Recompensas organizadas por tipo */
     public RewardsBlock Rewards = new RewardsBlock();
 
-    public static class RewardsBlock {
-        public LinkedHashMap<String, LevelRewards> Exact    = new LinkedHashMap<String, LevelRewards>();
-        public LinkedHashMap<String, LevelRewards> Packages = new LinkedHashMap<String, LevelRewards>();
-        public LevelRewards EveryLevel = new LevelRewards();
+    /** Sonidos que suenan al reclamar cada tipo */
+    public static class SoundsBlock {
+        /** Sonido al reclamar EveryLevel */
+        public String EveryLevel = "minecraft:entity.player.levelup";
+        /** Sonido al reclamar Exact */
+        public String Exact      = "minecraft:block.note_block.pling";
+        /** Sonido al reclamar Packages */
+        public String Packages   = "minecraft:block.chest.open";
     }
 
-    public static class LevelRewards {
-        public java.util.List<String> items    = new java.util.ArrayList<String>();
-        public java.util.List<String> commands = new java.util.ArrayList<String>();
+    /** Bloque principal de recompensas */
+    public static class RewardsBlock {
+        /** EveryLevel: ruta → RouteRewards */
+        public LinkedHashMap<String, RouteRewards> EveryLevel   = new LinkedHashMap<>();
+
+        /** Exact: nivel → (ruta → RouteRewards) */
+        public LinkedHashMap<String, LinkedHashMap<String, RouteRewards>> Exact    = new LinkedHashMap<>();
+
+        /** Packages: nivel → (ruta → RouteRewards) */
+        public LinkedHashMap<String, LinkedHashMap<String, RouteRewards>> Packages = new LinkedHashMap<>();
+    }
+
+    /**
+     * Recompensas para una ruta concreta (Free, Super, Ultra, Master).
+     * - En EveryLevel usa el campo Enable para activar/desactivar.
+     * - En Exact/Packages, si la ruta no está presente, no se entrega nada.
+     */
+    public static class RouteRewards {
+        /** Solo EveryLevel: activar o desactivar esta ruta */
+        public Boolean Enable = true;
+        /** Ítems tipo "modid:item amount" */
+        public List<String> items;
+        /** Comandos a ejecutar, con {PLAYER} y/o {ITEMS} de variable */
+        public List<String> commands;
     }
 
     private static RewardConfig INSTANCE;
@@ -90,24 +123,73 @@ public class RewardConfig {
     private static RewardConfig createDefault() {
         RewardConfig cfg = new RewardConfig();
 
-        // Nivel exacto
-        LevelRewards lvl5 = new LevelRewards();
-        lvl5.items.add("minecraft:paper 5");
-        lvl5.items.add("minecraft:diamond 1");
-        lvl5.commands.add("tell {PLAYER} ¡desbloqueaste el nivel 5!");
+        // Sonidos por defecto
+        cfg.Sounds.EveryLevel = "minecraft:entity.player.levelup";
+        cfg.Sounds.Exact      = "minecraft:block.note_block.pling";
+        cfg.Sounds.Packages   = "minecraft:block.chest.open";
+
+        // === EveryLevel por ruta ===
+        for (String route : Arrays.asList("Free", "Super", "Ultra", "Master")) {
+            RouteRewards rr = new RouteRewards();
+            // Enable: Free y Master activos por defecto
+            rr.Enable = "Free".equals(route) || "Master".equals(route);
+            // Ejemplo de ítems y comandos
+            switch (route) {
+                case "Free":
+                    rr.items = Arrays.asList("minecraft:emerald 1");
+                    rr.commands = Arrays.asList("tell {PLAYER} ¡Subiste un nivel! (Free)");
+                    break;
+                case "Super":
+                    rr.items = Arrays.asList("minecraft:diamond 1");
+                    rr.commands = Arrays.asList("tell {PLAYER} ¡Subiste un nivel! (Super)");
+                    break;
+                case "Ultra":
+                    rr.items = Arrays.asList("minecraft:diamond 2");
+                    rr.commands = Arrays.asList("tell {PLAYER} ¡Subiste un nivel! (Ultra)");
+                    break;
+                default:  // Master
+                    rr.items = Arrays.asList("minecraft:netherite_ingot 1");
+                    rr.commands = Arrays.asList("tell {PLAYER} ¡Subiste un nivel! (Master)");
+                    break;
+            }
+            cfg.Rewards.EveryLevel.put(route, rr);
+        }
+
+        // === Exact nivel 5 ===
+        LinkedHashMap<String, RouteRewards> lvl5 = new LinkedHashMap<>();
+        // Free
+        RouteRewards free5 = new RouteRewards();
+        free5.items = Arrays.asList("minecraft:paper 5");
+        free5.commands = Arrays.asList("tell {PLAYER} ¡Desbloqueaste nivel 5 (Free)!");
+        lvl5.put("Free", free5);
+        // Super (ejemplo comentado en YAML)
+        // Ultra (ejemplo comentado en YAML)
+        // Master
+        RouteRewards master5 = new RouteRewards();
+        master5.items = Arrays.asList("minecraft:netherite_scrap 2");
+        master5.commands = Arrays.asList("tell {PLAYER} ¡Desbloqueaste nivel 5 (Master)!");
+        lvl5.put("Master", master5);
         cfg.Rewards.Exact.put("5", lvl5);
 
-        // Paquetes
-        LevelRewards pkg5 = new LevelRewards();
-        pkg5.items.add("minecraft:emerald 1");
-        pkg5.commands.add("tell {PLAYER} recibiste un paquete por 5 niveles!");
+        // === Packages nivel 5 ===
+        LinkedHashMap<String, RouteRewards> pkg5 = new LinkedHashMap<>();
+        // Free
+        RouteRewards pf5 = new RouteRewards();
+        pf5.items = Arrays.asList("minecraft:iron_ingot 10");
+        pf5.commands = Arrays.asList("tell {PLAYER} ¡Recibiste paquete por 5 niveles! (Free)");
+        pkg5.put("Free", pf5);
+        // Super
+        RouteRewards ps5 = new RouteRewards();
+        ps5.items = Arrays.asList("minecraft:gold_ingot 5");
+        ps5.commands = Arrays.asList("tell {PLAYER} ¡Recibiste paquete por 5 niveles! (Super)");
+        pkg5.put("Super", ps5);
+        // Ultra
+        RouteRewards pu5 = new RouteRewards();
+        pu5.items = Arrays.asList("minecraft:diamond 2");
+        pu5.commands = Arrays.asList("tell {PLAYER} ¡Recibiste paquete por 5 niveles! (Ultra)");
+        pkg5.put("Ultra", pu5);
+        // Master (ejemplo comentado en YAML)
         cfg.Rewards.Packages.put("5", pkg5);
-
-        // EveryLevel
-        LevelRewards every = new LevelRewards();
-        every.items.add("minecraft:emerald_block 1");
-        every.commands.add("tell {PLAYER} ¡subiste un nivel!");
-        cfg.Rewards.EveryLevel = every;
 
         return cfg;
     }

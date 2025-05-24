@@ -104,6 +104,9 @@ public class ExpConfig {
         return get().worlds.isAllowed(dimName);
     }
 
+    public MaxLevelBroadcastConfig maxLevelBroadcast = MaxLevelBroadcastConfig.createDefault();
+
+
     /** Configuración por defecto. */
     private static ExpConfig createDefault() {
         ExpConfig cfg = new ExpConfig();
@@ -157,8 +160,59 @@ public class ExpConfig {
         cfg.passBuyUrls.put("ultra", "https://tuservidor.com/ultra");
         cfg.passBuyUrls.put("master", "https://tuservidor.com/master");
 
+        cfg.maxLevelBroadcast = MaxLevelBroadcastConfig.createDefault();
+        cfg.levelUpSound = SoundConfig.createDefaultLevelUp();
+
+
+
         return cfg;
     }
+
+    // Sonido de subida de nivel normal
+    public SoundConfig levelUpSound = SoundConfig.createDefaultLevelUp();
+
+    public static class SoundConfig {
+        public String soundEvent;
+        public float  volume;
+        public float  pitch;
+
+        public static SoundConfig createDefaultLevelUp() {
+            SoundConfig cfg = new SoundConfig();
+            cfg.soundEvent = "minecraft:entity.player.levelup";
+            cfg.volume     = 1.0f;
+            cfg.pitch      = 1.0f;
+            return cfg;
+        }
+    }
+
+
+    public static class MaxLevelBroadcastConfig {
+        public boolean enable;
+        public List<String> message;
+        public String soundEvent;
+        public float volume;
+        public float pitch;
+
+        public boolean isEnable()            { return enable; }
+
+        public static MaxLevelBroadcastConfig createDefault() {
+            MaxLevelBroadcastConfig cfg = new MaxLevelBroadcastConfig();
+            cfg.enable     = true;
+            cfg.message = Arrays.asList(
+                    "§6═══════════════════════════",
+                    "§e§l¡Atención aventureros! §r§a%PLAYER% §aha alcanzado el §6§lNIVEL MÁXIMO§a§r (§f%LEVEL%§r)",
+                    "§6═══════════════════════════"
+            );
+            cfg.soundEvent = "minecraft:ui.toast.challenge_complete";
+            cfg.volume     = 1.3f;
+            cfg.pitch      = 0.5f;
+            return cfg;
+        }
+    }
+
+
+
+
 
     public static class PurgeConfig {
         public boolean Enable = true;
@@ -166,12 +220,12 @@ public class ExpConfig {
 
         // De String a List<String> para permitir varias líneas
         public List<String> Reminder   = Arrays.asList(
-                "#FF5555 ¡El pase está por terminar!",
-                "#AAAAAA Aprovecha sus últimos momentos para subir de nivel!"
+                "&#FF5555 ¡El pase está por terminar!",
+                "&#AAAAAA Aprovecha sus últimos momentos para subir de nivel!"
         );
         public List<String> Broadcast  = Arrays.asList(
-                "#FF0000 El pase ha terminado!",
-                "#CCCCCC La obtención de EXP queda bloqueada hasta la nueva temporada."
+                "&#FF0000 El pase ha terminado!",
+                "&#CCCCCC La obtención de EXP queda bloqueada hasta la nueva temporada."
         );
     }
 
