@@ -60,6 +60,8 @@ public class CommandRegistry {
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
+        PermissionRegistrar.registerAll();
+
         CommandDispatcher<CommandSource> dispatcher = event.getDispatcher();
 
         // sugerencias para <value>

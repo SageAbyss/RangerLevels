@@ -4,6 +4,7 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraftforge.server.permission.DefaultPermissionLevel;
 import net.minecraftforge.server.permission.PermissionAPI;
+import rl.sage.rangerlevels.RangerLevels;
 
 import java.util.function.Predicate;
 
@@ -115,10 +116,30 @@ public class PermissionRegistrar {
      * Comprueba que la fuente sea un ServerPlayerEntity y tenga el permiso dado.
      */
     public static boolean has(CommandSource src, String node) {
-        if (!(src.getEntity() instanceof ServerPlayerEntity)) return false;
-        ServerPlayerEntity player = (ServerPlayerEntity) src.getEntity();
-        return PermissionAPI.hasPermission(player, node);
+        boolean isConsole = src.getEntity() == null;
+        boolean isOp      = src.hasPermission(2);
+        boolean lpResult  = false;
+
+        // Solo consultamos PermissionAPI si no es consola ni OP
+        if (!isConsole && !isOp) {
+            ServerPlayerEntity player = (ServerPlayerEntity) src.getEntity();
+            lpResult = PermissionAPI.hasPermission(player, node);
+        }
+
+        // Log de depuración
+        RangerLevels.INSTANCE.getLogger().debug(
+                "§4[PermCheck]§f source={} node={} console={} op={} lp={}",
+                src.getTextName(),
+                node,
+                isConsole,
+                isOp,
+                lpResult
+        );
+
+        // Permitimos si es consola, si es OP o si LP dice true
+        return isConsole || isOp || lpResult;
     }
+
 
     /**
      * Predicado para un solo nodo.
