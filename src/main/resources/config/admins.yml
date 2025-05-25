@@ -1,0 +1,6 @@
+# admins.yml
+admins:
+  # Nombres de jugador, sensibles a mayúsculas/minúsculas tal y como aparecen en el servidor
+  - "Notch"
+  - "Herobrine"
+  - "Steve"

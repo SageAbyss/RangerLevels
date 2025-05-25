@@ -115,30 +115,41 @@ public class PermissionRegistrar {
     /**
      * Comprueba que la fuente sea un ServerPlayerEntity y tenga el permiso dado.
      */
-    public static boolean has(CommandSource src, String node) {
-        boolean isConsole = src.getEntity() == null;
-        boolean isOp      = src.hasPermission(2);
-        boolean lpResult  = false;
+    public static boolean has(CommandSource source, String node) {
+        boolean isConsole = source.getEntity() == null;
+        boolean isOp = source.hasPermission(2);  // Nivel de OP
+        boolean result = false;
 
-        // Solo consultamos PermissionAPI si no es consola ni OP
         if (!isConsole && !isOp) {
-            ServerPlayerEntity player = (ServerPlayerEntity) src.getEntity();
-            lpResult = PermissionAPI.hasPermission(player, node);
+            ServerPlayerEntity player = (ServerPlayerEntity) source.getEntity();
+
+            // 1. Verificar por Forge (por si se definió default = ALL)
+            result = PermissionAPI.hasPermission(player, node);
+
+            // 2. Intentar verificar con Bukkit (LuckPerms)
+            try {
+                Class<?> bukkitClass = Class.forName("org.bukkit.Bukkit");
+                Object bukkitPlayer = bukkitClass
+                        .getMethod("getPlayer", java.util.UUID.class)
+                        .invoke(null, player.getUUID());
+
+                if (bukkitPlayer != null) {
+                    boolean hasPerm = (boolean) bukkitPlayer
+                            .getClass()
+                            .getMethod("hasPermission", String.class)
+                            .invoke(bukkitPlayer, node);
+                    if (hasPerm) {
+                        result = true;
+                    }
+                }
+            } catch (Exception e) {
+                // Bukkit no está disponible o error al acceder → ignorar
+            }
         }
 
-        // Log de depuración
-        RangerLevels.INSTANCE.getLogger().debug(
-                "§4[PermCheck]§f source={} node={} console={} op={} lp={}",
-                src.getTextName(),
-                node,
-                isConsole,
-                isOp,
-                lpResult
-        );
-
-        // Permitimos si es consola, si es OP o si LP dice true
-        return isConsole || isOp || lpResult;
+        return isConsole || isOp || result;
     }
+
 
 
     /**

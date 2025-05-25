@@ -1,0 +1,115 @@
+name: RangerLevels
+version: 1.0.0
+api-version: "1.16.5"
+main: rl.sage.rangerlevels.RangerLevels
+
+commands:
+  rangerlevels:
+    description: Comando base de RangerLevels
+    usage: /rangerlevels help
+    permission: rangerlevels.command.user
+    permission-message: "§cNo tienes permiso para usar /rangerlevels."
+  rlv:
+    description: Alias de /rangerlevels
+    aliases: [rlv]
+    permission: rangerlevels.command.user
+    permission-message: "§cNo tienes permiso para usar /rlv."
+
+  # Subcomandos de usuario
+  help:
+    description: Muestra el menú de ayuda de RangerLevels
+    usage: /rangerlevels help
+    permission: rangerlevels.command.help
+    permission-message: "§cNo tienes permiso para usar /rangerlevels help."
+  stats:
+    description: Muestra tus estadísticas
+    usage: /rangerlevels stats
+    permission: rangerlevels.command.stats
+    permission-message: "§cNo tienes permiso para usar /rangerlevels stats."
+  multipliers:
+    description: Muestra los multiplicadores activos
+    usage: /rangerlevels multipliers
+    permission: rangerlevels.command.multipliers
+    permission-message: "§cNo tienes permiso para usar /rangerlevels multipliers."
+  pass:
+    description: Gestión de pases de RangerLevels
+    usage: /rangerlevels pass <info|buy|set>
+    permission: rangerlevels.command.user
+    permission-message: "§cNo tienes permiso para usar /rangerlevels pass."
+  passinfo:
+    description: Información de tu pase
+    usage: /rangerlevels pass info
+    permission: rangerlevels.command.pass.info
+    permission-message: "§cNo tienes permiso para usar /rangerlevels pass info."
+  passbuy:
+    description: Comprar un pase
+    usage: /rangerlevels pass buy
+    permission: rangerlevels.command.pass.buy
+    permission-message: "§cNo tienes permiso para usar /rangerlevels pass buy."
+  menu:
+    description: Abre el menú principal de RangerLevels
+    usage: /rangerlevels menu
+    permission: rangerlevels.command.menu
+    permission-message: "§cNo tienes permiso para usar /rangerlevels menu."
+  rewards:
+    description: Abre el menú de recompensas
+    usage: /rangerlevels rewards
+    permission: rangerlevels.command.rewards
+    permission-message: "§cNo tienes permiso para usar /rangerlevels rewards."
+  purga:
+    description: Consulta el estado de la purga
+    usage: /rangerlevels purga
+    permission: rangerlevels.command.purga
+    permission-message: "§cNo tienes permiso para usar /rangerlevels purga."
+
+  # Subcomandos de administración
+  reload:
+    description: Recarga la configuración de RangerLevels
+    usage: /rangerlevels reload
+    permission: rangerlevels.command.reload
+    permission-message: "§cNo tienes permiso para usar /rangerlevels reload."
+  addexp:
+    description: Añade experiencia a un jugador
+    usage: /rangerlevels addexp <jugador> <cantidad>
+    permission: rangerlevels.command.addexp
+    permission-message: "§cNo tienes permiso para usar /rangerlevels addexp."
+  setexp:
+    description: Fija la experiencia de un jugador
+    usage: /rangerlevels setexp <jugador> <cantidad>
+    permission: rangerlevels.command.setexp
+    permission-message: "§cNo tienes permiso para usar /rangerlevels setexp."
+  removeexp:
+    description: Quita experiencia de un jugador
+    usage: /rangerlevels removeexp <jugador> <cantidad>
+    permission: rangerlevels.command.removeexp
+    permission-message: "§cNo tienes permiso para usar /rangerlevels removeexp."
+  addlevel:
+    description: Añade niveles a un jugador
+    usage: /rangerlevels addlevel <jugador> <cantidad>
+    permission: rangerlevels.command.addlevel
+    permission-message: "§cNo tienes permiso para usar /rangerlevels addlevel."
+  setlevel:
+    description: Fija el nivel de un jugador
+    usage: /rangerlevels setlevel <jugador> <cantidad>
+    permission: rangerlevels.command.setlevel
+    permission-message: "§cNo tienes permiso para usar /rangerlevels setlevel."
+  removelevel:
+    description: Quita niveles a un jugador
+    usage: /rangerlevels removelevel <jugador> <cantidad>
+    permission: rangerlevels.command.removelevel
+    permission-message: "§cNo tienes permiso para usar /rangerlevels removelevel."
+  reset:
+    description: Resetea estadísticas de un jugador
+    usage: /rangerlevels reset <jugador>
+    permission: rangerlevels.command.reset
+    permission-message: "§cNo tienes permiso para usar /rangerlevels reset."
+  setmultiplier:
+    description: Ajusta un multiplicador global o privado
+    usage: /rangerlevels setmultiplier <global|private> <valor> <tiempo> [jugador]
+    permission: rangerlevels.command.setmultiplier
+    permission-message: "§cNo tienes permiso para usar /rangerlevels setmultiplier."
+  click_evento_1:
+    description: Evento de click personalizado
+    usage: /rangerlevels click_evento_1
+    permission: rangerlevels.command.click_evento_1
+    permission-message: "§cNo tienes permiso para usar /rangerlevels click_evento_1."

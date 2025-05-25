@@ -19,6 +19,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.server.permission.PermissionAPI;
 import org.apache.logging.log4j.Logger;
 import rl.sage.rangerlevels.RangerLevels;
+import rl.sage.rangerlevels.capability.PassCapabilities;
 import rl.sage.rangerlevels.config.ConfigLoader;
 import rl.sage.rangerlevels.config.EventConfig;
 import rl.sage.rangerlevels.config.ExpConfig;
@@ -49,17 +50,25 @@ public class ExpEventHandler {
         double global   = MultiplierManager.instance().getGlobal();
         double personal = MultiplierManager.instance().getPlayer(player);
 
-        // Nuevo: multiplicador por pase
+        // 1. Saca el tier desde la capability y clampéalo
+        int tier = PassCapabilities.get(player).getTier();
+        PassManager.PassType[] types = PassManager.PassType.values();
+        if (tier < 0 || tier >= types.length) tier = 0;
+        PassManager.PassType pass = types[tier];
+
+        // 2. Determina el multiplier según el pass
         double passMultiplier;
-        switch (PassManager.getPass(player)) {
+        switch (pass) {
             case SUPER:  passMultiplier = 1.25; break;
             case ULTRA:  passMultiplier = 1.5;  break;
             case MASTER: passMultiplier = 2.0;  break;
-            default:     passMultiplier = 1.0;
+            default:     passMultiplier = 1.0;  break;
         }
 
+        // 3. Devuelve directamente el cálculo redondeado
         return (int) Math.round(baseExp * eventMul * global * personal * passMultiplier);
     }
+
 
 
     private static boolean isOp(ServerPlayerEntity player) {

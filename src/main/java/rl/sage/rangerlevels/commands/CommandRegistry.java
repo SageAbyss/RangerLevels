@@ -32,10 +32,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.server.permission.PermissionAPI;
 import rl.sage.rangerlevels.RangerLevels;
 import rl.sage.rangerlevels.capability.PassCapabilities;
-import rl.sage.rangerlevels.config.ConfigLoader;
-import rl.sage.rangerlevels.config.ExpConfig;
-import rl.sage.rangerlevels.config.LevelsConfig;
-import rl.sage.rangerlevels.config.RewardConfig;
+import rl.sage.rangerlevels.config.*;
 import rl.sage.rangerlevels.capability.LevelProvider;
 import rl.sage.rangerlevels.gui.HelpButtonUtils;
 import rl.sage.rangerlevels.gui.help.HelpMenu;
@@ -60,8 +57,6 @@ public class CommandRegistry {
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
-        PermissionRegistrar.registerAll();
-
         CommandDispatcher<CommandSource> dispatcher = event.getDispatcher();
 
         // sugerencias para <value>
@@ -79,11 +74,6 @@ public class CommandRegistry {
                 Commands.literal("rangerlevels")
                         // help
                         .then(Commands.literal("help")
-                                .requires(PermissionRegistrar.requireAny(
-                                        PermissionRegistrar.USER,
-                                        PermissionRegistrar.HELP,
-                                        PermissionRegistrar.ADMIN
-                                ))
                                 .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     HelpMenu.open(player);
@@ -92,28 +82,23 @@ public class CommandRegistry {
                         )
                         .then(Commands.literal("pass")
                                 .then(Commands.literal("info")
-                                        .requires(PermissionRegistrar.requireAny(
-                                                PermissionRegistrar.USER,
-                                                PermissionRegistrar.PASS_INFO,
-                                                PermissionRegistrar.ADMIN
-                                        ))
                                         .executes(ctx -> showPassInfo(ctx.getSource().getPlayerOrException()))
                                 )
                                 .then(Commands.literal("buy")
-                                        .requires(PermissionRegistrar.requireAny(
-                                                PermissionRegistrar.USER,
-                                                PermissionRegistrar.PASS_BUY,
-                                                PermissionRegistrar.ADMIN
-                                        ))                                        .executes(ctx -> {
+                                                            .executes(ctx -> {
                                             ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                             return showPassBuyLinks(player);
                                         })
                                 )
                                 .then(Commands.literal("set")
-                                        .requires(PermissionRegistrar.requireAny(
-                                                PermissionRegistrar.PASS_SET,
-                                                PermissionRegistrar.ADMIN
-                                        ))
+                                        .requires(src -> {
+                                            try {
+                                                ServerPlayerEntity p = src.getPlayerOrException();
+                                                return AdminConfig.isAdmin(p.getName().getString());
+                                            } catch (Exception e) {
+                                                return true; // consola
+                                            }
+                                        })
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .then(Commands.argument("tier", StringArgumentType.word())
                                                         .suggests((ctx, sb) -> {
@@ -131,102 +116,131 @@ public class CommandRegistry {
                         )
                         // stats
                         .then(Commands.literal("stats")
-                                .requires(PermissionRegistrar.requireAny(
-                                        PermissionRegistrar.USER,
-                                        PermissionRegistrar.STATS,
-                                        PermissionRegistrar.ADMIN
-                                ))
                                 .executes(CommandRegistry::showStats)
                         )
+
                         // addexp / setexp / removeexp
                         .then(Commands.literal("addexp")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
-                                                .requires(PermissionRegistrar.requireAny(
-                                                        PermissionRegistrar.ADDEXP,
-                                                        PermissionRegistrar.ADMIN
-                                                ))
                                                 .executes(ctx -> modifyExp(ctx, Mode.ADD))
                                         )
                                 )
                         )
 
                         .then(Commands.literal("setexp")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
-                                                .requires(PermissionRegistrar.requireAny(
-                                                        PermissionRegistrar.SETEXP,
-                                                        PermissionRegistrar.ADMIN
-                                                ))
                                                 .executes(ctx -> modifyExp(ctx, Mode.SET))
                                         )
                                 )
                         )
                         .then(Commands.literal("removeexp")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
-                                                .requires(PermissionRegistrar.requireAny(
-                                                        PermissionRegistrar.REMOVEEXP,
-                                                        PermissionRegistrar.ADMIN
-                                                ))
                                                 .executes(ctx -> modifyExp(ctx, Mode.REMOVE))
                                         )
                                 )
                         )
                         // addlevel / setlevel / removelevel
                         .then(Commands.literal("addlevel")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
-                                                .requires(PermissionRegistrar.requireAny(
-                                                        PermissionRegistrar.ADDLEVEL,
-                                                        PermissionRegistrar.ADMIN
-                                                ))
                                                 .executes(ctx -> modifyLevel(ctx, Mode.ADD))
                                         )
                                 )
                         )
                         .then(Commands.literal("setlevel")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
-                                                .requires(PermissionRegistrar.requireAny(
-                                                        PermissionRegistrar.SETLEVEL,
-                                                        PermissionRegistrar.ADMIN
-                                                ))
                                                 .executes(ctx -> modifyLevel(ctx, Mode.SET))
                                         )
                                 )
                         )
                         .then(Commands.literal("removelevel")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
-                                                .requires(PermissionRegistrar.requireAny(
-                                                        PermissionRegistrar.REMOVELEVEL,
-                                                        PermissionRegistrar.ADMIN
-                                                ))
                                                 .executes(ctx -> modifyLevel(ctx, Mode.REMOVE))
                                         )
                                 )
                         )
                         // reset
                         .then(Commands.literal("reset")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
-                                        .requires(PermissionRegistrar.requireAny(
-                                                PermissionRegistrar.RESET,
-                                                PermissionRegistrar.ADMIN
-                                        ))
                                         .executes(CommandRegistry::resetStats)
                                 )
                         )
                         // reload
                         .then(Commands.literal("reload")
-                                .requires(PermissionRegistrar.requireAny(
-                                        PermissionRegistrar.RELOAD,
-                                        PermissionRegistrar.ADMIN
-                                ))
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
                                 .executes(ctx -> {
                                     ConfigLoader.load();
                                     ExpConfig.reload();
                                     MultiplierState.load();
+                                    AdminConfig.load();
                                     MultiplierManager.instance().reload();
                                     RewardConfig.reload();
                                     RangerLevels.INSTANCE.getAutoSaveTask().resetCounter();
@@ -243,11 +257,15 @@ public class CommandRegistry {
                         )
 
                         // setmultiplier
-                        .then(Commands.literal("SETmultiplier")
-                                .requires(PermissionRegistrar.requireAny(
-                                        PermissionRegistrar.SETMULTIPLIER,
-                                        PermissionRegistrar.ADMIN
-                                ))                                // GLOBAL
+                        .then(Commands.literal("Setmultiplier")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })                              // GLOBAL
                                 .then(Commands.literal("global")
                                         .then(Commands.argument("value", DoubleArgumentType.doubleArg(0.0))
                                                 .suggests(valueSuggestions)
@@ -302,40 +320,32 @@ public class CommandRegistry {
                         )
                         // multipliers
                         .then(Commands.literal("multipliers")
-                                .requires(PermissionRegistrar.requireAny(
-                                        PermissionRegistrar.USER,
-                                        PermissionRegistrar.MULTIPLIERS,
-                                        PermissionRegistrar.ADMIN
-                                ))
                                 .executes(CommandRegistry::showMultipliers)
                         )
                         .then(Commands.literal("menu")
-                                .requires(PermissionRegistrar.requireAny(
-                                        PermissionRegistrar.USER,
-                                        PermissionRegistrar.MENU,
-                                        PermissionRegistrar.ADMIN
-                                ))                                .executes(ctx -> {
+                                    .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     rl.sage.rangerlevels.gui.MainMenu.open(player);
                                     return 1;
                                 })
                         )
                         .then(Commands.literal("rewards")
-                                .requires(PermissionRegistrar.requireAny(
-                                        PermissionRegistrar.USER,
-                                        PermissionRegistrar.REWARDS,
-                                        PermissionRegistrar.ADMIN
-                                ))                                .executes(ctx -> {
+                                    .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     rl.sage.rangerlevels.gui.rewards.RewardsMenu.open(player);
                                     return 1;
                                 })
                         )
                         .then(Commands.literal("purga")
-                                .requires(PermissionRegistrar.requireAny(
-                                        PermissionRegistrar.PURGA,
-                                        PermissionRegistrar.ADMIN
-                                ))                                .executes(ctx -> {
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
+                                    .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     ServerWorld world = player.getLevel(); // obtiene el mundo actual del jugador
 
@@ -361,10 +371,14 @@ public class CommandRegistry {
                                 })
                         )
                         .then(Commands.literal("click_evento_1")
-                                .requires(PermissionRegistrar.requireAny(
-                                        PermissionRegistrar.CLICK_EVENTO,
-                                        PermissionRegistrar.ADMIN
-                                ))
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
                                 .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
 
@@ -391,6 +405,42 @@ public class CommandRegistry {
                                     return 1;
                                 })
                         )
+                        .then(Commands.literal("admins")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
+                                .then(Commands.literal("add")
+                                        .then(Commands.argument("nick", StringArgumentType.word())
+                                                .executes(ctx -> {
+                                                    String nick = StringArgumentType.getString(ctx, "nick");
+                                                    boolean added = AdminConfig.addAdmin(nick);
+                                                    ctx.getSource().sendSuccess(
+                                                            new StringTextComponent(added
+                                                                    ? "§aJugador añadido a admins: " + nick
+                                                                    : "§eEse jugador ya es admin."), false);
+                                                    return 1;
+                                                })
+                                        )
+                                )
+                                .then(Commands.literal("remove")
+                                        .then(Commands.argument("nick", StringArgumentType.word())
+                                                .executes(ctx -> {
+                                                    String nick = StringArgumentType.getString(ctx, "nick");
+                                                    boolean removed = AdminConfig.removeAdmin(nick);
+                                                    ctx.getSource().sendSuccess(
+                                                            new StringTextComponent(removed
+                                                                    ? "§cJugador removido de admins: " + nick
+                                                                    : "§eEse jugador no era admin."), false);
+                                                    return 1;
+                                                })
+                                        )
+                                )
+                        )
 
 
         );
@@ -411,15 +461,6 @@ public class CommandRegistry {
         dispatcher.register(
                 Commands.literal("nivel")
                         .executes(CommandRegistry::showStats)
-        );
-
-        // justo después de tu registro de "rlv"
-        dispatcher.register(
-                Commands.literal("rewards")
-                        // aquí podrías repetir tu .requires(...) de permisos si lo usas
-                        .redirect(dispatcher.getRoot()
-                                .getChild("rangerlevels")   // /rangerlevels
-                                .getChild("rewards"))       // /rangerlevels rewards
         );
     }
     private static int showPassInfo(ServerPlayerEntity player) {
