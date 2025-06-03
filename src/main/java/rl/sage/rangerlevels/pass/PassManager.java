@@ -1,113 +1,63 @@
 package rl.sage.rangerlevels.pass;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraftforge.server.permission.DefaultPermissionLevel;
-import net.minecraftforge.server.permission.PermissionAPI;
-import rl.sage.rangerlevels.config.ExpConfig;
-import rl.sage.rangerlevels.util.GradientText;
+import rl.sage.rangerlevels.capability.IPassCapability;
+import rl.sage.rangerlevels.capability.PassCapabilities;
 
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Gestiona los diferentes tipos de pase y permisos de acceso.
+ * Gestiona los diferentes tipos de pase **solo** en base al valor
+ * almacenado en la capability (temporal). El pase FREE (tier=0) se
+ * usa cuando no hay pase activo o expiró.
  */
 public class PassManager {
 
-    private static IPermissionProvider permissionProvider = new PermissionAPIProvider();
-
-    /** Orden de prioridad para determinar el pase actual. */
+    /** Orden de prioridad para mapear un número de tier a PassType */
     private static final List<PassType> PRIORITY = Arrays.asList(
-            PassType.MASTER, PassType.ULTRA, PassType.SUPER, PassType.FREE
+            PassType.MASTER,
+            PassType.ULTRA,
+            PassType.SUPER,
+            PassType.FREE
     );
 
-    public static void setPermissionProvider(IPermissionProvider provider) {
-        if (provider != null) permissionProvider = provider;
-    }
+    /**
+     * Obtiene el pase **actual** del jugador, basándose únicamente
+     * en la capability (número de tier + expiración). Si no hay
+     * pase o ya expiró, retorna PassType.FREE.
+     */
+    public static PassType getCurrentPass(ServerPlayerEntity player) {
+        IPassCapability cap = PassCapabilities.get(player);
 
-    public enum PassType {
-        FREE(0,
-                GradientText.of("◎ Free Pass", "#FFFFFF", "#B3B3B3"),
-                "Pase básico sin coste"
-        ),
-        SUPER(1,
-                GradientText.of("✷ Super Pass", "#9F99F7", "#CD6B90"),
-                "XP ×1.25, Recompensas por pase"
-        ),
-        ULTRA(2,
-                GradientText.of("✸ Ultra Pass", "#ABBA5B", "#1CDD93", "#209A86"),
-                "XP ×1.5, Recompensas por pase"
-        ),
-        MASTER(3,
-                GradientText.of("✹ Master Pass", "#D7DF0C", "#F38326", "#D5C365"),
-                "XP ×2.0, Recompensas por pase" //+ "\n" + "S" POR SI QUIERES AGREGAR MAS LINEAS
-        );
-
-        private final int tier;
-        private final IFormattableTextComponent gradientName;
-        private final String description;
-
-        PassType(int tier,
-                 IFormattableTextComponent gradientName,
-                 String description) {
-            this.tier = tier;
-            this.gradientName = gradientName;
-            this.description = description;
-        }
-
-        public int getTier() {
-            return tier;
-        }
-
-        /** Devuelve una copia del nombre gradient. */
-        public IFormattableTextComponent getGradientDisplayName() {
-            return gradientName.copy();
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        /**
-         * Toma la URL de compra desde tu Config.yml
-         * (keys: "super","ultra","master")
-         */
-        public String getPurchaseUrl() {
-            // Asegúrate de que en Config.yml las claves coincidan en minúsculas
-            return ExpConfig.get().getPassBuyUrls()
-                    .getOrDefault(this.name().toLowerCase(), "");
-        }
-
-        /** Ejemplo de nodo: "rangerlevels.pass.super" */
-        public String getPermissionNode() {
-            return "rangerlevels.pass." + this.name().toLowerCase();
-        }
-    }
-
-    /** Pase más alto que tiene el jugador. */
-    public static PassType getPass(ServerPlayerEntity player) {
-        for (PassType type : PRIORITY) {
-            if (permissionProvider.hasPermission(player, type.getPermissionNode())) {
-                return type;
+        // Si la capability indica "activo" y no expiró, devolvemos el PassType correspondiente:
+        if (cap.hasActivePass()) {
+            int tier = cap.getTier();
+            for (PassType type : PassType.values()) {
+                if (type.getTier() == tier) {
+                    return type;
+                }
             }
+            // Si por algún motivo el tier no coincide, limpiamos la capability y consideramos FREE:
+            cap.setTier(0);
+            cap.setExpiresAt(0L);
+            return PassType.FREE;
         }
+
+        // Si no hay pase activo o ya expiró, consideramos que está en FREE:
         return PassType.FREE;
     }
 
-    /** Comprueba acceso al pase requerido o superior. */
+    /**
+     * Verifica si el jugador tiene acceso a un pase de nivel “required” o superior,
+     * comparando su pase actual (solo temporal).
+     *
+     * @param player   ServerPlayerEntity
+     * @param required tipo de pase mínimo requerido
+     * @return true si el pase actual (temporal) es >= required; false de lo contrario
+     */
     public static boolean hasAccessTo(ServerPlayerEntity player, PassType required) {
-        return getPass(player).getTier() >= required.getTier();
-    }
-
-    /** Registra automáticamente los nodos de permiso de cada PassType. */
-    public static void registerPermissions() {
-        for (PassType type : PassType.values()) {
-            PermissionAPI.registerNode(
-                    type.getPermissionNode(),
-                    DefaultPermissionLevel.NONE,
-                    "Acceso al " + type.name() + " (" + type.getDescription() + ")"
-            );
-        }
+        PassType actual = getCurrentPass(player);
+        return actual.getTier() >= required.getTier();
     }
 }

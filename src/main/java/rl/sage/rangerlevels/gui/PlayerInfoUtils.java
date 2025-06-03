@@ -10,14 +10,14 @@ import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.StringNBT;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.text.*;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
 import rl.sage.rangerlevels.capability.LevelProvider;
-import rl.sage.rangerlevels.capability.ILevel;
 import rl.sage.rangerlevels.capability.PassCapabilities;
+import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.pass.PassType;
+import rl.sage.rangerlevels.util.GradientText;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,13 +47,22 @@ public class PlayerInfoUtils {
         CompoundNBT ownerNBT = NBTUtil.writeGameProfile(new CompoundNBT(), profile);
         tag.put("SkullOwner", ownerNBT);
 
-        // 4) Display name: el nombre real del jugador
-        ITextComponent nameComp = new StringTextComponent(player.getName().getString());
+        // 4) Display name: el nombre real del jugador CON degradado amarillo→naranja pastel,
+        //    sin cursiva ni negrita.
+        String playerName = player.getName().getString();
+        IFormattableTextComponent gradientName = GradientText.of(
+                playerName + " ",
+                "#FFD54F",  // amarillo pastel
+                "#FFA726"   // naranja pastel
+        );
+        // Eliminamos cursiva/negrita en el componente:
+        Style noItalicNoBold = Style.EMPTY.withItalic(false).withBold(false);
+        gradientName.setStyle(noItalicNoBold);
+
         CompoundNBT display = new CompoundNBT();
-        display.putString("Name", ITextComponent.Serializer.toJson(nameComp));
+        display.putString("Name", ITextComponent.Serializer.toJson(gradientName));
 
         // 5) Leemos nivel y experiencia **actuales** del jugador
-        //    Si algo falla, caerá a 0/1 de forma segura
         final int[] lvlExp = new int[]{0, 0};
         LevelProvider.get(player).ifPresent(cap -> {
             lvlExp[0] = cap.getLevel();
@@ -63,11 +72,11 @@ public class PlayerInfoUtils {
         int exp = lvlExp[1];
 
         // 6) Calculamos la experiencia necesaria para el siguiente nivel
-        int next = 50 * (lvl + 1) * (lvl + 1);
-        int perc = next > 0 ? (int)(exp * 100.0 / next) : 0;
+        int next = ExpConfig.get().getLevels().getExpForLevel(lvl + 1);
+        int perc = next > 0 ? (int) (exp * 100.0 / next) : 0;
 
         // 7) Construimos la barra de progreso
-        int bars   = 20;
+        int bars = 20;
         int filled = perc * bars / 100;
         StringBuilder bar = new StringBuilder();
         for (int i = 0; i < bars; i++) {
@@ -78,14 +87,18 @@ public class PlayerInfoUtils {
 
         // 8) Obtenemos el tipo de pase
         int tier = PassCapabilities.get(player).getTier();
-        PassManager.PassType passType = PassManager.PassType.values()[tier];
+        PassType passType = PassType.values()[tier];
 
         // 9) Montamos el lore con valores reales
         List<ITextComponent> lore = new ArrayList<>();
+
+        // 9a) Nivel
         lore.add(new StringTextComponent(
                 TextFormatting.GRAY + "Nivel: " +
                         TextFormatting.WHITE + lvl
         ));
+
+        // 9b) Exp
         lore.add(new StringTextComponent(
                 TextFormatting.GRAY + "Exp: " +
                         TextFormatting.AQUA + exp +
@@ -95,12 +108,17 @@ public class PlayerInfoUtils {
                         TextFormatting.GREEN + perc + "%" +
                         TextFormatting.GRAY + "]"
         ));
+
+        // 9c) Barra de progreso
         lore.add(new StringTextComponent(bar.toString()));
-        lore.add(passType.getGradientDisplayName()
-                .append(new StringTextComponent(
-                        TextFormatting.GRAY + " (Pase Actual)"
-                ))
-        );
+
+        // 9d) Pase actual: usamos gradient tal cual, pero quitamos cursiva si tuviera
+        IFormattableTextComponent passDisplay = passType.getGradientDisplayName().copy();
+        passDisplay.setStyle(Style.EMPTY.withItalic(false).withBold(false));
+        passDisplay.append(new StringTextComponent(
+                TextFormatting.GRAY + " (Pase Actual)"
+        ));
+        lore.add(passDisplay);
 
         // 10) Serializamos el lore a NBT
         ListNBT loreList = new ListNBT();

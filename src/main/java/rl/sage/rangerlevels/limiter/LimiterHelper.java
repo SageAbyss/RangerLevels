@@ -10,6 +10,7 @@ import rl.sage.rangerlevels.capability.ILimiter;
 import rl.sage.rangerlevels.capability.LimiterProvider;
 import rl.sage.rangerlevels.capability.LevelProvider;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.pass.PassType;
 import rl.sage.rangerlevels.purge.PlayerPurgeNotifier;
 import rl.sage.rangerlevels.purge.PurgeManager;
 import rl.sage.rangerlevels.util.GradientText;
@@ -48,7 +49,7 @@ public class LimiterHelper {
 
             // 4) Calculamos el tope base y ajustado según el pase del jugador
             int baseMax = LimiterManager.getMaxExp();
-            PassManager.PassType pass = PassManager.getPass(player);
+            PassType pass = PassManager.getCurrentPass(player);
 
             float factor;
             switch (pass) {

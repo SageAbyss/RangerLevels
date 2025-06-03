@@ -18,9 +18,11 @@ import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
+import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.gui.MainMenu;
 import rl.sage.rangerlevels.gui.MenuSlot;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.pass.PassType;
 
 public class BuyPassMenuContainer extends ChestContainer {
     private final Inventory menuInv;
@@ -86,7 +88,7 @@ public class BuyPassMenuContainer extends ChestContainer {
                 // Lógica según botón pulsado
                 switch (id) {
                     case "buy_super": {
-                        String url = PassManager.PassType.SUPER.getPurchaseUrl();
+                        String url = ExpConfig.get().getPassBuyUrls().getOrDefault("super", "");
                         IFormattableTextComponent msg = new StringTextComponent("§eEnlace SuperPass: ")
                                 // parte clicable
                                 .append(new StringTextComponent(url)
@@ -107,7 +109,7 @@ public class BuyPassMenuContainer extends ChestContainer {
                         break;
                     }
                     case "buy_ultra": {
-                        String url = PassManager.PassType.ULTRA.getPurchaseUrl();
+                        String url = ExpConfig.get().getPassBuyUrls().getOrDefault("ultra", "");
                         IFormattableTextComponent msg = new StringTextComponent("§eEnlace UltraPass: ")
                                 .append(new StringTextComponent(url)
                                         .withStyle(Style.EMPTY
@@ -127,7 +129,7 @@ public class BuyPassMenuContainer extends ChestContainer {
                         break;
                     }
                     case "buy_master": {
-                        String url = PassManager.PassType.MASTER.getPurchaseUrl();
+                        String url = ExpConfig.get().getPassBuyUrls().getOrDefault("master", "");
                         IFormattableTextComponent msg = new StringTextComponent("§eEnlace MasterPass: ")
                                 .append(new StringTextComponent(url)
                                         .withStyle(Style.EMPTY

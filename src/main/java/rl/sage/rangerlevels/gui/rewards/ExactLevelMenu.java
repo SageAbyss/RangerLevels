@@ -16,6 +16,8 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.Items;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 
@@ -25,9 +27,8 @@ import rl.sage.rangerlevels.capability.RewardStatus;
 import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.gui.MenuItemBuilder;
 import rl.sage.rangerlevels.gui.PlayerInfoUtils;
-import rl.sage.rangerlevels.pass.PassManager;
-import rl.sage.rangerlevels.pass.PassManager.PassType;
 import rl.sage.rangerlevels.rewards.RewardManager;
+import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 public class ExactLevelMenu {
     private static final int[] SLOT_INDICES = {
@@ -43,6 +44,7 @@ public class ExactLevelMenu {
     }
 
     public static void open(final ServerPlayerEntity player, int page) {
+
         @Nullable
         IPlayerRewards cap = player
                 .getCapability(PlayerRewardsProvider.REWARDS_CAP, null)
@@ -146,6 +148,13 @@ public class ExactLevelMenu {
 
     /** Reclama una sola recompensa Exact */
     public static void claimSingle(ServerPlayerEntity player, String nivel, String ruta) {
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.EXPERIENCE_ORB_PICKUP,
+                SoundCategory.MASTER,
+                1.0f,
+                0.5f
+        );
         String key = "Exact:" + nivel + ":" + ruta;
         @Nullable
         IPlayerRewards cap = player
@@ -197,6 +206,13 @@ public class ExactLevelMenu {
                     player.getUUID()
             );
         } else {
+            PlayerSoundUtils.playSoundToPlayer(
+                    player,
+                    SoundEvents.PLAYER_LEVELUP,
+                    SoundCategory.MASTER,
+                    1.0f,
+                    0.5f
+            );
             for (String key : toClaim) {
                 String[] parts = key.split(":");
                 claimSingle(player, parts[1], parts[2]);

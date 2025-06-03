@@ -28,6 +28,8 @@ public class ExpConfig {
     public Database database = new Database();
     public Multipliers multipliers = new Multipliers();
     public LevelsConfig levels = LevelsConfig.createDefault();
+    public ReminderConfig rewardReminder = ReminderConfig.createDefault();
+
     public PurgeConfig purge = new PurgeConfig();
 
     public AutoSave autoSave = new AutoSave();
@@ -72,6 +74,7 @@ public class ExpConfig {
             INSTANCE = createDefault();
         }
 
+        /*
         // DEBUG de todas las secciones
         LOGGER.info("database.type = {}", INSTANCE.database.type);
         LOGGER.info("multipliers.events = {}", INSTANCE.multipliers.events);
@@ -85,9 +88,25 @@ public class ExpConfig {
         LOGGER.info("worlds.enable = {}, whitelist = {}, list = {}",
                 INSTANCE.worlds.enable, INSTANCE.worlds.whitelist, INSTANCE.worlds.list);
         LOGGER.info("passBuyUrls = {}", INSTANCE.passBuyUrls);
+
+         */
         return INSTANCE;
     }
 
+    public static class ReminderConfig {
+        /**
+         * Cada cuántos minutos enviar el recordatorio.
+         * Si es 0 o negativo, se desactiva.
+         */
+        public int intervalMinutes = 10;
+
+        /** Valor por defecto al crear el YAML por primera vez. */
+        public static ReminderConfig createDefault() {
+            ReminderConfig cfg = new ReminderConfig();
+            cfg.intervalMinutes = 10; // 10 minutos por defecto
+            return cfg;
+        }
+    }
     /** Devuelve la configuración cargada. */
     public static ExpConfig get() {
         return INSTANCE != null ? INSTANCE : load();
@@ -200,7 +219,7 @@ public class ExpConfig {
             cfg.enable     = true;
             cfg.message = Arrays.asList(
                     "§6═══════════════════════════",
-                    "§e§l¡Atención aventureros! §r§a%PLAYER% §aha alcanzado el §6§lNIVEL MÁXIMO§a§r (§f%LEVEL%§r)",
+                    "§e§l¡Atención! §r§a%PLAYER% §aha alcanzado el §6§lNIVEL MÁXIMO§a§r (§f%LEVEL%§r)",
                     "§6═══════════════════════════"
             );
             cfg.soundEvent = "minecraft:ui.toast.challenge_complete";

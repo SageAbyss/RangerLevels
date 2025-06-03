@@ -9,15 +9,27 @@ import rl.sage.rangerlevels.RangerLevels;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.capability.ILevel;
 
-import java.util.UUID;
+import static rl.sage.rangerlevels.util.DataSyncHelper.syncCapabilityToJson;
 
+/**
+ * Tarea de autosave: cada X ticks (definidos en Config.yml),
+ * recorre todos los jugadores en línea y vuelca sus datos (nivel, exp, multiplier)
+ * a Data.json (vía dataManager) y crea un backup individual.
+ */
 public class AutoSaveTask {
-    private final RangerLevels mod;
+
+    private final RangerLevels mod;              // Referencia a tu clase principal
+    private final IPlayerDataManager dataManager;
+    private final IBackupManager backupManager;
+
     private int tickCounter = 0;
 
     public AutoSaveTask(RangerLevels mod) {
         this.mod = mod;
+        this.dataManager   = mod.getDataManager();
+        this.backupManager = mod.getBackupManager();
     }
+
     public void resetCounter() {
         this.tickCounter = 0;
     }
@@ -26,16 +38,13 @@ public class AutoSaveTask {
     public void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
 
-        // Cada tick chequeamos si está habilitado
-        if (!ExpConfig.get().isAutoSaveEnabled()) {
-            tickCounter = 0; // reseteamos el contador si lo deshabilitan
+        if (!ExpConfig.get().autoSave.enable) {
+            tickCounter = 0;
             return;
         }
 
         tickCounter++;
-        // Leemos el intervalo dinámicamente
-        int intervalTicks = ExpConfig.get().getAutoSaveInterval() * 20;
-
+        int intervalTicks = ExpConfig.get().autoSave.interval * 20;
         if (tickCounter < intervalTicks) return;
 
         tickCounter = 0;
@@ -46,21 +55,28 @@ public class AutoSaveTask {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server == null) return;
 
-        mod.getLogger().info("§8[AutoSave] §aGuardando datos de todos los jugadores");
+        // 1) Iniciamos el temporizador
+        long startTime = System.currentTimeMillis();
 
         for (ServerPlayerEntity player : server.getPlayerList().getPlayers()) {
+            // Sincronizamos la capability del jugador con el JSON
+            syncCapabilityToJson(player);
+
+            // Para depuración, si quieres ver datos individuales:
             ILevel cap = player.getCapability(ILevel.CAPABILITY).orElse(null);
             if (cap != null) {
-                PlayerData data = new PlayerData(
-                        player.getUUID(),
+                mod.getLogger().info("§8[AutoSave DEBUG] §aJugador={} lvl={} exp={}",
                         player.getName().getString(),
                         cap.getLevel(),
-                        cap.getExp(),
-                        cap.getPlayerMultiplier()
-                );
-                mod.getDataManager().savePlayerData(data);
-                mod.getBackupManager().savePlayerData(data);
+                        cap.getExp());
             }
         }
+
+        // 2) Calculamos cuánto tiempo tardó en milisegundos
+        long elapsed = System.currentTimeMillis() - startTime;
+
+        // 3) Imprimimos el log final con el tiempo transcurrido
+        mod.getLogger().info("§8[AutoSave] §aGuardado de datos completado (§f{}ms§a)", elapsed);
     }
+
 }

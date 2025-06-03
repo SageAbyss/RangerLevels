@@ -3,6 +3,7 @@ package rl.sage.rangerlevels.capability;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.play.server.SPlaySoundEffectPacket;
+import net.minecraft.network.play.server.STitlePacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
@@ -28,10 +29,7 @@ import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.ExpConfig.SoundConfig;
 import rl.sage.rangerlevels.config.ExpConfig.MaxLevelBroadcastConfig;
 import rl.sage.rangerlevels.rewards.RewardManager;
-import rl.sage.rangerlevels.util.GradientText;
-import rl.sage.rangerlevels.util.TextColorUtil;
-import rl.sage.rangerlevels.util.TextFormatterUtil;
-import rl.sage.rangerlevels.util.WorldUtils;
+import rl.sage.rangerlevels.util.*;
 
 import java.util.List;
 
@@ -132,6 +130,50 @@ public class LevelProvider {
                     false
             );
             player.displayClientMessage(sep, false);
+
+
+            // Creamos Title y Subtitle con gradient, manteniendo el mismo texto:
+            IFormattableTextComponent titleGradient;
+            IFormattableTextComponent subtitleGradient;
+
+            if (lvl >= maxLvl) {
+                // Si es nivel máximo, degradado dorado→rojo
+                titleGradient = GradientText.of(
+                        "¡Nivel Máximo!",
+                        "#FFD700", "#FFA500", "#FF4500", "#FF0000"
+                ).setStyle(Style.EMPTY.withBold(true));
+                subtitleGradient = GradientText.of(
+                        "¡Gracias por llegar tan lejos, Ranger!",
+                        "#FFFFFF", "#AAAAAA", "#888888"
+                );
+
+            } else {
+                // Si es nivel normal, degradado aqua→azul
+                titleGradient = GradientText.of(
+                        " ",
+                        "#FFAA00", "#FFAA00", "#FFAA00"
+                ).setStyle(Style.EMPTY.withBold(true));
+                subtitleGradient = GradientText.of(
+                        "Subiste a Nivel " + lvl,
+                        "#FFFF00", "#FFDD00", "#FFAA00"
+                );
+            }
+
+            // Enviamos el TITLE (fadeIn = 10, stay = 70, fadeOut = 20)
+            player.connection.send(new STitlePacket(
+                    STitlePacket.Type.TITLE,
+                    titleGradient,
+                    10, 70, 20
+            ));
+
+            // Enviamos el SUBTITLE (mismos tiempos)
+            player.connection.send(new STitlePacket(
+                    STitlePacket.Type.SUBTITLE,
+                    subtitleGradient,
+                    10, 70, 20
+            ));
+
+
 
             // 5.3) Action bar
             player.displayClientMessage(

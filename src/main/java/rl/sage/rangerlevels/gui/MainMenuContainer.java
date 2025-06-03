@@ -14,9 +14,7 @@ import net.minecraft.network.play.server.SSetSlotPacket;
 import rl.sage.rangerlevels.gui.help.HelpMenu;
 import rl.sage.rangerlevels.gui.pass.BuyPassMenu;
 import rl.sage.rangerlevels.gui.rewards.RewardsMenu;
-import rl.sage.rangerlevels.gui.rewards.RewardsMenuContainer;
 
-import static rl.sage.rangerlevels.gui.RangerMenuUtils.sendComprarPaseMessage;
 
 public class MainMenuContainer extends ChestContainer {
     private final Inventory menuInv;

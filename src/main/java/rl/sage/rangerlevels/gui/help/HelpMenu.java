@@ -5,16 +5,26 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.SimpleNamedContainerProvider;
 import net.minecraft.item.Items;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.StringTextComponent;
 import rl.sage.rangerlevels.gui.HelpButtonUtils;
 import rl.sage.rangerlevels.gui.MenuItemBuilder;
 import rl.sage.rangerlevels.gui.PlayerInfoUtils;
+import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.Arrays;
 
 public class HelpMenu {
 
     public static void open(ServerPlayerEntity player) {
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.NOTE_BLOCK_BIT,
+                SoundCategory.MASTER,
+                1.0f,
+                0.8f
+        );
         // 1) Creamos un inventario virtual de 27 slots (3×9)
         Inventory inv = new Inventory(27);
         inv.clearContent();

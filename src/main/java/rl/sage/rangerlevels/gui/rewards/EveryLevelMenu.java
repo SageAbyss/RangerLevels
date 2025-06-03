@@ -8,6 +8,8 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import rl.sage.rangerlevels.capability.RewardStatus;
@@ -16,6 +18,7 @@ import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.gui.MenuItemBuilder;
 import rl.sage.rangerlevels.gui.PlayerInfoUtils;
 import rl.sage.rangerlevels.rewards.RewardManager;
+import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -46,6 +49,7 @@ public class EveryLevelMenu {
      * @param page   la página a mostrar (1-based)
      */
     public static void open(final ServerPlayerEntity player, int page) {
+
         @Nullable
         rl.sage.rangerlevels.capability.IPlayerRewards cap =
                 player.getCapability(PlayerRewardsProvider.REWARDS_CAP, null).orElse(null);
@@ -151,6 +155,13 @@ public class EveryLevelMenu {
 
     public static void claimSingle(ServerPlayerEntity player,
                                    String nivel, String ruta) {
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.EXPERIENCE_ORB_PICKUP,
+                SoundCategory.MASTER,
+                1.0f,
+                0.5f
+        );
         String key = "EveryLevel:" + nivel + ":" + ruta;
         @Nullable
         rl.sage.rangerlevels.capability.IPlayerRewards cap =
@@ -186,7 +197,16 @@ public class EveryLevelMenu {
             claimSingle(player, parts[1], parts[2]);
             any = true;
         }
-        if (!any) {
+        if (any) {
+            // Solo reproducir si sí hubo al menos una recompensa reclamada
+            PlayerSoundUtils.playSoundToPlayer(
+                    player,
+                    SoundEvents.PLAYER_LEVELUP,
+                    SoundCategory.MASTER,
+                    1.0f,
+                    0.5f
+            );
+        } else {
             player.sendMessage(
                     new StringTextComponent("§cNo hay recompensas por reclamar."),
                     player.getUUID()

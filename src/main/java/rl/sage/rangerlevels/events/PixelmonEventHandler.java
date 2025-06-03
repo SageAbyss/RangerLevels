@@ -7,6 +7,7 @@ import com.pixelmonmod.pixelmon.api.events.legendary.ArceusEvent;
 import com.pixelmonmod.pixelmon.api.events.legendary.TimespaceEvent;
 import com.pixelmonmod.pixelmon.api.events.raids.StartRaidEvent;
 import rl.sage.rangerlevels.capability.PassCapabilities;
+import rl.sage.rangerlevels.items.gemas.ExpGemHandler;
 import rl.sage.rangerlevels.pass.PassManager;
 import com.pixelmonmod.pixelmon.api.events.PokedexEvent;
 import com.pixelmonmod.pixelmon.api.pokedex.PokedexRegistrationStatus;
@@ -31,6 +32,7 @@ import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.SpecificRangePermissions;
 import rl.sage.rangerlevels.limiter.LimiterHelper;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
+import rl.sage.rangerlevels.pass.PassType;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -65,9 +67,9 @@ public class PixelmonEventHandler {
 
         // 1. Saca el tier desde la capability y clampéalo
         int tier = PassCapabilities.get(player).getTier();
-        PassManager.PassType[] types = PassManager.PassType.values();
+        PassType[] types = PassType.values();
         if (tier < 0 || tier >= types.length) tier = 0;
-        PassManager.PassType pass = types[tier];
+        PassType pass = types[tier];
 
         // 2. Determina el multiplier según el pass
         double passMultiplier;
@@ -78,8 +80,10 @@ public class PixelmonEventHandler {
             default:     passMultiplier = 1.0;  break;
         }
 
-        // 3. Devuelve directamente el cálculo redondeado
-        return (int) Math.round(baseExp * eventMul * global * personal * passMultiplier);
+        // 3. Calculamos la EXP base con los multiplicadores de evento, global, personal y pase
+        double resultado = baseExp * eventMul * global * personal * passMultiplier;
+
+        return (int) Math.round(resultado);
     }
 
 
@@ -165,6 +169,7 @@ public class PixelmonEventHandler {
         ServerPlayerEntity player = ev.getPlayer();
         PixelmonEntity pkmn = ev.getPokemon();
         if (player == null || pkmn == null) return;
+
         EventConfig cfg = getCfg("onCapture");
         if (cfg == null || !cfg.isEnable()) return;
         if (cfg.isRequiresPermission() && !hasAnyPermission(player, cfg.getPermissions())) return;
@@ -173,6 +178,7 @@ public class PixelmonEventHandler {
         boolean shiny = pkmn.getPokemon().isShiny();
         boolean legendary = pkmn.getPokemon().getSpecies().isLegendary()
                 || pkmn.getPokemon().getSpecies().isUltraBeast();
+
         if (legendary) base = randomInRange(150, 300);
         else if (shiny) base = randomInRange(60, 120);
         else base = randomInRange(cfg.getExpRange()[0], cfg.getExpRange()[1]);
@@ -180,8 +186,17 @@ public class PixelmonEventHandler {
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
 
-        giveExp(player, base, "onCapture");
+        // ── Aquí aplicamos primero el cálculo normal de multipliers (sin gema) ──
+        int totalSinGema = applyMultipliers(player, base, "onCapture");
+
+        // ── Luego averiguamos si el jugador tiene gema activa y la aplicamos solo en este evento ──
+        double gemBonus = ExpGemHandler.getBonus(player); // 0.10, 0.30, 0.50 o 0.0
+        int totalConGema = (int) Math.round(totalSinGema * (1.0 + gemBonus));
+
+        // Finalmente, damos la EXP con límite
+        LimiterHelper.giveExpWithLimit(player, totalConGema);
     }
+
 
     @SubscribeEvent
     public static void onLevelUp(LevelUpEvent.Post ev) {
@@ -278,7 +293,15 @@ public class PixelmonEventHandler {
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
 
-        giveExp(player, base, "beatWild");
+        // ── Cálculo normal (sin gema) ──
+        int totalSinGema = applyMultipliers(player, base, "beatWild");
+
+        // ── Aplicamos bonificación de gema SOLO aquí ──
+        double gemBonus = ExpGemHandler.getBonus(player); // 0.10, 0.30, 0.50 o 0.0
+        int totalConGema = (int) Math.round(totalSinGema * (1.0 + gemBonus));
+
+        // Finalmente, damos EXP con límite
+        LimiterHelper.giveExpWithLimit(player, totalConGema);
     }
 
     @SubscribeEvent

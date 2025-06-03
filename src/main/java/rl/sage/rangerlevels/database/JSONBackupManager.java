@@ -1,94 +1,51 @@
-// src/main/java/rl/sage/rangerlevels/database/JSONBackupManager.java
+// JSONBackupManager.java
 package rl.sage.rangerlevels.database;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import com.mojang.util.UUIDTypeAdapter;
+import net.minecraftforge.fml.loading.FMLPaths;
 import rl.sage.rangerlevels.RangerLevels;
 
-import java.io.*;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-public class JSONBackupManager implements IPlayerDataManager {
-    private final File file;
+/**
+ * Implementación sencilla de IBackupManager: crea un archivo JSON individual
+ * en config/rangerlevels/backups/<uuid>_<timestamp>.json
+ */
+public class JSONBackupManager implements IBackupManager {
+
+    private static final String SUBDIR    = "rangerlevels/backups";
     private final Gson gson;
-    private final Map<UUID, PlayerData> cache = new HashMap<>();
+    private final RangerLevels mod = RangerLevels.INSTANCE;
+    private final Path backupDir;
 
-    public JSONBackupManager(RangerLevels plugin) {
-        File cfg = new File("config", plugin.MODID);
-        if (!cfg.exists()) cfg.mkdirs();
-        this.file = new File(cfg, "PlayerData.json");
-        this.gson = new GsonBuilder().setPrettyPrinting().registerTypeAdapter( UUID.class, new UUIDTypeAdapter() ).create();
-        initTables();
-    }
-
-    @Override
-    public void initTables() {
-        // carga inicial
-        if (!file.exists()) return;
-        try (Reader r = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
-            Type type = new TypeToken<Map<UUID, PlayerData>>(){}.getType();
-            Map<UUID, PlayerData> raw = gson.fromJson(r, type);
-            if (raw != null) cache.putAll(raw);
+    public JSONBackupManager() {
+        this.gson = new GsonBuilder().setPrettyPrinting().create();
+        Path configDir = FMLPaths.CONFIGDIR.get();
+        this.backupDir = configDir.resolve(SUBDIR);
+        try {
+            if (!Files.exists(backupDir)) {
+                Files.createDirectories(backupDir);
+            }
         } catch (IOException e) {
-            RangerLevels.INSTANCE.getLogger().error("[BackupJSON] Error cargando respaldo", e);
+            mod.getLogger().error("[RangerLevels] No se pudo crear carpeta de backups: {}", e.getMessage());
+            e.printStackTrace();
         }
-    }
-
-    @Override
-    public PlayerData loadPlayerData(UUID uuid, String nickname) {
-        PlayerData pd = cache.get(uuid);
-        if (pd != null) {
-            pd.setNickname(nickname);
-            return pd;
-        }
-        // nuevo
-        pd = new PlayerData(uuid, nickname,
-                RangerLevels.INSTANCE.getExpConfig().levels.starting.level,
-                RangerLevels.INSTANCE.getExpConfig().levels.starting.experience,
-                RangerLevels.INSTANCE.getExpConfig().multipliers.playerDefault
-        );
-        cache.put(uuid, pd);
-        savePlayerData(pd);
-        return pd;
     }
 
     @Override
     public void savePlayerData(PlayerData data) {
-        cache.put(data.getUuid(), data);
-        try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
-            gson.toJson(cache, w);
+        String filename = data.getUuid() + ".json";
+        Path filePath = backupDir.resolve(filename);
+        try (Writer writer = Files.newBufferedWriter(filePath)) {
+            gson.toJson(data, writer);
         } catch (IOException e) {
-            RangerLevels.INSTANCE.getLogger().error("[BackupJSON] Error guardando respaldo", e);
+            mod.getLogger().error("[RangerLevels] ERROR creando backup {}: {}", filename, e.getMessage());
+            e.printStackTrace();
         }
-    }
-
-    @Override
-    public void unloadPlayerData(UUID uuid) {
-        cache.remove(uuid);
-        saveAll();
-    }
-
-    private void saveAll() {
-        try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
-            gson.toJson(cache, w);
-        } catch (IOException e) {
-            RangerLevels.INSTANCE.getLogger().error("[BackupJSON] Error guardando respaldo", e);
-        }
-    }
-
-    @Override
-    public void close() {
-        // nada extra
-    }
-
-    @Override
-    public String getSourceName() {
-        return "JSON-Backup";
     }
 }

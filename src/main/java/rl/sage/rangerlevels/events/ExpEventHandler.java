@@ -28,6 +28,7 @@ import rl.sage.rangerlevels.config.SpecificRangePermissions;
 import rl.sage.rangerlevels.limiter.LimiterHelper;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.pass.PassType;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,9 +53,9 @@ public class ExpEventHandler {
 
         // 1. Saca el tier desde la capability y clampéalo
         int tier = PassCapabilities.get(player).getTier();
-        PassManager.PassType[] types = PassManager.PassType.values();
+        PassType[] types = PassType.values();
         if (tier < 0 || tier >= types.length) tier = 0;
-        PassManager.PassType pass = types[tier];
+        PassType pass = types[tier];
 
         // 2. Determina el multiplier según el pass
         double passMultiplier;

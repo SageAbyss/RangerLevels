@@ -2,30 +2,36 @@ package rl.sage.rangerlevels.capability;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
 
-/**
- * Capability interface to store and manage a player's pass tier.
- * Tier values correspond to PassType tiers: 0=FREE, 1=SUPER, 2=ULTRA, 3=MASTER.
- */
 public interface IPassCapability {
-    /**
-     * Gets the current pass tier for the player.
-     *
-     * @return the tier value (0–3)
-     */
+    /** Devuelve el nivel numérico del pase (0 = sin pase, 1=Super, 2=Ultra, 3=Master). */
     int getTier();
 
-    /**
-     * Sets the pass tier for the player.
-     *
-     * @param tier the new tier value (0–3)
-     */
+    /** Asigna el nivel del pase (0 para ninguno). */
     void setTier(int tier);
 
+    /** Devuelve el timestamp (ms desde epoch) en que expira el pase. 0 si no hay pase asignado. */
+    long getExpiresAt();
+
+    /** Fija el timestamp (ms) de expiración. */
+    void setExpiresAt(long expiresAt);
+
     /**
-     * Synchronizes this capability's data to the client.
-     * Should be called on the server side when the tier changes.
-     *
-     * @param player the server player to sync to
+     * Sincroniza la capability en el cliente (si implementaras algo en client-side).
+     * Como tu mod es server-only, puede quedarse vacío o lanzar NoOp.
      */
     void syncToClient(ServerPlayerEntity player);
+
+    /**
+     * Shortcut: si tiene Tier > 0 y ahora < expiresAt, retorna true.
+     * De lo contrario, setea tier=0 y retorna false.
+     */
+    boolean hasActivePass();
+
+    /**
+     * Conveniencia para “otorgar un pase temporal”:
+     * - Asigna el tier
+     * - Calcula expiresAt = ahora + durationMillis
+     * - (Opcional) invoca syncToClient
+     */
+    void grantPass(int tier, long durationMillis);
 }

@@ -4,9 +4,12 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.SimpleNamedContainerProvider;
 import net.minecraft.item.Items;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import rl.sage.rangerlevels.gui.PlayerInfoUtils;
+import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.Arrays;
 
@@ -16,6 +19,13 @@ public class MainMenu {
      * Abre el menú principal como cofre virtual de 3 filas (27 slots).
      */
     public static void open(ServerPlayerEntity player) {
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.NOTE_BLOCK_CHIME,
+                SoundCategory.MASTER,
+                1.0f,
+                0.8f
+        );
         // 1) Creamos un inventario interno de 27 slots (3x9)
         Inventory inv = new Inventory(27);
         inv.clearContent();
@@ -24,21 +34,21 @@ public class MainMenu {
         inv.setItem(10, PlayerInfoUtils.getInfoItem(player, 10));
         inv.setItem(12, MenuItemBuilder.createButton(
                 "§bRecompensas",
-                Arrays.asList("Haz clic para ver tus recompensas"),
+                Arrays.asList("§7Haz clic para ver tus recompensas"),
                 Items.CHEST,
                 "rewards",
                 12
         ));
         inv.setItem(14, MenuItemBuilder.createButton(
                 "§eAyuda",
-                Arrays.asList("Información sobre el mod"),
+                Arrays.asList("§7Información sobre RangerLevels"),
                 Items.BOOK,
                 "help",
                 14
         ));
         inv.setItem(16, MenuItemBuilder.createButton(
                 "§aComprar Pase",
-                Arrays.asList("Ver beneficios y opciones de compra"),
+                Arrays.asList("§7Ver beneficios y opciones de compra"),
                 Items.EMERALD,
                 "buy",
                 16

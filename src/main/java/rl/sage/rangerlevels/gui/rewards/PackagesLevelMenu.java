@@ -16,6 +16,8 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.Items;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 
@@ -26,6 +28,7 @@ import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.gui.MenuItemBuilder;
 import rl.sage.rangerlevels.gui.PlayerInfoUtils;
 import rl.sage.rangerlevels.rewards.RewardManager;
+import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 public class PackagesLevelMenu {
     private static final int[] SLOT_INDICES = {
@@ -47,7 +50,7 @@ public class PackagesLevelMenu {
         if (cap == null) return;
 
         // DEBUG
-        System.out.println("[RewardsMenu][DEBUG] cap.getStatusMap() = " + cap.getStatusMap());
+       // System.out.println("[RewardsMenu][DEBUG] cap.getStatusMap() = " + cap.getStatusMap());
 
         // 1) Filtrar claves válidas PENDING de Packages (format “Packages:iv:nivel:ruta”)
         List<String> pending = new ArrayList<>();
@@ -62,7 +65,7 @@ public class PackagesLevelMenu {
         }
 
         // DEBUG
-        System.out.println("[RewardsMenu][DEBUG] pendingPackages = " + pending);
+       // System.out.println("[RewardsMenu][DEBUG] pendingPackages = " + pending);
 
         // 2) Ordenar por nivel numérico (parts[2]) y luego ruta (parts[3])
         Collections.sort(pending, new Comparator<String>() {
@@ -151,6 +154,13 @@ public class PackagesLevelMenu {
     }
 
     public static void claimSingle(ServerPlayerEntity player, String iv, String nivel, String ruta) {
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.EXPERIENCE_ORB_PICKUP,
+                SoundCategory.MASTER,
+                1.0f,
+                0.5f
+        );
         String key = String.join(":", "Packages", iv, nivel, ruta);
         @Nullable IPlayerRewards cap = player
                 .getCapability(PlayerRewardsProvider.REWARDS_CAP, null)
@@ -194,11 +204,20 @@ public class PackagesLevelMenu {
             anyClaimed = true;
         }
 
-        if (!anyClaimed) {
+        if (anyClaimed) {
+            PlayerSoundUtils.playSoundToPlayer(
+                    player,
+                    SoundEvents.PLAYER_LEVELUP,
+                    SoundCategory.MASTER,
+                    1.0f,
+                    0.5f
+            );
+        }
+        else {
             player.sendMessage(
                     new StringTextComponent("§cNo hay recompensas de paquete pendientes que puedas reclamar."),
                     player.getUUID()
-            );
-        }
+                );
+            }
     }
 }

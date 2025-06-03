@@ -49,6 +49,9 @@ multipliers:
     diamondEmeraldBreak: 1.0
     playerKill: 1.0
 
+rewardReminder:
+  intervalMinutes: 10
+
 levels:
   starting:
     level: 1

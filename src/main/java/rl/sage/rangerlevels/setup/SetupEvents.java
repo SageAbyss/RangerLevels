@@ -1,18 +1,19 @@
 package rl.sage.rangerlevels.setup;
 
-import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rl.sage.rangerlevels.RangerLevels;
-import rl.sage.rangerlevels.capability.LevelProvider;
-import rl.sage.rangerlevels.capability.LimiterProvider;
 import rl.sage.rangerlevels.config.ConfigLoader;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.events.PixelmonEventHandler;
+import rl.sage.rangerlevels.items.gemas.GemaExpComun;
+import rl.sage.rangerlevels.items.gemas.GemaExpEpico;
+import rl.sage.rangerlevels.items.gemas.GemaExpLegendario;
+import rl.sage.rangerlevels.items.tickets.*;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.multiplier.MultiplierState;
 
@@ -33,7 +34,18 @@ public class SetupEvents {
             MultiplierState.load();
             MultiplierManager.instance().reload();
         });
+        //ITEMS
+        new TicketSuper();
+        new TicketUltra();
+        new TicketMaster();
+        new TicketNivel();
+        new CarameloNivel();
+        new GemaExpComun();
+        new GemaExpEpico();
+        new GemaExpLegendario();
+
+
         PixelmonEventHandler.register();
-        LOGGER.info("{}: inicialización completada.", PREFIX_STR);
+        LOGGER.info("§8{}:§a Items cargados con éxito", PREFIX_STR);
     }
 }

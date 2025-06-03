@@ -4,22 +4,33 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.SimpleNamedContainerProvider;
 import net.minecraft.item.Items;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.StringTextComponent;
 import rl.sage.rangerlevels.gui.MenuItemBuilder;
 import rl.sage.rangerlevels.gui.PlayerInfoUtils;
 import rl.sage.rangerlevels.pass.PassManager;
+import rl.sage.rangerlevels.pass.PassType;
+import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.Arrays;
 
 public class BuyPassMenu {
 
     public static void open(ServerPlayerEntity player) {
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.NOTE_BLOCK_BIT,
+                SoundCategory.MASTER,
+                1.0f,
+                0.8f
+        );
         Inventory inv = new Inventory(27);
         inv.clearContent();
 
         // Super Pass
         inv.setItem(12, MenuItemBuilder.createButton(
-                PassManager.PassType.SUPER.getGradientDisplayName(),  // gradient name
+                PassType.SUPER.getGradientDisplayName(),  // gradient name
                 Arrays.asList(
                         "§7XP ×1.25 Exp",
                         "§7Limitador diario +10%",
@@ -32,7 +43,7 @@ public class BuyPassMenu {
 
         // Ultra Pass
         inv.setItem(14, MenuItemBuilder.createButton(
-                PassManager.PassType.ULTRA.getGradientDisplayName(),
+                PassType.ULTRA.getGradientDisplayName(),
                 Arrays.asList(
                         "§7XP ×1.5 Exp",
                         "§7Limitador diario +20%",
@@ -45,7 +56,7 @@ public class BuyPassMenu {
 
         // Master Pass
         inv.setItem(16, MenuItemBuilder.createButton(
-                PassManager.PassType.MASTER.getGradientDisplayName(),
+                PassType.MASTER.getGradientDisplayName(),
                 Arrays.asList(
                         "§7XP ×2.0 Exp",
                         "§7Limitador diario +50%",

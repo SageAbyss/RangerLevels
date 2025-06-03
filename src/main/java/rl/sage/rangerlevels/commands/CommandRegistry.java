@@ -7,6 +7,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 
 
@@ -15,9 +16,10 @@ import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.play.server.SPlaySoundEffectPacket;
+import net.minecraft.network.play.server.STitlePacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.SectionPos;
 import net.minecraft.util.text.*;
@@ -29,20 +31,22 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import net.minecraftforge.server.permission.PermissionAPI;
 import rl.sage.rangerlevels.RangerLevels;
+import rl.sage.rangerlevels.capability.IPassCapability;
 import rl.sage.rangerlevels.capability.PassCapabilities;
 import rl.sage.rangerlevels.config.*;
 import rl.sage.rangerlevels.capability.LevelProvider;
-import rl.sage.rangerlevels.gui.HelpButtonUtils;
+import rl.sage.rangerlevels.database.FlatFilePlayerDataManager;
 import rl.sage.rangerlevels.gui.help.HelpMenu;
+import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.multiplier.MultiplierState;
 import rl.sage.rangerlevels.pass.PassManager;
-import rl.sage.rangerlevels.permissions.PermissionRegistrar;
+import rl.sage.rangerlevels.pass.PassType;
 import rl.sage.rangerlevels.purge.PurgeData;
 import rl.sage.rangerlevels.rewards.RewardManager;
 import rl.sage.rangerlevels.util.GradientText;
+import rl.sage.rangerlevels.util.PlayerSoundUtils;
 import rl.sage.rangerlevels.util.TimeUtil;
 
 import java.util.List;
@@ -99,10 +103,17 @@ public class CommandRegistry {
                                                 return true; // consola
                                             }
                                         })
+                                        .executes(ctx -> {
+                                            ctx.getSource().sendFailure(
+                                                    new StringTextComponent(TextFormatting.RED +
+                                                            "Uso correcto: /rlv pass set <Player> <Pase>")
+                                            );
+                                            return 0;
+                                        })
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .then(Commands.argument("tier", StringArgumentType.word())
                                                         .suggests((ctx, sb) -> {
-                                                            for (PassManager.PassType t : PassManager.PassType.values()) {
+                                                            for (PassType t : PassType.values()) {
                                                                 sb.suggest(t.name().toLowerCase());
                                                             }
                                                             return sb.buildFuture();
@@ -114,9 +125,94 @@ public class CommandRegistry {
                                 )
 
                         )
+                        .then(Commands.literal("resetAll")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
+                                .executes(CommandResetAll::resetAll)
+                        )
                         // stats
                         .then(Commands.literal("stats")
                                 .executes(CommandRegistry::showStats)
+                        )
+
+                        .then(Commands.literal("seen")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // permite que la consola también lo ejecute
+                                    }
+                                })
+                                .executes(ctx -> {
+                                    ctx.getSource().sendFailure(
+                                            new StringTextComponent(TextFormatting.RED +
+                                                    "Uso correcto: /rlv seen <Player>")
+                                    );
+                                    return 0;
+                                })
+                                // 2) Ahora definimos el argumento "playerName" con sugerencias de jugadores online:
+                                .then(Commands.argument("playerName", StringArgumentType.word())
+                                        .suggests(playerNameSuggestions()) // <-- aquí registramos nuestras sugerencias
+                                        .executes(CommandSeen::seen)       // <-- el método que tienes implementado
+                                )
+                        )
+
+                        .then(Commands.literal("top")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
+                                .executes(CommandTop::top)
+                        )
+
+                        .then(Commands.literal("give")
+                                .requires(src -> {
+                                    try {
+                                        ServerPlayerEntity p = src.getPlayerOrException();
+                                        return AdminConfig.isAdmin(p.getName().getString());
+                                    } catch (Exception e) {
+                                        return true; // consola
+                                    }
+                                })
+                                .then(Commands.argument("target", EntityArgument.player())
+                                        .then(Commands.argument("item", StringArgumentType.word())
+                                                .suggests(ITEM_SUGGESTIONS)
+                                                .executes(ctx -> {
+                                                    ServerPlayerEntity target = EntityArgument.getPlayer(ctx, "target");
+                                                    String itemId = StringArgumentType.getString(ctx, "item").toLowerCase();
+                                                    int count = 1; // valor por defecto
+                                                    return CommandGiveHelper.giveItem(target, itemId, count, ctx.getSource());
+                                                })
+                                                .then(
+                                                        Commands.argument("count", IntegerArgumentType.integer(1))
+                                                                .suggests((CommandContext<CommandSource> ctx, SuggestionsBuilder builder) -> {
+                                                                    // Sugerimos explicitamente los valores 1, 2 y 3.
+                                                                    builder.suggest("1");
+                                                                    builder.suggest("2");
+                                                                    builder.suggest("3");
+                                                                    return builder.buildFuture();
+                                                                })
+                                                                .executes(ctx -> {
+                                                                    ServerPlayerEntity target = EntityArgument.getPlayer(ctx, "target");
+                                                                    String itemId = StringArgumentType.getString(ctx, "item").toLowerCase();
+                                                                    int count = IntegerArgumentType.getInteger(ctx, "count");
+                                                                    return CommandGiveHelper.giveItem(target, itemId, count, ctx.getSource());
+                                                                })
+                                                )
+
+                                        )
+                                )
                         )
 
                         // addexp / setexp / removeexp
@@ -128,6 +224,13 @@ public class CommandRegistry {
                                     } catch (Exception e) {
                                         return true; // consola
                                     }
+                                })
+                                .executes(ctx -> {
+                                    ctx.getSource().sendFailure(
+                                            new StringTextComponent(TextFormatting.RED +
+                                                    "Uso correcto: /rlv addexp <Player> <Amount>")
+                                    );
+                                    return 0;
                                 })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
@@ -145,6 +248,13 @@ public class CommandRegistry {
                                         return true; // consola
                                     }
                                 })
+                                .executes(ctx -> {
+                                    ctx.getSource().sendFailure(
+                                            new StringTextComponent(TextFormatting.RED +
+                                                    "Uso correcto: /rlv setexp <Player> <Amount>")
+                                    );
+                                    return 0;
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
                                                 .executes(ctx -> modifyExp(ctx, Mode.SET))
@@ -159,6 +269,13 @@ public class CommandRegistry {
                                     } catch (Exception e) {
                                         return true; // consola
                                     }
+                                })
+                                .executes(ctx -> {
+                                    ctx.getSource().sendFailure(
+                                            new StringTextComponent(TextFormatting.RED +
+                                                    "Uso correcto: /rlv removeexp <Player> <Amount>")
+                                    );
+                                    return 0;
                                 })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
@@ -176,6 +293,13 @@ public class CommandRegistry {
                                         return true; // consola
                                     }
                                 })
+                                .executes(ctx -> {
+                                    ctx.getSource().sendFailure(
+                                            new StringTextComponent(TextFormatting.RED +
+                                                    "Uso correcto: /rlv addlevel <Player> <Amount>")
+                                    );
+                                    return 0;
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
                                                 .executes(ctx -> modifyLevel(ctx, Mode.ADD))
@@ -190,6 +314,13 @@ public class CommandRegistry {
                                     } catch (Exception e) {
                                         return true; // consola
                                     }
+                                })
+                                .executes(ctx -> {
+                                    ctx.getSource().sendFailure(
+                                            new StringTextComponent(TextFormatting.RED +
+                                                    "Uso correcto: /rlv setlevel <Player> <Amount>")
+                                    );
+                                    return 0;
                                 })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
@@ -206,6 +337,13 @@ public class CommandRegistry {
                                         return true; // consola
                                     }
                                 })
+                                .executes(ctx -> {
+                                    ctx.getSource().sendFailure(
+                                            new StringTextComponent(TextFormatting.RED +
+                                                    "Uso correcto: /rlv removelevel <Player> <Amount>")
+                                    );
+                                    return 0;
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
                                                 .executes(ctx -> modifyLevel(ctx, Mode.REMOVE))
@@ -221,6 +359,13 @@ public class CommandRegistry {
                                     } catch (Exception e) {
                                         return true; // consola
                                     }
+                                })
+                                .executes(ctx -> {
+                                    ctx.getSource().sendFailure(
+                                            new StringTextComponent(TextFormatting.RED +
+                                                    "Uso correcto: /rlv reset <Player>")
+                                    );
+                                    return 0;
                                 })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .executes(CommandRegistry::resetStats)
@@ -240,6 +385,7 @@ public class CommandRegistry {
                                     ConfigLoader.load();
                                     ExpConfig.reload();
                                     MultiplierState.load();
+                                    FlatFilePlayerDataManager.getInstance().reload();
                                     AdminConfig.load();
                                     MultiplierManager.instance().reload();
                                     RewardConfig.reload();
@@ -257,7 +403,7 @@ public class CommandRegistry {
                         )
 
                         // setmultiplier
-                        .then(Commands.literal("Setmultiplier")
+                        .then(Commands.literal("Multiplier")
                                 .requires(src -> {
                                     try {
                                         ServerPlayerEntity p = src.getPlayerOrException();
@@ -449,6 +595,22 @@ public class CommandRegistry {
         dispatcher.register(Commands.literal("rlv").redirect(base));
 
 
+        dispatcher.register(Commands.literal("rlv")
+                        .executes(ctx -> {
+                            ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+                            rl.sage.rangerlevels.gui.MainMenu.open(player);
+                            return 1;
+                        })
+        );
+        dispatcher.register(Commands.literal("pase")
+                .executes(ctx -> {
+                    ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+                    rl.sage.rangerlevels.gui.MainMenu.open(player);
+                    return 1;
+                }));
+
+
+
         // --------------- ALIAS PARA STATS DIRECTO ---------------
         dispatcher.register(
                 Commands.literal("stats")
@@ -464,33 +626,59 @@ public class CommandRegistry {
         );
     }
     private static int showPassInfo(ServerPlayerEntity player) {
-        int tier = PassCapabilities.get(player).getTier();
-        PassManager.PassType pass = PassManager.PassType.values()[tier];
+        IPassCapability cap = PassCapabilities.get(player);
+        PassType pass = PassManager.getCurrentPass(player);
 
-        // Encabezado con gradiente
+        // 1) Cabecera: gradiente + color dorado, luego salto de línea
         IFormattableTextComponent header = pass.getGradientDisplayName()
                 .withStyle(style -> style.withColor(TextFormatting.GOLD))
-                .append(new StringTextComponent("\n"));
+                .append((IFormattableTextComponent) new StringTextComponent("\n"));
 
-        // Beneficios: usamos la descripción genérica del pase
-        IFormattableTextComponent benefits = new StringTextComponent("Beneficios:\n")
+        // 2) Beneficios: “Beneficios:\n” en amarillo, y luego la descripción en gris + salto
+        IFormattableTextComponent benefits = (IFormattableTextComponent) new StringTextComponent("Beneficios:\n")
                 .withStyle(style -> style.withColor(TextFormatting.YELLOW))
-                .append(new StringTextComponent(" - " + pass.getDescription() + "\n")
+                .append((IFormattableTextComponent) new StringTextComponent(" - " + pass.getDescription() + "\n")
                         .withStyle(style -> style.withColor(TextFormatting.GRAY)));
 
-        // URL de compra
-        IFormattableTextComponent purchase = new StringTextComponent("Compra aquí: ")
-                .withStyle(style -> style.withColor(TextFormatting.AQUA))
-                .append(new StringTextComponent(pass.getPurchaseUrl())
-                        .withStyle(style -> style.withColor(TextFormatting.BLUE)));
+        // 3) Si el pase no es FREE, agregamos información de expiración
+        IFormattableTextComponent expiryInfo = (IFormattableTextComponent) new StringTextComponent("");
+        if (pass != PassType.FREE) {
+            long expiresAt = cap.getExpiresAt();
+            String expiresStr;
+            if (expiresAt == Long.MAX_VALUE) {
+                expiresStr = "Nunca"; // pase indefinido
+            } else {
+                expiresStr = java.time.format.DateTimeFormatter
+                        .ofPattern("yyyy-MM-dd HH:mm")
+                        .withZone(java.time.ZoneOffset.UTC)
+                        .format(java.time.Instant.ofEpochMilli(expiresAt)) + " UTC";
+            }
+            expiryInfo = (IFormattableTextComponent) new StringTextComponent("Expira: ")
+                    .withStyle(style -> style.withColor(TextFormatting.AQUA))
+                    .append((IFormattableTextComponent) new StringTextComponent(expiresStr + "\n")
+                            .withStyle(style -> style.withColor(TextFormatting.GRAY)));
+        }
 
-        // Envío de mensajes
+        // 4) Envío de mensajes al jugador
         player.sendMessage(header, player.getUUID());
         player.sendMessage(benefits, player.getUUID());
-        player.sendMessage(purchase, player.getUUID());
+        if (pass != PassType.FREE) {
+            player.sendMessage(expiryInfo, player.getUUID());
+        }
 
-        return 0; // Si necesitas un entero de retorno, ajusta según tu lógica
+        // 5) Sonido de confirmación
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.NOTE_BLOCK_CHIME,
+                SoundCategory.MASTER,
+                1.0f,
+                0.8f
+        );
+
+        return 1;
     }
+
+
 
 
     private static int showPassBuyLinks(ServerPlayerEntity player) {
@@ -507,7 +695,7 @@ public class CommandRegistry {
         player.sendMessage(header.append(new StringTextComponent("\n")), uuid);
 
         // ║   • Super Pass
-        sendDecoratedPass(player, PassManager.PassType.SUPER,
+        sendDecoratedPass(player, PassType.SUPER,
                 urls.getOrDefault("super", ""), uuid);
 
         // ╟────────────────────────────────╢
@@ -518,7 +706,7 @@ public class CommandRegistry {
         );
 
         // ║   • Ultra Pass
-        sendDecoratedPass(player, PassManager.PassType.ULTRA,
+        sendDecoratedPass(player, PassType.ULTRA,
                 urls.getOrDefault("ultra", ""), uuid);
 
         // ╟────────────────────────────────╢
@@ -529,7 +717,7 @@ public class CommandRegistry {
         );
 
         // ║   • Master Pass
-        sendDecoratedPass(player, PassManager.PassType.MASTER,
+        sendDecoratedPass(player, PassType.MASTER,
                 urls.getOrDefault("master", ""), uuid);
 
         // ╚════════════════════════════════╝
@@ -538,12 +726,19 @@ public class CommandRegistry {
                         .withStyle(Style.EMPTY.withColor(TextFormatting.GRAY)),
                 uuid
         );
-
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.NOTE_BLOCK_CHIME,
+                SoundCategory.MASTER,
+                1.0f,
+                1.0f
+        );
         return 1;
     }
 
+
     /** Envía una línea de pase con viñeta, hover y click decorados */
-    private static void sendDecoratedPass(ServerPlayerEntity player, PassManager.PassType type, String url, UUID uuid) {
+    private static void sendDecoratedPass(ServerPlayerEntity player, PassType type, String url, UUID uuid) {
         // Viñeta y espacio
         IFormattableTextComponent line = new StringTextComponent(" ║   • ")
                 .append(type.getGradientDisplayName().copy());
@@ -562,31 +757,82 @@ public class CommandRegistry {
 
         // Envía la línea con salto de línea al final
         player.sendMessage(line.append(new StringTextComponent("\n")), uuid);
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.NOTE_BLOCK_CHIME,
+                SoundCategory.MASTER,
+                1.0f,
+                0.8f
+        );
     }
 
+
     private static int setPassTier(CommandContext<CommandSource> ctx) throws CommandSyntaxException {
+        // Obtenemos al jugador objetivo y el nombre del tier
         ServerPlayerEntity target = EntityArgument.getPlayer(ctx, "target");
         String tierName = StringArgumentType.getString(ctx, "tier").toUpperCase();
 
-        PassManager.PassType chosen;
+        // Intentamos parsear el PassType
+        PassType chosen;
         try {
-            chosen = PassManager.PassType.valueOf(tierName);
+            chosen = PassType.valueOf(tierName);
         } catch (IllegalArgumentException e) {
-            ctx.getSource().sendFailure(new StringTextComponent("Tier inválido: " + tierName));
+            ctx.getSource().sendFailure(
+                    new StringTextComponent(TextFormatting.RED + "Tier inválido: " + tierName)
+            );
             return 0;
         }
 
-        PassCapabilities.get(target).setTier(chosen.ordinal());
+        // 1) Asignamos el nuevo tier en la capability y lo hacemos "indefinido"
+        IPassCapability cap = PassCapabilities.get(target);
+        cap.setTier(chosen.getTier());
+        cap.setExpiresAt(Long.MAX_VALUE); // Pase indefinido
+        cap.syncToClient(target); // por si en un futuro hay cliente que necesite saberlo
+
+        // 2) Mensaje de confirmación en el chat del ejecutor
         ctx.getSource().sendSuccess(
                 new StringTextComponent(
-                        "Tier de pase de " + target.getName().getString()
-                                + " establecido a " + chosen.name().toLowerCase()
+                        TextFormatting.GREEN + "Tier de pase de " +
+                                TextFormatting.AQUA + target.getName().getString() +
+                                TextFormatting.GREEN + " establecido a " +
+                                TextFormatting.GOLD + chosen.name().toLowerCase()
                 ),
                 true
         );
+
+        // 3) Envío de Title y Subtitle al jugador objetivo
+        // 3a) Título: "Pase Ranger" (en dorado)
+        ITextComponent titleText = new StringTextComponent("Pase Ranger")
+                .withStyle(TextFormatting.GOLD);
+
+        // 3b) Subtítulo: "Ahora tienes el <PASE>" (mostrando el nombre gradient del PassType)
+        ITextComponent subTitleText = new StringTextComponent("Ahora tienes el ")
+                .withStyle(TextFormatting.AQUA)
+                .append(chosen.getGradientDisplayName());
+
+        // 3c) Creamos los paquetes para TITLE y SUBTITLE
+        STitlePacket packetTitle = new STitlePacket(
+                STitlePacket.Type.TITLE,
+                titleText
+        );
+        STitlePacket packetSubTitle = new STitlePacket(
+                STitlePacket.Type.SUBTITLE,
+                subTitleText
+        );
+
+        // 3d) Enviamos los paquetes al jugador
+        target.connection.send(packetTitle);
+        target.connection.send(packetSubTitle);
+
+        PlayerSoundUtils.playSoundToPlayer(
+                target,
+                SoundEvents.NOTE_BLOCK_CHIME,
+                SoundCategory.MASTER,
+                1.0f,
+                0.8f
+        );
         return 1;
     }
-
 
 
     // ----------------------------
@@ -694,6 +940,7 @@ public class CommandRegistry {
                         ).withStyle(TextFormatting.GREEN)),
                 true
         );
+
         return 1;
     }
     // ------------------------------
@@ -728,7 +975,7 @@ public class CommandRegistry {
                                 : " indefinido").withStyle(TextFormatting.GREEN)),
                 true
         );
-        return 1;
+              return 1;
     }
     // -----------------------------------
     // RESTO DE COMANDOS SIN CAMBIOS
@@ -807,7 +1054,13 @@ public class CommandRegistry {
             player.sendMessage(header, player.getUUID());
             player.sendMessage(body,   player.getUUID());
         });
-
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.NOTE_BLOCK_CHIME,
+                SoundCategory.MASTER,
+                1.0f,
+                0.8f
+        );
         return 1;
     }
 
@@ -938,6 +1191,14 @@ public class CommandRegistry {
                             TextFormatting.LIGHT_PURPLE + " reseteadas a Nivel 1 y EXP 0"
             ), target.getUUID());
         });
+        PlayerSoundUtils.playSoundToPlayer(
+                target,
+                SoundEvents.NOTE_BLOCK_IRON_XYLOPHONE,
+                SoundCategory.MASTER,
+                1.0f,
+                0.5f
+        );
+
         return 1;
     }
 
@@ -963,16 +1224,8 @@ public class CommandRegistry {
                         .withStyle(style -> style.setStrikethrough(true).withColor(Color.fromRgb(0xFFA500))));
         player.sendMessage(header, player.getUUID());
 
-        // ✨ Nuevo: multiplicador por pase actual desde Capability
-        int tierOrdinal = PassCapabilities.get(player).getTier();
-        PassManager.PassType pass;
-        // Convertimos ordinal a PassType, si está fuera de rango, fallback a FREE
-        PassManager.PassType[] types = PassManager.PassType.values();
-        if (tierOrdinal >= 0 && tierOrdinal < types.length) {
-            pass = types[tierOrdinal];
-        } else {
-            pass = PassManager.PassType.FREE;
-        }
+        // ✨ Ahora obtenemos el pase actual a través de PassManager
+        PassType pass = PassManager.getCurrentPass(player);
 
         double passMul;
         switch (pass) {
@@ -1006,7 +1259,36 @@ public class CommandRegistry {
                 player.getUUID()
         );
 
+        PlayerSoundUtils.playSoundToPlayer(
+                player,
+                SoundEvents.ITEM_BREAK,
+                SoundCategory.MASTER,
+                1.0f,
+                0.5f
+        );
         return 1;
     }
 
+    /**
+     * SuggestionProvider que propone todos los nicknames de jugadores actualmente conectados.
+     */
+    private static SuggestionProvider<CommandSource> playerNameSuggestions() {
+        return (context, builder) -> {
+            MinecraftServer server = context.getSource().getServer();
+            if (server != null) {
+                for (ServerPlayerEntity online : server.getPlayerList().getPlayers()) {
+                    // Sugerimos solo si el texto parcial coincide
+                    builder.suggest(online.getName().getString());
+                }
+            }
+            return builder.buildFuture();
+        };
+    }
+    private static final SuggestionProvider<CommandSource> ITEM_SUGGESTIONS =
+            (CommandContext<CommandSource> context, SuggestionsBuilder builder) -> {
+                for (String id : CustomItemRegistry.getAllIds()) {
+                    builder.suggest(id);
+                }
+                return builder.buildFuture();
+            };
 }
