@@ -8,17 +8,18 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
-import rl.sage.rangerlevels.gui.PlayerInfoUtils;
 import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.Arrays;
 
+/**
+ * Abre el “Main Menu” (3 filas x 9 columnas = 27 slots).
+ * Coloca en cada posición los botones con su NBT “MenuButtonID” y “MenuSlot”.
+ */
 public class MainMenu {
 
-    /**
-     * Abre el menú principal como cofre virtual de 3 filas (27 slots).
-     */
     public static void open(ServerPlayerEntity player) {
+        // Reproducir sonido al abrir
         PlayerSoundUtils.playSoundToPlayer(
                 player,
                 SoundEvents.NOTE_BLOCK_CHIME,
@@ -26,12 +27,15 @@ public class MainMenu {
                 1.0f,
                 0.8f
         );
-        // 1) Creamos un inventario interno de 27 slots (3x9)
+
+        // 1) Inventario interno de 27 slots
         Inventory inv = new Inventory(27);
         inv.clearContent();
 
-        // 2) Posicionamos nuestros botones en slots concretos
+        // – Info (slot 10)
         inv.setItem(10, PlayerInfoUtils.getInfoItem(player, 10));
+
+        // – Recompensas (slot 12)
         inv.setItem(12, MenuItemBuilder.createButton(
                 "§bRecompensas",
                 Arrays.asList("§7Haz clic para ver tus recompensas"),
@@ -39,6 +43,8 @@ public class MainMenu {
                 "rewards",
                 12
         ));
+
+        // – Ayuda (slot 14)
         inv.setItem(14, MenuItemBuilder.createButton(
                 "§eAyuda",
                 Arrays.asList("§7Información sobre RangerLevels"),
@@ -46,6 +52,8 @@ public class MainMenu {
                 "help",
                 14
         ));
+
+        // – Comprar Pase (slot 16)
         inv.setItem(16, MenuItemBuilder.createButton(
                 "§aComprar Pase",
                 Arrays.asList("§7Ver beneficios y opciones de compra"),
@@ -54,15 +62,11 @@ public class MainMenu {
                 16
         ));
 
-        // 3) Abrimos el menú con el constructor de ChestContainer
+        // 3) Abrir el contenedor con SimpleNamedContainerProvider (GENERIC_9x3)
+        ITextComponent title = new StringTextComponent("§6RangerLevels");
         player.openMenu(new SimpleNamedContainerProvider(
-                (windowId, playerInv, p) ->
-                        new MainMenuContainer(
-                                windowId,
-                                playerInv,
-                                inv
-                        ),
-                new StringTextComponent("§6RangerLevels")
+                (windowId, playerInv, p) -> new MainMenuContainer(windowId, playerInv, inv),
+                title
         ));
     }
 }

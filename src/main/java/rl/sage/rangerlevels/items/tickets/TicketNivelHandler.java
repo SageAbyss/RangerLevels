@@ -3,12 +3,13 @@ package rl.sage.rangerlevels.items.tickets;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.SoundEvents;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.Hand;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
-import net.minecraft.network.play.server.STitlePacket;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -21,6 +22,8 @@ import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
 import rl.sage.rangerlevels.rewards.RewardManager;
 import rl.sage.rangerlevels.util.GradientText;
+
+import java.util.UUID;
 
 /**
  * Handler para el “Ticket de Nivel”. Comprueba que el ItemStack tenga
@@ -38,33 +41,23 @@ public class TicketNivelHandler {
         Hand hand = event.getHand();
 
         ItemStack held = player.getItemInHand(hand);
-        if (held == null || held.isEmpty()) {
-            return;
-        }
+        if (held == null || held.isEmpty()) return;
 
         // 1) Verificar el ID NBT "ticket_nivel"
         String id = RangerItemDefinition.getIdFromStack(held);
-        if (!ID_TICKET_NIVEL.equals(id)) {
-            return;
-        }
+        if (!ID_TICKET_NIVEL.equals(id)) return;
 
-        // (Opcional) comprobar también que su Tier sea RARO, si deseas
+        // (Opcional) comprobar que su Tier sea RARO
         Tier tier = RangerItemDefinition.getTierFromStack(held);
-        if (tier != Tier.RARO) {
-            return;
-        }
+        if (tier != Tier.RARO) return;
 
         // 2) Cancelar uso vanilla
         event.setCanceled(true);
         event.setCancellationResult(net.minecraft.util.ActionResultType.SUCCESS);
 
         // 3) Lógica solo en servidor
-        if (world.isClientSide) {
-            return;
-        }
-        if (!(player instanceof ServerPlayerEntity)) {
-            return;
-        }
+        if (world.isClientSide) return;
+        if (!(player instanceof ServerPlayerEntity)) return;
         ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
 
         // 4) Obtener capability de nivel
@@ -74,15 +67,12 @@ public class TicketNivelHandler {
             int maxLevel = cfg.getMaxLevel();
             LevelsConfig levelsCfg = cfg.getLevels();
 
-            // 5) Si ya está en nivel máximo, enviamos mensaje y no consumimos
+            // 5) Si ya está en nivel máximo
             if (currentLevel >= maxLevel) {
-                serverPlayer.sendMessage(
-                        new StringTextComponent(
-                                TextFormatting.RED +
-                                        "Ya has alcanzado el nivel máximo (" + maxLevel + ")."
-                        ),
-                        serverPlayer.getUUID()
-                );
+                StringTextComponent titulo = new StringTextComponent(TextFormatting.DARK_BLUE + "✦ Ticket de Nivel ✦");
+                StringTextComponent linea = new StringTextComponent(TextFormatting.RED + "Ya has alcanzado el nivel máximo (" + maxLevel + ").");
+                serverPlayer.sendMessage(titulo.copy(), serverPlayer.getUUID());
+                serverPlayer.sendMessage(linea, serverPlayer.getUUID());
                 return;
             }
 
@@ -109,9 +99,11 @@ public class TicketNivelHandler {
                 serverPlayer.displayClientMessage(title, false);
                 serverPlayer.displayClientMessage(sep, false);
 
-                // 6.3) Mensaje flotante en action bar
+                // 6.3) Mensaje flotante en action bar con borde Unicode
+                String actionBar = TextFormatting.YELLOW + "⇧ "
+                        + TextFormatting.DARK_BLUE + "Nivel Ranger " + lvl;
                 serverPlayer.displayClientMessage(
-                        new StringTextComponent("§e⇧ §3Nivel Ranger " + lvl),
+                        new StringTextComponent(actionBar),
                         true
                 );
 
@@ -119,8 +111,8 @@ public class TicketNivelHandler {
                 serverPlayer.level.playSound(
                         null,
                         serverPlayer.blockPosition(),
-                        net.minecraft.util.SoundEvents.PLAYER_LEVELUP,
-                        net.minecraft.util.SoundCategory.PLAYERS,
+                        SoundEvents.PLAYER_LEVELUP,
+                        SoundCategory.PLAYERS,
                         1.0f, 1.0f
                 );
             }
@@ -129,6 +121,19 @@ public class TicketNivelHandler {
             if (!serverPlayer.isCreative()) {
                 held.shrink(1);
             }
+
+            // 8) Sonido de activación de “ticket”
+            serverPlayer.level.playSound(
+                    null,
+                    serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
+                    SoundEvents.IRON_DOOR_OPEN,
+                    SoundCategory.MASTER,
+                    1.0f, 0.5f
+            );
+
+            // 9) Mensaje final indicando activado
+            StringTextComponent msgTitulo = new StringTextComponent(TextFormatting.DARK_GREEN + "✦ ᴀᴄᴛɪᴠᴀᴅᴏ Ticket de Nivel ✦");
+            serverPlayer.sendMessage(msgTitulo, serverPlayer.getUUID());
         });
     }
 
@@ -136,9 +141,7 @@ public class TicketNivelHandler {
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         PlayerEntity player = event.getPlayer();
         ItemStack held = player.getItemInHand(event.getHand());
-        if (held == null || held.isEmpty()) {
-            return;
-        }
+        if (held == null || held.isEmpty()) return;
 
         // Solo cancelamos la acción si es “ticket_nivel”
         String id = RangerItemDefinition.getIdFromStack(held);

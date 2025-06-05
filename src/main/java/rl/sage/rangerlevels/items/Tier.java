@@ -1,34 +1,49 @@
 package rl.sage.rangerlevels.items;
 
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.Style;
+import rl.sage.rangerlevels.util.GradientText;
 
 public enum Tier {
-    COMUN(TextFormatting.WHITE,     "ᴄᴏᴍᴍᴏɴ"),
-    RARO(TextFormatting.BLUE,       "ʀᴀʀᴇ"),
-    EPICO(TextFormatting.AQUA,      "ᴇᴘɪᴄ"),
-    LEGENDARIO(TextFormatting.GOLD, "ʟᴇɢᴇɴᴅ"),
-    ESTELAR(TextFormatting.DARK_AQUA, "ᴇꜱᴛᴇʟᴀʀ"),
-    MITICO(TextFormatting.LIGHT_PURPLE,  "ᴍʏᴛʜɪᴄ");
+    COMUN     ("ᴄᴏᴍᴍᴏɴ",   new String[]{"#E2E2E2", "#9D9D9D"}),
+    RARO      ("ʀᴀʀᴇ",     new String[]{"#ADD8E6", "#84C1E0"}),
+    EPICO     ("ᴇᴘɪᴄ",     new String[]{"#BB8CFF", "#A346FF"}),
+    LEGENDARIO("ʟᴇɢᴇɴᴅ",   new String[]{"#FFE87C", "#FFD700"}),
+    ESTELAR   ("ᴇꜱᴛᴇʟᴀʀ", new String[]{"#6EE3DC", "#996FEA"}),
+    MITICO    ("ᴍʏᴛʜɪᴄ",   new String[]{"#11998E", "#38EF7D"});
 
-    private final TextFormatting color;
     private final String displayName;
+    private final String[] gradientHex;
 
-    Tier(TextFormatting color, String displayName) {
-        this.color = color;
+    Tier(String displayName, String[] gradientHex) {
         this.displayName = displayName;
+        this.gradientHex  = gradientHex;
     }
 
-    /**
-     * Retorna el nombre amigable con acento (ej. "Épico").
-     */
+    /** Retorna el nombre amigable con acento (ej. "ᴍʏᴛʜɪᴄ"). */
     public String getDisplayName() {
         return displayName;
     }
 
     /**
-     * Retorna el color asociado a este tier (TextFormatting).
+     * Devuelve el nombre del tier con degradado y sin cursiva.
+     * Úsalo si realmente quieres mostrar el nombre interno del enum, pintado en degradado.
      */
-    public TextFormatting getColor() {
-        return color;
+    public IFormattableTextComponent getColor() {
+        // GradientText.of(displayName, ...) produce un componente posiblemente con estilos por defecto.
+        // Con withStyle(...) quitamos la cursiva:
+        return GradientText
+                .of(displayName, gradientHex[0], gradientHex[1])
+                .withStyle(style -> style.withItalic(false));
+    }
+
+    /**
+     * Pinta cualquier texto con el degradado de este tier y sin cursiva.
+     * Ejemplo: Tier.LEGENDARIO.applyGradient("✦ Mi Ítem Legendario ✦")
+     */
+    public IFormattableTextComponent applyGradient(String text) {
+        return GradientText
+                .of(text, gradientHex[0], gradientHex[1])
+                .withStyle(style -> style.withItalic(false));
     }
 }

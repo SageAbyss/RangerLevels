@@ -6,33 +6,34 @@ import com.pixelmonmod.pixelmon.api.events.battles.CatchComboEvent;
 import com.pixelmonmod.pixelmon.api.events.legendary.ArceusEvent;
 import com.pixelmonmod.pixelmon.api.events.legendary.TimespaceEvent;
 import com.pixelmonmod.pixelmon.api.events.raids.StartRaidEvent;
-import rl.sage.rangerlevels.capability.PassCapabilities;
-import rl.sage.rangerlevels.items.gemas.ExpGemHandler;
-import rl.sage.rangerlevels.pass.PassManager;
-import com.pixelmonmod.pixelmon.api.events.PokedexEvent;
 import com.pixelmonmod.pixelmon.api.pokedex.PokedexRegistrationStatus;
 import com.pixelmonmod.pixelmon.api.pokemon.boss.BossTierRegistry;
-import com.pixelmonmod.pixelmon.entities.pixelmon.PixelmonEntity;
 import com.pixelmonmod.pixelmon.battles.controller.participants.BattleParticipant;
 import com.pixelmonmod.pixelmon.battles.controller.participants.PlayerParticipant;
+import com.pixelmonmod.pixelmon.entities.pixelmon.PixelmonEntity;
+import net.minecraftforge.fml.common.Mod;
+import rl.sage.rangerlevels.capability.PassCapabilities;
+import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
+import rl.sage.rangerlevels.items.RangerItemDefinition;
+
+import rl.sage.rangerlevels.items.amuletos.ShinyAmuletHandler;
+import rl.sage.rangerlevels.items.gemas.ExpGemHandler;
+import rl.sage.rangerlevels.config.*;
+import rl.sage.rangerlevels.limiter.LimiterHelper;
+import rl.sage.rangerlevels.multiplier.MultiplierManager;
+import rl.sage.rangerlevels.pass.PassType;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.AdvancementEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import net.minecraftforge.server.permission.PermissionAPI;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import rl.sage.rangerlevels.capability.LevelProvider;
-import rl.sage.rangerlevels.config.ConfigLoader;
-import rl.sage.rangerlevels.config.EventConfig;
-import rl.sage.rangerlevels.config.ExpConfig;
-import rl.sage.rangerlevels.config.SpecificRangePermissions;
-import rl.sage.rangerlevels.limiter.LimiterHelper;
-import rl.sage.rangerlevels.multiplier.MultiplierManager;
-import rl.sage.rangerlevels.pass.PassType;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -40,6 +41,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.function.Function;
 
+@Mod.EventBusSubscriber(modid = "rangerlevels")
 public class PixelmonEventHandler {
     private static final Logger LOGGER = LogManager.getLogger(PixelmonEventHandler.class);
     private static final Random RNG = new Random();
@@ -65,13 +67,11 @@ public class PixelmonEventHandler {
         double global   = MultiplierManager.instance().getGlobal();
         double personal = MultiplierManager.instance().getPlayer(player);
 
-        // 1. Saca el tier desde la capability y clampéalo
         int tier = PassCapabilities.get(player).getTier();
         PassType[] types = PassType.values();
         if (tier < 0 || tier >= types.length) tier = 0;
         PassType pass = types[tier];
 
-        // 2. Determina el multiplier según el pass
         double passMultiplier;
         switch (pass) {
             case SUPER:  passMultiplier = 1.25; break;
@@ -80,14 +80,9 @@ public class PixelmonEventHandler {
             default:     passMultiplier = 1.0;  break;
         }
 
-        // 3. Calculamos la EXP base con los multiplicadores de evento, global, personal y pase
         double resultado = baseExp * eventMul * global * personal * passMultiplier;
-
         return (int) Math.round(resultado);
     }
-
-
-
 
     private static void giveExp(ServerPlayerEntity player, int baseExp, String eventKey) {
         int total = applyMultipliers(player, baseExp, eventKey);
@@ -173,6 +168,11 @@ public class PixelmonEventHandler {
         EventConfig cfg = getCfg("onCapture");
         if (cfg == null || !cfg.isEnable()) return;
         if (cfg.isRequiresPermission() && !hasAnyPermission(player, cfg.getPermissions())) return;
+        // ── BLOQUE AMULETO SHINY (delegado a ShinyAmuletHandler) ──
+        ShinyAmuletHandler.tryUse(player, pkmn);
+        // ─────────────────────────────────────────────────────────
+
+        // ── Lógica normal de cálculo de EXP ──
 
         int base;
         boolean shiny = pkmn.getPokemon().isShiny();
@@ -186,17 +186,11 @@ public class PixelmonEventHandler {
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
 
-        // ── Aquí aplicamos primero el cálculo normal de multipliers (sin gema) ──
         int totalSinGema = applyMultipliers(player, base, "onCapture");
-
-        // ── Luego averiguamos si el jugador tiene gema activa y la aplicamos solo en este evento ──
-        double gemBonus = ExpGemHandler.getBonus(player); // 0.10, 0.30, 0.50 o 0.0
+        double gemBonus = ExpGemHandler.getBonus(player);
         int totalConGema = (int) Math.round(totalSinGema * (1.0 + gemBonus));
-
-        // Finalmente, damos la EXP con límite
         LimiterHelper.giveExpWithLimit(player, totalConGema);
     }
-
 
     @SubscribeEvent
     public static void onLevelUp(LevelUpEvent.Post ev) {
@@ -293,14 +287,48 @@ public class PixelmonEventHandler {
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
 
+        // ── BLOQUE AMULETO DE CAMPEÓN ──
+        boolean hasAmulet = false;
+        for (ItemStack stack : player.inventory.items) {
+            if (stack != null && !stack.isEmpty()) {
+                String id = RangerItemDefinition.getIdFromStack(stack);
+                if (ChampionAmulet.ID.equals(id)) {
+                    hasAmulet = true;
+                    break;
+                }
+            }
+        }
+        if (hasAmulet) {
+            ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
+
+            // 1) Aplicar bonus de EXP
+            double xpPercent = amCfg.xpPercent;
+            int bonusXp = (int) Math.floor(base * (xpPercent / 100.0));
+            base += bonusXp;
+
+            // 2) Iterar sobre cada comando configurado
+            for (ItemsConfig.ChampionAmuletConfig.CommandEntry entry : amCfg.commands) {
+                double chancePercent = entry.chancePercent;
+                String rawCmd = entry.command;
+                double roll = RNG.nextDouble() * 100.0;
+                if (roll < chancePercent) {
+                    String cmdToRun = rawCmd.replace("%player%", player.getName().getString());
+                    MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+                    if (server != null) {
+                        server.getCommands().performCommand(
+                                server.createCommandSourceStack(),
+                                cmdToRun
+                        );
+                    }
+                }
+            }
+        }
+        // ────────────────────────────────────
+
         // ── Cálculo normal (sin gema) ──
         int totalSinGema = applyMultipliers(player, base, "beatWild");
-
-        // ── Aplicamos bonificación de gema SOLO aquí ──
         double gemBonus = ExpGemHandler.getBonus(player); // 0.10, 0.30, 0.50 o 0.0
         int totalConGema = (int) Math.round(totalSinGema * (1.0 + gemBonus));
-
-        // Finalmente, damos EXP con límite
         LimiterHelper.giveExpWithLimit(player, totalConGema);
     }
 
@@ -313,8 +341,58 @@ public class PixelmonEventHandler {
 
         boolean isBoss = ev.trainer.getBossTier() != BossTierRegistry.NOT_BOSS;
         String key = isBoss ? "beatBoss" : "beatTrainer";
-        handleGeneric(player, key, EventConfig::getExpRange);
+
+        // ── calculamos baseExp antes del amuleto ──
+        int[] range = isBoss
+                ? Objects.requireNonNull(getCfg("beatBoss")).getExpRange()
+                : Objects.requireNonNull(getCfg("beatTrainer")).getExpRange();
+        int base = randomInRange(range[0], range[1]);
+        Integer vip = getVipRangeExp(player, Objects.requireNonNull(getCfg(key)).getSpecificRangePermissions());
+        if (vip != null) base = vip;
+
+        // ── BLOQUE AMULETO DE CAMPEÓN ──
+        boolean hasAmulet = false;
+        for (ItemStack stack : player.inventory.items) {
+            if (stack != null && !stack.isEmpty()) {
+                String id = RangerItemDefinition.getIdFromStack(stack);
+                if (ChampionAmulet.ID.equals(id)) {
+                    hasAmulet = true;
+                    break;
+                }
+            }
+        }
+        if (hasAmulet) {
+            ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
+
+            // 1) Aplicar bonus de EXP
+            double xpPercent = amCfg.xpPercent;
+            int bonusXp = (int) Math.floor(base * (xpPercent / 100.0));
+            base += bonusXp;
+
+            // 2) Iterar sobre cada comando configurado
+            for (ItemsConfig.ChampionAmuletConfig.CommandEntry entry : amCfg.commands) {
+                double chancePercent = entry.chancePercent;
+                String rawCmd = entry.command;
+                double roll = RNG.nextDouble() * 100.0;
+                if (roll < chancePercent) {
+                    String cmdToRun = rawCmd.replace("%player%", player.getName().getString());
+                    MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+                    if (server != null) {
+                        server.getCommands().performCommand(
+                                server.createCommandSourceStack(),
+                                cmdToRun
+                        );
+                    }
+                }
+            }
+        }
+        // ────────────────────────────────────
+
+        // ── Cálculo normal (sin gema) ──
+        int total = applyMultipliers(player, base, key);
+        LimiterHelper.giveExpWithLimit(player, total);
     }
+
 
     @SubscribeEvent
     public static void onArceusPlayFlute(ArceusEvent.PlayFlute ev) {

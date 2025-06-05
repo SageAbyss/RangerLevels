@@ -86,38 +86,36 @@ public class RangerItemDefinition {
     public ItemStack createStack(int amount) {
         ItemStack stack = new ItemStack(baseItem, amount);
 
-        // 1) Guardar el ID en NBT
+        // 1) Guardar NBT igual que antes...
         CompoundNBT tag = stack.getOrCreateTag();
         tag.putString(NBT_ID_KEY, id);
-
         tag.putString(NBT_TIER_KEY, tier.name());
 
-
-        // 2) Asignar el nombre coloreado (hover name)
-        //    Ejemplo: en color AQUA + "Ticket Épico"
-        IFormattableTextComponent nombreColoreado =
-                new StringTextComponent(tierColor + displayName);
+        // 2) ------------------ Aquí cambiamos ------------------
+        // En lugar de usar TextFormatting y concatenar:
+        // IFormattableTextComponent nombreColoreado = new StringTextComponent(tierColor + displayName);
+        // ahora pintamos el displayName con degradado:
+        IFormattableTextComponent nombreColoreado = tier.applyGradient(displayName);
         stack.setHoverName(nombreColoreado);
+        // --------------------------------------------------------
 
-        // 3) Si hay lore definido, inyectarlo dentro de display → Lore
+        // 3) Lore (si existe)
         if (defaultLore != null && !defaultLore.isEmpty()) {
             CompoundNBT displayTag = tag.getCompound("display");
             ListNBT loreList = new ListNBT();
-
             for (IFormattableTextComponent line : defaultLore) {
-                // Convertir cada componente a JSON y guardarlo como StringNBT
                 String json = ITextComponent.Serializer.toJson(line);
                 loreList.add(StringNBT.valueOf(json));
             }
-
             displayTag.put("Lore", loreList);
             tag.put("display", displayTag);
         }
 
-        // 4) Asignar la etiqueta NBT al stack y devolverlo
+        // 4) Finalmente, setTag y return
         stack.setTag(tag);
         return stack;
     }
+
 
     /**
      * Dado un ItemStack, intenta extraer el Tier según el tag NBT “RangerTier”.

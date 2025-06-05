@@ -1,4 +1,3 @@
-// src/main/java/rl/sage/rangerlevels/gui/rewards/PackagesLevelMenu.java
 package rl.sage.rangerlevels.gui.rewards;
 
 import javax.annotation.Nullable;
@@ -9,18 +8,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.INamedContainerProvider;
+import net.minecraft.inventory.container.SimpleNamedContainerProvider;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
-
 import rl.sage.rangerlevels.capability.IPlayerRewards;
 import rl.sage.rangerlevels.capability.PlayerRewardsProvider;
 import rl.sage.rangerlevels.capability.RewardStatus;
@@ -30,29 +28,38 @@ import rl.sage.rangerlevels.gui.PlayerInfoUtils;
 import rl.sage.rangerlevels.rewards.RewardManager;
 import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
+/**
+ * Menú paginado que muestra todas las recompensas “Packages:<iv>:<nivel>:<ruta>”
+ * que el jugador tiene en estado PENDING. Permite reclamar individual, reclamar todas,
+ * navegar entre páginas y volver al menú anterior.
+ */
 public class PackagesLevelMenu {
+    // ranuras donde se ubicarán los botones de recompensa (4 filas × 7 columnas)
     private static final int[] SLOT_INDICES = {
-            10,11,12,13,14,15,16,
-            19,20,21,22,23,24,25,
-            28,29,30,31,32,33,34,
-            37,38,39,40,41,42,43
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
     };
     private static final int SLOTS_PER_PAGE = SLOT_INDICES.length;
 
+    /** Abre la página 1 por defecto */
     public static void open(ServerPlayerEntity player) {
         open(player, 1);
     }
 
+    /**
+     * Abre el menú “Packages” en la página indicada (1-based), mostrando solo
+     * las recompensas con estado PENDING, ordenadas por nivel y ruta.
+     */
     public static void open(final ServerPlayerEntity player, int page) {
+        @Nullable
         IPlayerRewards cap = player
                 .getCapability(PlayerRewardsProvider.REWARDS_CAP, null)
                 .orElse(null);
         if (cap == null) return;
 
-        // DEBUG
-       // System.out.println("[RewardsMenu][DEBUG] cap.getStatusMap() = " + cap.getStatusMap());
-
-        // 1) Filtrar claves válidas PENDING de Packages (format “Packages:iv:nivel:ruta”)
+        // 1) Filtrar y ordenar claves “Packages:<iv>:<nivel>:<ruta>” con estado PENDING
         List<String> pending = new ArrayList<>();
         for (Entry<String, RewardStatus> e : cap.getStatusMap().entrySet()) {
             String key = e.getKey();
@@ -63,11 +70,6 @@ public class PackagesLevelMenu {
                 pending.add(key);
             }
         }
-
-        // DEBUG
-       // System.out.println("[RewardsMenu][DEBUG] pendingPackages = " + pending);
-
-        // 2) Ordenar por nivel numérico (parts[2]) y luego ruta (parts[3])
         Collections.sort(pending, new Comparator<String>() {
             @Override
             public int compare(String a, String b) {
@@ -80,49 +82,57 @@ public class PackagesLevelMenu {
             }
         });
 
-        // 3) Paginación
-        int total    = pending.size();
+        // 2) Cálculo de páginas
+        int total = pending.size();
         int maxPages = Math.max(1, (int)Math.ceil(total / (double) SLOTS_PER_PAGE));
         if (page < 1) page = 1;
         if (page > maxPages) page = maxPages;
 
-        // 4) Inventario y título
+        // 3) Crear inventario de 54 ranuras (6×9) y título dinámico
         Inventory inv = new Inventory(54);
         inv.clearContent();
         ITextComponent title = new StringTextComponent(
                 "§6Recompensas por Paquetes §7(" + page + "/" + maxPages + ")"
         );
 
-        // 5) Botones fijos
-        inv.setItem(4,  PlayerInfoUtils.getInfoItem(player, 4));
+        // 4) Botones fijos
+        inv.setItem(4, PlayerInfoUtils.getInfoItem(player, 4));
         inv.setItem(49, MenuItemBuilder.createButton(
                 "§aReclamar todas",
                 Collections.singletonList("§7Haz clic para reclamar todas las recompensas pendientes"),
-                Items.EMERALD_BLOCK, "claim_all", 49
+                Items.EMERALD_BLOCK,
+                "claim_all",
+                49
         ));
         inv.setItem(53, MenuItemBuilder.createButton(
                 "§cVolver",
                 Collections.singletonList("§7Regresar al menú anterior"),
-                Items.BARRIER, "back", 53
+                Items.BARRIER,
+                "back",
+                53
         ));
 
-        // 6) Navegación
+        // 5) Navegación entre páginas
         if (page > 1) {
             inv.setItem(45, MenuItemBuilder.createButton(
                     "§e« Página " + (page - 1),
                     Collections.singletonList("§7Ir a la página anterior"),
-                    Items.ARROW, "page:" + (page - 1), 45
+                    Items.ARROW,
+                    "page:" + (page - 1),
+                    45
             ));
         }
         if (page < maxPages) {
             inv.setItem(51, MenuItemBuilder.createButton(
                     "§ePágina " + (page + 1) + " »",
                     Collections.singletonList("§7Ir a la página siguiente"),
-                    Items.ARROW, "page:" + (page + 1), 51
+                    Items.ARROW,
+                    "page:" + (page + 1),
+                    51
             ));
         }
 
-        // 7) Rellenar ítems de recompensas
+        // 6) Rellenar botones de recompensa para esta página
         int start = (page - 1) * SLOTS_PER_PAGE;
         int end   = Math.min(start + SLOTS_PER_PAGE, total);
         for (int i = start; i < end; i++) {
@@ -132,27 +142,28 @@ public class PackagesLevelMenu {
             String nivel = parts[2];
             String ruta  = parts[3];
             int slotIndex = SLOT_INDICES[i - start];
-            String btnId = String.join(".", "Packages", iv, nivel, ruta, String.valueOf(page));
 
-            inv.setItem(slotIndex, MenuItemBuilder.createButton(
+            // ID = "Packages.<iv>.<nivel>.<ruta>.<page>"
+            String btnId = "Packages." + iv + "." + nivel + "." + ruta + "." + page;
+            ItemStack button = MenuItemBuilder.createButton(
                     "§ePaquete " + nivel + " → " + ruta,
                     Collections.singletonList("§7Haz clic para reclamar esta recompensa"),
-                    Items.CHEST, btnId, slotIndex
-            ));
+                    Items.CHEST,
+                    btnId,
+                    slotIndex
+            );
+            inv.setItem(slotIndex, button);
         }
 
-        // 8) Abrir contenedor
-        INamedContainerProvider provider = new INamedContainerProvider() {
-            @Override public ITextComponent getDisplayName() { return title; }
-            @Override public Container createMenu(int windowId,
-                                                  PlayerInventory playerInv,
-                                                  PlayerEntity playerEntity) {
-                return new PackagesLevelMenuContainer(windowId, playerInv, inv);
-            }
-        };
+        // 7) Abrir contenedor usando un provider anónimo
+        SimpleNamedContainerProvider provider = new SimpleNamedContainerProvider(
+                (windowId, playerInv, unused) -> new PackagesLevelMenuContainer(windowId, playerInv, inv),
+                title
+        );
         player.openMenu(provider);
     }
 
+    /** Reclama una sola recompensa “Packages:<iv>:<nivel>:<ruta>”. */
     public static void claimSingle(ServerPlayerEntity player, String iv, String nivel, String ruta) {
         PlayerSoundUtils.playSoundToPlayer(
                 player,
@@ -162,7 +173,8 @@ public class PackagesLevelMenu {
                 0.5f
         );
         String key = String.join(":", "Packages", iv, nivel, ruta);
-        @Nullable IPlayerRewards cap = player
+        @Nullable
+        IPlayerRewards cap = player
                 .getCapability(PlayerRewardsProvider.REWARDS_CAP, null)
                 .orElse(null);
         if (cap == null) return;
@@ -184,8 +196,10 @@ public class PackagesLevelMenu {
         }
     }
 
+    /** Reclama todas las recompensas “Packages” en estado PENDING. */
     public static void claimAll(ServerPlayerEntity player) {
-        @Nullable IPlayerRewards cap = player
+        @Nullable
+        IPlayerRewards cap = player
                 .getCapability(PlayerRewardsProvider.REWARDS_CAP, null)
                 .orElse(null);
         if (cap == null) return;
@@ -194,9 +208,11 @@ public class PackagesLevelMenu {
         for (Map.Entry<String, RewardStatus> e : cap.getStatusMap().entrySet()) {
             String key = e.getKey();
             String[] parts = key.split(":");
-            if (parts.length != 4 || !parts[0].equals("Packages") || e.getValue() != RewardStatus.PENDING)
+            if (parts.length != 4
+                    || !parts[0].equals("Packages")
+                    || e.getValue() != RewardStatus.PENDING) {
                 continue;
-
+            }
             String iv    = parts[1];
             String nivel = parts[2];
             String ruta  = parts[3];
@@ -212,12 +228,11 @@ public class PackagesLevelMenu {
                     1.0f,
                     0.5f
             );
-        }
-        else {
+        } else {
             player.sendMessage(
                     new StringTextComponent("§cNo hay recompensas de paquete pendientes que puedas reclamar."),
                     player.getUUID()
-                );
-            }
+            );
+        }
     }
 }

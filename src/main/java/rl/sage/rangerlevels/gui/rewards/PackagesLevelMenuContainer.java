@@ -1,76 +1,57 @@
-// src/main/java/rl/sage/rangerlevels/gui/rewards/PackagesLevelMenuContainer.java
 package rl.sage.rangerlevels.gui.rewards;
 
-import javax.annotation.Nullable;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.container.ChestContainer;
 import net.minecraft.inventory.container.ClickType;
-import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.inventory.container.Slot;
-import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.SSetSlotPacket;
+import net.minecraft.item.ItemStack;
+import rl.sage.rangerlevels.gui.BaseMenuContainer6;
 import rl.sage.rangerlevels.gui.MenuSlot;
 
-public class PackagesLevelMenuContainer extends ChestContainer {
+/**
+ * Antes extendía ChestContainer(GENERIC_9x6), ahora extiende BaseMenuContainer6.
+ */
+public class PackagesLevelMenuContainer extends BaseMenuContainer6 {
     private final Inventory menuInv;
 
     public PackagesLevelMenuContainer(int windowId, PlayerInventory inv, Inventory menuInv) {
-        super(ContainerType.GENERIC_9x6, windowId, inv, menuInv, 6);
+        super(windowId, inv, menuInv);
         this.menuInv = menuInv;
-        menuInv.startOpen(inv.player);
-
-        // 1) Proteger cada slot con MenuSlot
-        for (int i = 0; i < menuInv.getContainerSize(); i++) {
-            Slot old = this.slots.get(i);
-            MenuSlot ms = new MenuSlot(menuInv, i, old.x, old.y);
-            ms.set(old.getItem());
-            this.slots.set(i, ms);
-        }
     }
 
     @Override
-    public ItemStack clicked(int slotId, int dragType, ClickType clickTypeIn, PlayerEntity player) {
-        if (slotId >= 0 && slotId < menuInv.getContainerSize()) {
-            Slot slot = this.slots.get(slotId);
-            ItemStack original = slot.getItem();
+    protected void handleButtonClick(String buttonId, ServerPlayerEntity player) {
+        // 1) Paginación: "page:<número>"
+        if (buttonId.startsWith("page:")) {
+            try {
+                int newPage = Integer.parseInt(buttonId.split(":")[1]);
+                PackagesLevelMenu.open(player, newPage);
+            } catch (NumberFormatException ignore) {}
+            return;
+        }
 
-            if (player instanceof ServerPlayerEntity) {
-                ServerPlayerEntity sp = (ServerPlayerEntity) player;
-                String id = "";
-                if (original.hasTag()) {
-                    id = original.getTag().getString("MenuButtonID");
-                }
+        switch (buttonId) {
+            case "claim_all":
+                PackagesLevelMenu.claimAll(player);
+                player.getServer().execute(() -> {
+                    PackagesLevelMenu.open(player, 1);
+                });
+                break;
 
-                // limpiar cursor en cliente
-                sp.connection.send(new SSetSlotPacket(-1, 0, ItemStack.EMPTY));
-                sp.inventory.setCarried(ItemStack.EMPTY);
+            case "back":
+                player.closeContainer();
+                player.getServer().execute(() -> {
+                    RewardsMenu.open(player);
+                });
+                break;
 
-                // paginación
-                if (id.startsWith("page:")) {
-                    try {
-                        int nuevaPagina = Integer.parseInt(id.split(":")[1]);
-                        PackagesLevelMenu.open(sp, nuevaPagina);
-                    } catch (NumberFormatException ignore) {}
-                    return original.copy();
-                }
-
-                // acciones fijas
-                if ("info".equals(id)) {
-                    // nada
-                } else if ("back".equals(id)) {
-                    sp.closeContainer();
-                    RewardsMenu.open(sp);
-                } else if ("claim_all".equals(id)) {
-                    PackagesLevelMenu.claimAll(sp);
-                    PackagesLevelMenu.open(sp, 1);
-                }
-                // reclamar un solo paquete
-                else if (id.startsWith("Packages.")) {
-                    // id = "Packages.<iv>.<nivel>.<ruta>.<page>"
-                    String[] parts = id.split("\\.");
+            default:
+                // "Packages.<iv>.<nivel>.<ruta>.<page>"
+                if (buttonId.startsWith("Packages.")) {
+                    String[] parts = buttonId.split("\\.");
                     if (parts.length == 5) {
                         String iv     = parts[1];
                         String nivel  = parts[2];
@@ -81,33 +62,13 @@ public class PackagesLevelMenuContainer extends ChestContainer {
                         } catch (NumberFormatException e) {
                             pagina = 1;
                         }
-                        PackagesLevelMenu.claimSingle(sp, iv, nivel, ruta);
-                        PackagesLevelMenu.open(sp, pagina);
+                        PackagesLevelMenu.claimSingle(player, iv, nivel, ruta);
+                        player.getServer().execute(() -> {
+                            PackagesLevelMenu.open(player, 1);
+                        });
                     }
                 }
-
-                // restaurar slot en servidor y sincronizar
-                slot.set(original.copy());
-                slot.setChanged();
-                this.broadcastChanges();
-                sp.connection.send(new SSetSlotPacket(this.containerId, slotId, original.copy()));
-                return original.copy();
-            }
-
-            // cliente o no-ServerPlayer: restaurar y devolver vacío
-            slot.set(original.copy());
-            slot.setChanged();
-            this.broadcastChanges();
-            return ItemStack.EMPTY;
+                break;
         }
-
-        return super.clicked(slotId, dragType, clickTypeIn, player);
     }
-
-    // Bloquear cualquier otra forma de mover ítems
-    @Override public ItemStack quickMoveStack(PlayerEntity player, int index) { return ItemStack.EMPTY; }
-    @Override public boolean canTakeItemForPickAll(ItemStack stack, Slot slot) { return false; }
-    @Override public boolean canDragTo(Slot slot) { return false; }
-    @Override protected boolean moveItemStackTo(ItemStack stack, int start, int end, boolean rev) { return false; }
-    @Override public boolean stillValid(PlayerEntity player) { return true; }
 }

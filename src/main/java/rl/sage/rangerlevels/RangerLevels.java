@@ -21,10 +21,7 @@ import org.apache.logging.log4j.Logger;
 
 import rl.sage.rangerlevels.commands.CommandRegistry;
 import rl.sage.rangerlevels.capability.*;
-import rl.sage.rangerlevels.config.AdminConfig;
-import rl.sage.rangerlevels.config.ConfigLoader;
-import rl.sage.rangerlevels.config.ExpConfig;
-import rl.sage.rangerlevels.config.RewardConfig;
+import rl.sage.rangerlevels.config.*;
 import rl.sage.rangerlevels.database.*;
 import rl.sage.rangerlevels.events.ExpEventHandler;
 import rl.sage.rangerlevels.events.PixelmonEventHandler;
@@ -49,6 +46,7 @@ public class RangerLevels {
     public RangerLevels() {
         INSTANCE = this;
         ExpConfig.load();  // Pre-carga de config
+        ItemsConfig.load();
 
         // 3) Inicializar gestores de datos
         this.dataManager   = FlatFilePlayerDataManager.getInstance();

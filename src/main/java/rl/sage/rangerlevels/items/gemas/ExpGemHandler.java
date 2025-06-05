@@ -1,80 +1,117 @@
 package rl.sage.rangerlevels.items.gemas;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 /**
  * Mantenimiento de las Gemas de Experiencia activas:
- *  - Para cada jugador (UUID) guardamos qué bonus (%) tiene y hasta qué timestamp dura.
+ *  - Ahora se almacena en el NBT persistente de cada jugador (player.getPersistentData()).
+ *  - Claves usadas en el NBT:
+ *      "RangerGem_Bonus"      → double (bonus actual, ej. 0.10, 0.30, 0.50)
+ *      "RangerGem_ExpiresAt"  → long   (timestamp de expiración en millis)
  */
 public class ExpGemHandler {
 
-    /** Estructura interna que guarda cuánto bonus y hasta cuándo. */
-    private static class GemData {
-        private final double bonusMultiplier; // por ejemplo 0.10 para 10%, 0.30 para 30%, etc.
-        private final long expiresAtMs;       // System.currentTimeMillis() + duración
-
-        private GemData(double bonusMultiplier, long expiresAtMs) {
-            this.bonusMultiplier = bonusMultiplier;
-            this.expiresAtMs = expiresAtMs;
-        }
-    }
-
-    /** Mapa que asocia jugador UUID → GemData activa */
-    private static final Map<UUID, GemData> ACTIVE_GEMS = new HashMap<>();
+    private static final String NBT_KEY = "RangerGem";
+    private static final String NBT_BONUS      = "RangerGem_Bonus";
+    private static final String NBT_EXPIRES_AT = "RangerGem_ExpiresAt";
 
     /**
      * Activa una gema para el jugador dado, con X porcentaje de bonus y duración en milisegundos.
-     * Si ya tenía una gema activa, la sobrescribe si la nueva expira más tarde.
+     * Si ya tenía una gema activa en NBT y la nueva expira más tarde, la sobrescribe.
      *
-     * @param player          Jugador al que activar la gema
-     * @param bonusMultiplier Porcentaje extra, expresado como decimal (ej. 0.10, 0.30, 0.50)
-     * @param durationMs      Duración de la gema en milisegundos
+     * @param player        Jugador al que activar la gema
+     * @param bonusMultiplier  porcentaje extra  (ej. 0.10, 0.30, 0.50)
+     * @param durationMs    duración de la gema en ms
      */
     public static void activarGem(ServerPlayerEntity player, double bonusMultiplier, long durationMs) {
-        UUID uuid = player.getUUID();
-        long now = System.currentTimeMillis();
-        long newExpires = now + durationMs;
+        CompoundNBT persist = player.getPersistentData();
 
-        GemData existing = ACTIVE_GEMS.get(uuid);
-        if (existing != null) {
-            // Si ya tenía una gema activa y la nueva dura más tiempo, la sobrescribimos.
-            if (newExpires > existing.expiresAtMs) {
-                ACTIVE_GEMS.put(uuid, new GemData(bonusMultiplier, newExpires));
-            }
-        } else {
-            ACTIVE_GEMS.put(uuid, new GemData(bonusMultiplier, newExpires));
+        long now = System.currentTimeMillis();
+        long newExpiresAt = now + durationMs;
+
+        double existingBonus = getBonus(player);           // lee NBT
+        long   existingExpires = getExpiresAt(player);     // lee NBT
+
+        // Si hay una gema activa y expira más tarde, no sobrescribimos.
+        if (existingBonus > 0.0 && existingExpires >= newExpiresAt) {
+            return;
         }
+
+        // Guardamos en NBT:
+        CompoundNBT gemTag = new CompoundNBT();
+        gemTag.putDouble(NBT_BONUS, bonusMultiplier);
+        gemTag.putLong(NBT_EXPIRES_AT, newExpiresAt);
+        persist.put(NBT_KEY, gemTag);
+
+        // Sincronizar con cliente si fuese necesario (dependerá de cómo envíes el NBT al cliente)
+        // Por ejemplo: Packets para sincronizar persistentData.
     }
 
     /**
      * Devuelve el bonus actual para ese jugador (0.0 si no hay gema activa o ya expiró).
-     * Si la gema expiró, la remueve del mapa.
-     *
-     * @param player Jugador a consultar
-     * @return Double entre 0.0 y (por ejemplo) 0.50. 0.0 = sin bonus.
+     * Si la gema expiró, limpia las claves en NBT y devuelve 0.
      */
     public static double getBonus(ServerPlayerEntity player) {
-        UUID uuid = player.getUUID();
-        GemData data = ACTIVE_GEMS.get(uuid);
-        if (data == null) return 0.0;
+        CompoundNBT persist = player.getPersistentData();
+        if (!persist.contains(NBT_KEY)) return 0.0;
 
-        long now = System.currentTimeMillis();
-        if (now >= data.expiresAtMs) {
-            // Ya expiró → removemos y devolvemos 0
-            ACTIVE_GEMS.remove(uuid);
+        CompoundNBT gemTag = persist.getCompound(NBT_KEY);
+        if (!gemTag.contains(NBT_BONUS) || !gemTag.contains(NBT_EXPIRES_AT)) {
+            persist.remove(NBT_KEY);
             return 0.0;
         }
-        return data.bonusMultiplier;
+
+        long expiresAt = gemTag.getLong(NBT_EXPIRES_AT);
+        long now = System.currentTimeMillis();
+        if (now >= expiresAt) {
+            // expiró → limpiamos NBT
+            persist.remove(NBT_KEY);
+            return 0.0;
+        }
+
+        return gemTag.getDouble(NBT_BONUS);
     }
 
     /**
-     * (Opcional) Remueve manualmente la gema activa de un jugador, si se quiere invalidar antes.
+     * Devuelve el tiempo restante en milisegundos de la gema activa para el jugador (0 si no hay).
+     */
+    public static long getRemainingDurationMs(ServerPlayerEntity player) {
+        CompoundNBT persist = player.getPersistentData();
+        if (!persist.contains(NBT_KEY)) return 0L;
+
+        CompoundNBT gemTag = persist.getCompound(NBT_KEY);
+        if (!gemTag.contains(NBT_EXPIRES_AT)) {
+            persist.remove(NBT_KEY);
+            return 0L;
+        }
+
+        long expiresAt = gemTag.getLong(NBT_EXPIRES_AT);
+        long now = System.currentTimeMillis();
+        long remaining = expiresAt - now;
+        if (remaining <= 0L) {
+            persist.remove(NBT_KEY);
+            return 0L;
+        }
+        return remaining;
+    }
+
+    /**
+     * (Opcional) Devuelve el timestamp de expiración, o 0 si no hay gema.
+     */
+    public static long getExpiresAt(ServerPlayerEntity player) {
+        CompoundNBT persist = player.getPersistentData();
+        if (!persist.contains(NBT_KEY)) return 0L;
+        CompoundNBT gemTag = persist.getCompound(NBT_KEY);
+        return gemTag.getLong(NBT_EXPIRES_AT);
+    }
+
+    /**
+     * (Opcional) Forzar limpieza de la gema activa (por ejemplo, en algún comando).
      */
     public static void limpiarGem(ServerPlayerEntity player) {
-        ACTIVE_GEMS.remove(player.getUUID());
+        player.getPersistentData().remove(NBT_KEY);
     }
 }

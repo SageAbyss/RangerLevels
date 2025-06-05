@@ -10,6 +10,16 @@ import rl.sage.rangerlevels.config.ConfigLoader;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.events.PixelmonEventHandler;
+import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
+import rl.sage.rangerlevels.items.amuletos.ShinyAmuletEstelar;
+import rl.sage.rangerlevels.items.amuletos.ShinyAmuletLegendaria;
+import rl.sage.rangerlevels.items.amuletos.ShinyAmuletMitico;
+import rl.sage.rangerlevels.items.cetro.CetroDivinoComun;
+import rl.sage.rangerlevels.items.cetro.CetroDivinoEpico;
+import rl.sage.rangerlevels.items.cetro.CetroDivinoMitico;
+import rl.sage.rangerlevels.items.frasco.FrascoCalmaEpico;
+import rl.sage.rangerlevels.items.frasco.FrascoCalmaEstelar;
+import rl.sage.rangerlevels.items.frasco.FrascoCalmaRaro;
 import rl.sage.rangerlevels.items.gemas.GemaExpComun;
 import rl.sage.rangerlevels.items.gemas.GemaExpEpico;
 import rl.sage.rangerlevels.items.gemas.GemaExpLegendario;
@@ -37,13 +47,23 @@ public class SetupEvents {
         //ITEMS
         new TicketSuper();
         new TicketUltra();
+        new TicketUltraShort();
         new TicketMaster();
         new TicketNivel();
         new CarameloNivel();
         new GemaExpComun();
         new GemaExpEpico();
         new GemaExpLegendario();
-
+        new FrascoCalmaRaro();
+        new FrascoCalmaEpico();
+        new FrascoCalmaEstelar();
+        new ChampionAmulet();
+        new ShinyAmuletEstelar();
+        new ShinyAmuletLegendaria();
+        new ShinyAmuletMitico();
+        new CetroDivinoComun();
+        new CetroDivinoEpico();
+        new CetroDivinoMitico();
 
         PixelmonEventHandler.register();
         LOGGER.info("§8{}:§a Items cargados con éxito", PREFIX_STR);

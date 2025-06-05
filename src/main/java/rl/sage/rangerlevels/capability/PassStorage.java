@@ -17,6 +17,8 @@ public class PassStorage implements Capability.IStorage<IPassCapability> {
         CompoundNBT tag = new CompoundNBT();
         tag.putInt("PassTier", instance.getTier());
         tag.putLong("PassExpiresAt", instance.getExpiresAt());
+        tag.putInt("PreviousPassTier", instance.getPreviousTier());
+        tag.putLong("PreviousPassExpiresAt", instance.getPreviousExpiresAt());
         return tag;
     }
 
@@ -31,5 +33,7 @@ public class PassStorage implements Capability.IStorage<IPassCapability> {
         CompoundNBT tag = (CompoundNBT) nbt;
         instance.setTier(tag.getInt("PassTier"));
         instance.setExpiresAt(tag.getLong("PassExpiresAt"));
+        instance.setPreviousTier(tag.getInt("PreviousPassTier"));
+        instance.setPreviousExpiresAt(tag.getLong("PreviousPassExpiresAt"));
     }
 }

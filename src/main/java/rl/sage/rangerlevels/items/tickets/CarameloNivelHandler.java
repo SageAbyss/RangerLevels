@@ -3,11 +3,14 @@ package rl.sage.rangerlevels.items.tickets;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.SoundEvents;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.Hand;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
+import net.minecraft.network.play.server.STitlePacket;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -20,6 +23,8 @@ import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
 import rl.sage.rangerlevels.rewards.RewardManager;
 import rl.sage.rangerlevels.util.GradientText;
+
+import java.util.UUID;
 
 /**
  * Handler para el “Caramelo de Nivel”. Comprueba que el ItemStack tenga
@@ -73,15 +78,12 @@ public class CarameloNivelHandler {
             int maxLevel = cfg.getMaxLevel();
             LevelsConfig levelsCfg = cfg.getLevels();
 
-            // 5) Si ya está en nivel máximo, enviamos mensaje y no consumimos
+            // 5) Si ya está en nivel máximo, enviamos mensaje decorativo y no consumimos
             if (currentLevel >= maxLevel) {
-                serverPlayer.sendMessage(
-                        new StringTextComponent(
-                                TextFormatting.RED +
-                                        "Ya has alcanzado el nivel máximo (" + maxLevel + ")."
-                        ),
-                        serverPlayer.getUUID()
-                );
+                StringTextComponent titulo = new StringTextComponent(TextFormatting.DARK_PURPLE + "✦ Caramelo de Nivel ✦");
+                StringTextComponent linea = new StringTextComponent(TextFormatting.RED + "Ya has alcanzado el nivel máximo (" + maxLevel + ").");
+                serverPlayer.sendMessage(titulo.copy(), serverPlayer.getUUID());
+                serverPlayer.sendMessage(linea, serverPlayer.getUUID());
                 return;
             }
 
@@ -108,9 +110,11 @@ public class CarameloNivelHandler {
                 serverPlayer.displayClientMessage(title, false);
                 serverPlayer.displayClientMessage(sep, false);
 
-                // 6.3) Mensaje flotante en action bar
+                // 6.3) Mensaje flotante en action bar con borde Unicode
+                String actionBar = TextFormatting.YELLOW + "⇧ "
+                        + TextFormatting.DARK_AQUA + "Nivel Ranger " + lvl;
                 serverPlayer.displayClientMessage(
-                        new StringTextComponent("§e⇧ §3Nivel Ranger " + lvl),
+                        new StringTextComponent(actionBar),
                         true
                 );
 
@@ -118,8 +122,8 @@ public class CarameloNivelHandler {
                 serverPlayer.level.playSound(
                         null,
                         serverPlayer.blockPosition(),
-                        net.minecraft.util.SoundEvents.PLAYER_LEVELUP,
-                        net.minecraft.util.SoundCategory.PLAYERS,
+                        SoundEvents.PLAYER_LEVELUP,
+                        SoundCategory.PLAYERS,
                         1.0f, 1.0f
                 );
             }
@@ -128,6 +132,10 @@ public class CarameloNivelHandler {
             if (!serverPlayer.isCreative()) {
                 held.shrink(1);
             }
+
+            // 9) Mensaje final indicando activado
+            StringTextComponent msgTitulo = new StringTextComponent(TextFormatting.DARK_GREEN + "✦ ᴀᴄᴛɪᴠᴀᴅᴏ Caramelo de Nivel ✦");
+            serverPlayer.sendMessage(msgTitulo, serverPlayer.getUUID());
         });
     }
 

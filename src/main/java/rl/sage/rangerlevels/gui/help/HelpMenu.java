@@ -1,9 +1,9 @@
-// src/main/java/rl/sage/rangerlevels/gui/help/HelpMenu.java
 package rl.sage.rangerlevels.gui.help;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.SimpleNamedContainerProvider;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
@@ -15,9 +15,15 @@ import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.Arrays;
 
+/**
+ * HelpMenu: construye el inventario de 27 ranuras y coloca cada botón con su NBT
+ * (MenuButtonID + MenuSlot). Al abrirse, imprime en consola los tags NBT de cada botón
+ * para confirmar que llevan correctamente MenuButtonID y MenuSlot.
+ */
 public class HelpMenu {
 
     public static void open(ServerPlayerEntity player) {
+        // Reproducir sonido al abrir
         PlayerSoundUtils.playSoundToPlayer(
                 player,
                 SoundEvents.NOTE_BLOCK_BIT,
@@ -25,72 +31,80 @@ public class HelpMenu {
                 1.0f,
                 0.8f
         );
-        // 1) Creamos un inventario virtual de 27 slots (3×9)
+
+        // 1) Inventario virtual de 27 slots (3×9)
         Inventory inv = new Inventory(27);
         inv.clearContent();
 
+        // 1.a) Slot 4: Info del jugador (no es “botón”; no lleva MenuButtonID/MenuSlot)
         inv.setItem(4, PlayerInfoUtils.getInfoItem(player, 4));
 
-        // 2) Para cada sección, extraemos el texto hover y lo usamos como lore
-        //    buildEventosHover(): devuelve un ITextComponent con líneas separadas por '\n'
-        String[] eventos = HelpButtonUtils.buildEventosHover().getString().split("\n");
-        inv.setItem(22, MenuItemBuilder.createButton(
+        // 2) Botones “Help” (estos sí llevan NBT de botón)
+
+        // – Eventos Activos (slot 22)
+        ItemStack botonTopic1 = MenuItemBuilder.createButton(
                 "§f§l✦ Eventos Activos",
-                Arrays.asList(eventos),
+                Arrays.asList(HelpButtonUtils.buildEventosHover().getString().split("\n")),
                 Items.FIREWORK_STAR,
                 "topic1",
                 22
-        ));
+        );
+        inv.setItem(22, botonTopic1);
 
-        String[] compra = HelpButtonUtils.buildCompraHover().getString().split("\n");
-        inv.setItem(10, MenuItemBuilder.createButton(
+        // – Cómo comprar el pase (slot 10)
+        ItemStack botonTopic2 = MenuItemBuilder.createButton(
                 "§e§l✧ Cómo comprar el pase",
-                Arrays.asList(compra),
+                Arrays.asList(HelpButtonUtils.buildCompraHover().getString().split("\n")),
                 Items.EMERALD,
                 "topic2",
                 10
-        ));
+        );
+        inv.setItem(10, botonTopic2);
 
+        // – Nivel Máximo Actual (slot 12)
         String maxLevel = "§7Nivel Máximo: §f" + rl.sage.rangerlevels.config.ExpConfig.get().getMaxLevel();
-        inv.setItem(12, MenuItemBuilder.createButton(
+        ItemStack botonTopic3 = MenuItemBuilder.createButton(
                 "§f§l✦ Nivel Máximo Actual",
                 Arrays.asList(maxLevel),
                 Items.EXPERIENCE_BOTTLE,
                 "topic3",
                 12
-        ));
+        );
+        inv.setItem(12, botonTopic3);
 
-        String[] reinicio = HelpButtonUtils.buildReinicioHover(player).getString().split("\n");
-        inv.setItem(14, MenuItemBuilder.createButton(
+        // – Próximo Reinicio del pase (slot 14)
+        ItemStack botonTopic4 = MenuItemBuilder.createButton(
                 "§e§l✧ Próximo Reinicio del pase",
-                Arrays.asList(reinicio),
+                Arrays.asList(HelpButtonUtils.buildReinicioHover(player).getString().split("\n")),
                 Items.CLOCK,
                 "topic4",
                 14
-        ));
+        );
+        inv.setItem(14, botonTopic4);
 
-        String[] limiter = HelpButtonUtils.buildLimiterHover(player).getString().split("\n");
-        inv.setItem(16, MenuItemBuilder.createButton(
+        // – Limitador Activo (slot 16)
+        ItemStack botonTopic5 = MenuItemBuilder.createButton(
                 "§f§l✦ Limitador Activo",
-                Arrays.asList(limiter),
+                Arrays.asList(HelpButtonUtils.buildLimiterHover(player).getString().split("\n")),
                 Items.BARRIER,
                 "topic5",
                 16
-        ));
+        );
+        inv.setItem(16, botonTopic5);
 
-        // Botón de Volver al menú principal
-        inv.setItem(26, MenuItemBuilder.createButton(
+        // 3) Botón “Volver” (slot 26)
+        ItemStack botonBack = MenuItemBuilder.createButton(
                 "§cVolver",
                 Arrays.asList("§6Regresa al menú principal"),
                 Items.ARROW,
                 "back",
                 26
-        ));
+        );
+        inv.setItem(26, botonBack);
 
-        // 3) Abrimos el menú
+        // 4) Abrir el contenedor con SimpleNamedContainerProvider y GENERIC_9x3
         player.openMenu(new SimpleNamedContainerProvider(
-                (windowId, playerInv, p) ->
-                        new HelpMenuContainer(windowId, playerInv, inv),
+                (windowId, playerInv, p) -> new HelpMenuContainer(windowId, playerInv, inv),
                 new StringTextComponent("§6Ayuda RangerLevels")
         ));
     }

@@ -15,6 +15,12 @@ public interface IPassCapability {
     /** Fija el timestamp (ms) de expiración. */
     void setExpiresAt(long expiresAt);
 
+    int getPreviousTier();
+    void setPreviousTier(int previousTier);
+
+    long getPreviousExpiresAt();
+    void setPreviousExpiresAt(long previousExpiresAt);
+
     /**
      * Sincroniza la capability en el cliente (si implementaras algo en client-side).
      * Como tu mod es server-only, puede quedarse vacío o lanzar NoOp.

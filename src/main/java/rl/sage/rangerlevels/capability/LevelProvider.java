@@ -6,11 +6,9 @@ import net.minecraft.network.play.server.SPlaySoundEffectPacket;
 import net.minecraft.network.play.server.STitlePacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.SoundEvents;
-import net.minecraft.util.text.ChatType;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
@@ -28,6 +26,9 @@ import rl.sage.rangerlevels.broadcast.BroadcastUtil;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.ExpConfig.SoundConfig;
 import rl.sage.rangerlevels.config.ExpConfig.MaxLevelBroadcastConfig;
+import rl.sage.rangerlevels.config.ItemsConfig;
+import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
+import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.rewards.RewardManager;
 import rl.sage.rangerlevels.util.*;
 
@@ -66,6 +67,31 @@ public class LevelProvider {
     }
 
     public static void giveExpAndNotify(ServerPlayerEntity player, int amount) {
+        // =========================
+        // 1) ¿Lleva Amuleto de Campeón?
+        // =========================
+        boolean hasAmulet = false;
+        for (int slot = 0; slot < player.inventory.getContainerSize(); slot++) {
+            net.minecraft.item.ItemStack stack = player.inventory.getItem(slot);
+            if (stack != null && !stack.isEmpty()) {
+                String id = RangerItemDefinition.getIdFromStack(stack);
+                if (ChampionAmulet.ID.equals(id)) {
+                    hasAmulet = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasAmulet) {
+            // 1.1) Leemos configuración de ItemsConfig.yml
+            ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
+
+            // 1.2) Aplicar bonus de EXP
+            double xpPercent = amCfg.xpPercent;                // ej. 15.0
+            int bonusXp = (int) Math.floor(amount * (xpPercent / 100.0));
+            amount += bonusXp;
+        }
+
         if (!WorldUtils.isWorldAllowed(player)) {
             // Mensaje simple sin colores avanzados
             player.displayClientMessage(

@@ -6,7 +6,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.STitlePacket;
 import net.minecraft.util.Hand;
 import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.SoundEvents;
@@ -21,22 +20,22 @@ import rl.sage.rangerlevels.RangerLevels;
 import rl.sage.rangerlevels.capability.IPassCapability;
 import rl.sage.rangerlevels.capability.PassCapabilities;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
-import rl.sage.rangerlevels.items.Tier;
 import rl.sage.rangerlevels.pass.PassManager;
 import rl.sage.rangerlevels.pass.PassType;
+import rl.sage.rangerlevels.pass.PassUtil;
 
 import java.time.Duration;
 
 /**
  * Listener para “Ticket Ultra” (ID = "ticket_ultra"):
  *  1) Comprueba que el ItemStack tenga NBT “RangerID” = "ticket_ultra".
- *  2) Otorga el pase ULTRA si no está activo, envía mensajes/título, consume el ítem.
- *  3) Cancela cualquier RightClickBlock si el ID coincide.
+ *  2) Restaura el pase anterior si expiró y notifica.
+ *  3) Si no tiene Ultra, lo otorga por 1 día; si ya tiene, muestra tiempo restante.
+ *  4) Cancela cualquier RightClickBlock si el ID coincide.
  */
 @Mod.EventBusSubscriber(modid = RangerLevels.MODID)
 public class TicketUltraHandler {
 
-    // Duración del pase ULTRA: 1 día
     private static final long ULTRA_DURATION_MS = Duration.ofDays(1).toMillis();
     private static final String ID_TICKET_ULTRA = "ticket_ultra";
 
@@ -47,48 +46,59 @@ public class TicketUltraHandler {
         Hand hand = event.getHand();
 
         ItemStack held = player.getItemInHand(hand);
-        if (held == null || held.isEmpty()) {
-            return;
-        }
+        if (held == null || held.isEmpty()) return;
 
-        // 1) Verificar el ID NBT “ticket_ultra”
+        // 1) Verificar ID NBT
         String id = RangerItemDefinition.getIdFromStack(held);
-        if (!ID_TICKET_ULTRA.equals(id)) {
-            return;
-        }
+        if (!ID_TICKET_ULTRA.equals(id)) return;
 
-        // ── BLOQUEAR USO VANILLA ──
+        // Bloquear uso vanilla
         event.setCanceled(true);
         event.setCancellationResult(ActionResultType.SUCCESS);
 
-        // ── LÓGICA SOLO EN SERVIDOR ──
-        if (world.isClientSide) {
-            return;
-        }
-        if (!(player instanceof ServerPlayerEntity)) {
-            return;
-        }
+        // Solo en servidor
+        if (world.isClientSide) return;
+        if (!(player instanceof ServerPlayerEntity)) return;
         ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
 
-        // 2) Chequear pase actual
-        PassType actual = PassManager.getCurrentPass(serverPlayer);
+        // 2) Verificar/restaurar pase expirado y notificar
+        PassType actual = PassUtil.checkAndRestorePass(serverPlayer);
+
+        // 3) Si ya tiene Ultra (o Master), mostrar tiempo restante
         if (actual.getTier() >= PassType.ULTRA.getTier()) {
-            serverPlayer.sendMessage(
-                    new StringTextComponent(
-                            TextFormatting.RED +
-                                    "Ya tienes el pase “" + actual + "” activo §7(igual o mayor)§r."
-                    ),
-                    serverPlayer.getUUID()
-            );
+            IPassCapability cap = PassCapabilities.get(serverPlayer);
+            long expiresAt = cap.getExpiresAt();
+            String remainingTime = "Desconocido";
+            if (expiresAt != Long.MAX_VALUE) {
+                long millisLeft = expiresAt - System.currentTimeMillis();
+                if (millisLeft > 0) {
+                    Duration duration = Duration.ofMillis(millisLeft);
+                    long hours = duration.toHours();
+                    long minutes = duration.minusHours(hours).toMinutes();
+                    remainingTime = hours + "h " + minutes + "m";
+                } else {
+                    remainingTime = "Expirado";
+                }
+            }
+
+            StringTextComponent titulo = new StringTextComponent(TextFormatting.DARK_PURPLE + "✦ Pase Ranger ✦");
+            IFormattableTextComponent linea1 = new StringTextComponent(TextFormatting.RED + "❖ Ya tienes el pase ")
+                    .append(actual.getGradientDisplayName())
+                    .append(new StringTextComponent(TextFormatting.RED + " activo."));
+            IFormattableTextComponent linea2 = new StringTextComponent(TextFormatting.GRAY + "❖ Tiempo restante: ")
+                    .append(new StringTextComponent(TextFormatting.YELLOW + remainingTime));
+            serverPlayer.sendMessage(titulo.copy(), serverPlayer.getUUID());
+            serverPlayer.sendMessage(linea1, serverPlayer.getUUID());
+            serverPlayer.sendMessage(linea2, serverPlayer.getUUID());
             return;
         }
 
-        // 3) Otorgar Ultra Pass (1 día)
+        // 4) Otorgar Ultra Pass (1 día), guardando el pase anterior
         IPassCapability cap = PassCapabilities.get(serverPlayer);
         cap.grantPass(PassType.ULTRA.getTier(), ULTRA_DURATION_MS);
         cap.syncToClient(serverPlayer);
 
-        // 4) Notificar fecha de expiración en chat
+        // 5) Notificar fecha de expiración en chat
         long expiresAt = cap.getExpiresAt();
         String expirationTime;
         if (expiresAt == Long.MAX_VALUE) {
@@ -100,18 +110,20 @@ public class TicketUltraHandler {
                     .format(java.time.Instant.ofEpochMilli(expiresAt))
                     + " UTC";
         }
-        IFormattableTextComponent msg = new StringTextComponent("")
-                .append(new StringTextComponent("¡Has activado el pase ").withStyle(TextFormatting.GREEN))
+
+        StringTextComponent titulo = new StringTextComponent(TextFormatting.DARK_PURPLE + "✦ Pase Ranger ✦");
+        IFormattableTextComponent linea1 = new StringTextComponent(TextFormatting.GREEN + "❖ ᴀᴄᴛɪᴠᴀᴅᴏ ")
                 .append(PassType.ULTRA.getGradientDisplayName())
-                .append(new StringTextComponent(" por 1 día! ").withStyle(TextFormatting.GREEN))
-                .append(new StringTextComponent("Expira: ").withStyle(TextFormatting.GRAY))
-                .append(new StringTextComponent(expirationTime).withStyle(TextFormatting.YELLOW));
+                .append(new StringTextComponent(TextFormatting.GREEN + " por 1 día!"));
+        IFormattableTextComponent linea2 = new StringTextComponent(TextFormatting.GRAY + "❖ Expira: ")
+                .append(new StringTextComponent(TextFormatting.YELLOW + expirationTime));
+        serverPlayer.sendMessage(titulo.copy(), serverPlayer.getUUID());
+        serverPlayer.sendMessage(linea1, serverPlayer.getUUID());
+        serverPlayer.sendMessage(linea2, serverPlayer.getUUID());
 
-        serverPlayer.sendMessage(msg, serverPlayer.getUUID());
-
-        // 5) Enviar título y subtítulo
-        ITextComponent titleText = new StringTextComponent("Pase Ranger").withStyle(TextFormatting.GOLD);
-        ITextComponent subTitleText = new StringTextComponent("Ahora tienes el ")
+        // 6) Enviar título y subtítulo
+        IFormattableTextComponent titleText = new StringTextComponent("Pase Ranger").withStyle(TextFormatting.GOLD);
+        IFormattableTextComponent subTitleText = new StringTextComponent("ᴀᴄᴛɪᴠᴀᴅᴏ ")
                 .withStyle(TextFormatting.AQUA)
                 .append(PassType.ULTRA.getGradientDisplayName());
         STitlePacket packetTitle = new STitlePacket(STitlePacket.Type.TITLE, titleText);
@@ -119,18 +131,18 @@ public class TicketUltraHandler {
         serverPlayer.connection.send(packetTitle);
         serverPlayer.connection.send(packetSub);
 
-        // 6) Consumir el ticket (si no está en creativo)
+        // 7) Consumir ticket (si no está en creativo)
         if (!serverPlayer.isCreative()) {
             held.shrink(1);
         }
 
-        // 7) Reproducir sonido de confirmación
+        // 8) Reproducir sonido de confirmación
         serverPlayer.level.playSound(
                 null,
                 serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
-                SoundEvents.NOTE_BLOCK_CHIME,
+                SoundEvents.IRON_DOOR_OPEN,
                 SoundCategory.MASTER,
-                1.0f, 0.8f
+                1.0f, 0.5f
         );
     }
 
@@ -138,11 +150,8 @@ public class TicketUltraHandler {
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         PlayerEntity player = event.getPlayer();
         ItemStack held = player.getItemInHand(event.getHand());
-        if (held == null || held.isEmpty()) {
-            return;
-        }
+        if (held == null || held.isEmpty()) return;
 
-        // 8) Cancelamos la interacción con bloques solo si es “ticket_ultra”
         String id = RangerItemDefinition.getIdFromStack(held);
         if (ID_TICKET_ULTRA.equals(id)) {
             event.setCanceled(true);

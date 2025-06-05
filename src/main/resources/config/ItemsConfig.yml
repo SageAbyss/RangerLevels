@@ -1,0 +1,6 @@
+championAmulet:
+  xpPercent: 15.0
+  commands:
+    - chancePercent: 2.5
+      command: "give %player% minecraft:diamond 1"
+

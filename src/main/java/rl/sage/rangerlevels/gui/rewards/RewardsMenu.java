@@ -1,10 +1,8 @@
-// src/main/java/rl/sage/rangerlevels/gui/rewards/RewardsMenu.java
 package rl.sage.rangerlevels.gui.rewards;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.SimpleNamedContainerProvider;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
@@ -15,12 +13,18 @@ import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.Arrays;
 
+/**
+ * Abre el menú “Recompensas” (3×9). Contiene:
+ *  - Botón de info (slot 10).
+ *  - “Recompensas por Nivel” (slot 12, tag = "reward_everylevel").
+ *  - “Recompensas por Paquete” (slot 14, tag = "reward_package").
+ *  - “Recompensa por Nivel Exacto” (slot 16, tag = "reward_exact").
+ *  - Botón “Volver” (slot 22, tag = "back").
+ */
 public class RewardsMenu {
 
-    /**
-     * Abre el menú de recompensas desbloqueadas del jugador.
-     */
     public static void open(ServerPlayerEntity player) {
+        // Reproducir sonido al abrir
         PlayerSoundUtils.playSoundToPlayer(
                 player,
                 SoundEvents.NOTE_BLOCK_BIT,
@@ -28,14 +32,15 @@ public class RewardsMenu {
                 1.0f,
                 0.8f
         );
-        // Inventario virtual de 27 slots (3 filas x 9)
+
+        // Inventario virtual de 27 ranuras (3 filas × 9 columnas)
         Inventory inv = new Inventory(27);
         inv.clearContent();
 
-        // Botón de información (cabeza del jugador)
+        // Botón de info (slot 10)
         inv.setItem(10, PlayerInfoUtils.getInfoItem(player, 10));
 
-        // Botones de tipos de recompensa
+        // “Recompensas por Nivel” (slot 12, tag = "reward_everylevel")
         inv.setItem(12, MenuItemBuilder.createButton(
                 "§6Recompensas por Nivel",
                 Arrays.asList("§7Ver recompensas desbloqueadas por nivel"),
@@ -44,6 +49,7 @@ public class RewardsMenu {
                 12
         ));
 
+        // “Recompensas por Paquete” (slot 14, tag = "reward_package")
         inv.setItem(14, MenuItemBuilder.createButton(
                 "§dRecompensas por Paquete",
                 Arrays.asList("§7Ver recompensas desbloqueadas por paquete"),
@@ -52,6 +58,7 @@ public class RewardsMenu {
                 14
         ));
 
+        // “Recompensa por Nivel Exacto” (slot 16, tag = "reward_exact")
         inv.setItem(16, MenuItemBuilder.createButton(
                 "§bRecompensa por Nivel Exacto",
                 Arrays.asList("§7Ver recompensa para el nivel exacto alcanzado"),
@@ -60,7 +67,7 @@ public class RewardsMenu {
                 16
         ));
 
-        // Botón de Volver al menú principal
+        // Botón “Volver” (slot 22, tag = "back")
         inv.setItem(22, MenuItemBuilder.createButton(
                 "§cVolver",
                 Arrays.asList("§6Regresa al menú principal"),
@@ -69,7 +76,7 @@ public class RewardsMenu {
                 22
         ));
 
-        // Abrir menú
+        // Abrir el contenedor
         player.openMenu(new SimpleNamedContainerProvider(
                 (windowId, playerInv, p) -> new RewardsMenuContainer(windowId, playerInv, inv),
                 new StringTextComponent("§6Recompensas")

@@ -88,7 +88,7 @@ public class HelpButtonUtils {
     /** Construye el componente con el mini tutorial de compra. */
     public static ITextComponent buildCompraHover() {
         IFormattableTextComponent hover = new StringTextComponent("");
-        hover.append(GradientText.of(" §3▶ Tutorial de Compra ◀ ", "#FFB3BA", "#FFDFBA", "#FFFFBA"))
+        hover.append(GradientText.of(" ▶ Tutorial de Compra ◀ ", "#FFB3BA", "#FFDFBA", "#FFFFBA"))
                 .append(new StringTextComponent("\n"));
         hover.append(new StringTextComponent("§f(1) §7Entra al enlace del pase que quieras comprar\n"));
         hover.append(new StringTextComponent("§f(2) §7Sigue las instrucciones de compra de la página\n"));
@@ -140,5 +140,12 @@ public class HelpButtonUtils {
         if (minutes > 0 || hours > 0 || days > 0) sb.append(minutes).append("m ");
         sb.append(seconds).append("s");
         return sb.toString();
+    }
+    public static void sendHelpTopic(ServerPlayerEntity player, int topicIndex) {
+        switch (topicIndex) {
+            case 1: player.sendMessage(HelpButtonUtils.buildEventosHover(), player.getUUID()); break;
+            case 2: player.sendMessage(HelpButtonUtils.buildCompraHover(), player.getUUID()); break;
+            // etc.
+        }
     }
 }
