@@ -2,6 +2,8 @@
 package rl.sage.rangerlevels.items.tickets;
 
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
@@ -10,6 +12,8 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.EnchantUtils;
+import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -80,10 +84,10 @@ public class TicketUltraShort extends RangerItemDefinition {
         display.put("Lore", loreList);
         tag.put("display", display);
 
+        EnchantUtils.addEnchantment(stack, Enchantments.UNBREAKING, 1);
+
         // 5) Ocultamos atributos innecesarios (HideFlags bit 32)
-        int hide = tag.contains("HideFlags") ? tag.getInt("HideFlags") : 0;
-        hide |= 32;
-        tag.putInt("HideFlags", hide);
+        NBTUtils.applyAllHideFlags(tag);
 
         stack.setTag(tag);
         return stack;

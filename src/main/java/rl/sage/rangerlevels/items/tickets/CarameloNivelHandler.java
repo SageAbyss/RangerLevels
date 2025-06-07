@@ -122,9 +122,9 @@ public class CarameloNivelHandler {
                 serverPlayer.level.playSound(
                         null,
                         serverPlayer.blockPosition(),
-                        SoundEvents.PLAYER_LEVELUP,
+                        SoundEvents.GENERIC_EAT,
                         SoundCategory.PLAYERS,
-                        1.0f, 1.0f
+                        1.0f, 0.5f
                 );
             }
 

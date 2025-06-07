@@ -1,16 +1,17 @@
 // File: rl/sage/rangerlevels/items/ShinyAmuletMitico.java
 package rl.sage.rangerlevels.items.amuletos;
 
+import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
-import rl.sage.rangerlevels.config.ItemsConfig;
+import rl.sage.rangerlevels.config.MysteryBoxesConfig;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,12 +25,12 @@ import java.util.List;
  */
 public class ShinyAmuletMitico extends RangerItemDefinition {
     public static final String ID = "amuleto_shiny_mitico";
-    private static final double CHANCE_PERCENT = ItemsConfig.get().shinyAmulet.miticoPercent;
+    private static final double CHANCE_PERCENT = MysteryBoxesConfig.get().shinyAmulet.miticoPercent;
 
     public ShinyAmuletMitico() {
         super(
                 ID,
-                Items.NETHER_STAR,    // Ícono (puedes cambiarlo si prefieres otro)
+                PixelmonItems.rainbow_flower,
                 Tier.MITICO,         // Tier MÍTICO
                 null,
                 "✦ Amuleto Shiny Mítico ✦",
@@ -76,10 +77,7 @@ public class ShinyAmuletMitico extends RangerItemDefinition {
         display.put("Lore", loreList);
         tag.put("display", display);
 
-        // 4) Ocultamos atributos innecesarios (HideFlags bit 32)
-        int hide = tag.contains("HideFlags") ? tag.getInt("HideFlags") : 0;
-        hide |= 32;
-        tag.putInt("HideFlags", hide);
+        NBTUtils.applyAllHideFlags(tag);
 
         stack.setTag(tag);
         return stack;

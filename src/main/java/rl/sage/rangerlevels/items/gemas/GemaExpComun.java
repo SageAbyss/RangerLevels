@@ -1,6 +1,7 @@
 // File: rl/sage/rangerlevels/items/gemas/GemaExpComun.java
 package rl.sage.rangerlevels.items.gemas;
 
+import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
@@ -10,6 +11,7 @@ import net.minecraft.util.text.TextFormatting;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,10 +27,10 @@ public class GemaExpComun extends RangerItemDefinition {
     public GemaExpComun() {
         super(
                 ID,
-                Items.EMERALD,    // Ítem base: esmeralda
+                PixelmonItems.jade_orb,    // Ítem base: esmeralda
                 Tier.COMUN,       // Tier COMÚN
                 null,             // Ya no pasamos TextFormatting
-                "✦ Gema de Experiencia ✦",
+                "✦ Gema de Dominio ✦",
                 null              // Lore se asigna en createStack()
         );
         CustomItemRegistry.register(this);
@@ -65,10 +67,7 @@ public class GemaExpComun extends RangerItemDefinition {
         display.put("Lore", loreList);
         tag.put("display", display);
 
-        // 5) Ocultamos atributos innecesarios (HideFlags bit 32)
-        int hide = tag.contains("HideFlags") ? tag.getInt("HideFlags") : 0;
-        hide |= 32;
-        tag.putInt("HideFlags", hide);
+        NBTUtils.applyAllHideFlags(tag);
 
         stack.setTag(tag);
         return stack;

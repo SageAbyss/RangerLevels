@@ -1,5 +1,7 @@
 package rl.sage.rangerlevels.items.cetro;
 
+import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
+import com.pixelmonmod.pixelmon.items.PixelmonItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
@@ -10,6 +12,7 @@ import net.minecraft.util.text.StringTextComponent;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +34,7 @@ public class CetroDivinoComun extends RangerItemDefinition {
     public CetroDivinoComun() {
         super(
                 ID,
-                Items.BLAZE_ROD,                 // Reutilizamos un palo como base (puedes cambiarlo)
+                PixelmonItems.leek,                 // Reutilizamos un palo como base (puedes cambiarlo)
                 Tier.COMUN,
                 null,                        // Color sólido ya no hace falta; usamos degradado en createStack()
                 "✦ Cetro Divino ✦",
@@ -70,6 +73,8 @@ public class CetroDivinoComun extends RangerItemDefinition {
         }
         displayTag.put("Lore", loreList);
         tag.put("display", displayTag);
+
+        NBTUtils.applyAllHideFlags(tag);
 
         // 4) Guardar tag y regresar el stack
         stack.setTag(tag);

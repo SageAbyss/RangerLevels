@@ -14,6 +14,7 @@ import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
 import rl.sage.rangerlevels.items.amuletos.ShinyAmuletEstelar;
 import rl.sage.rangerlevels.items.amuletos.ShinyAmuletLegendaria;
 import rl.sage.rangerlevels.items.amuletos.ShinyAmuletMitico;
+import rl.sage.rangerlevels.items.boxes.*;
 import rl.sage.rangerlevels.items.cetro.CetroDivinoComun;
 import rl.sage.rangerlevels.items.cetro.CetroDivinoEpico;
 import rl.sage.rangerlevels.items.cetro.CetroDivinoMitico;
@@ -63,7 +64,12 @@ public class SetupEvents {
         new ShinyAmuletMitico();
         new CetroDivinoComun();
         new CetroDivinoEpico();
-        new CetroDivinoMitico();
+        new MysteryBoxComun();
+        new MysteryBoxRaro();
+        new MysteryBoxEpico();
+        new MysteryBoxLegendario();
+        new MysteryBoxEstelar();
+        new MysteryBoxMitico();
 
         PixelmonEventHandler.register();
         LOGGER.info("§8{}:§a Items cargados con éxito", PREFIX_STR);

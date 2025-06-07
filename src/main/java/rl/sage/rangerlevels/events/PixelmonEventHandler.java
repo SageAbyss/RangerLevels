@@ -17,6 +17,7 @@ import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 
 import rl.sage.rangerlevels.items.amuletos.ShinyAmuletHandler;
+import rl.sage.rangerlevels.items.boxes.MysteryBoxHelper;
 import rl.sage.rangerlevels.items.gemas.ExpGemHandler;
 import rl.sage.rangerlevels.config.*;
 import rl.sage.rangerlevels.limiter.LimiterHelper;
@@ -156,6 +157,8 @@ public class PixelmonEventHandler {
             if (!(part instanceof PlayerParticipant)) continue;
             ServerPlayerEntity player = ((PlayerParticipant) part).player;
             handleGeneric(player, "raidParticipation", EventConfig::getExpRange);
+            MysteryBoxHelper.tryDropOneOnEvent(player,
+                    MysteryBoxHelper.EventType.RAID, MysteryBoxesConfig.get().mysteryBox.comun);
         }
     }
 
@@ -277,42 +280,42 @@ public class PixelmonEventHandler {
         int[] legendary = cfg.getExpRangeLegendary();
         int[] boss      = cfg.getExpRangeBoss();
         int base;
-        if (defeated.isBossPokemon())            base = randomInRange(boss[0], boss[1]);
+        if (defeated.isBossPokemon()) {
+            base = randomInRange(boss[0], boss[1]);
+        }
         else if (defeated.getPokemon().isLegendary()
-                || defeated.getPokemon().getSpecies().isUltraBeast())
+                || defeated.getPokemon().getSpecies().isUltraBeast()) {
             base = randomInRange(legendary[0], legendary[1]);
-        else if (defeated.getPokemon().isShiny()) base = randomInRange(shiny[0], shiny[1]);
-        else                                     base = randomInRange(wild[0], wild[1]);
+            if (RNG.nextDouble() < 0.05) {
+                MysteryBoxHelper.tryDropOneOnEvent(player,
+                        MysteryBoxHelper.EventType.BEAT_BOSS, MysteryBoxesConfig.get().mysteryBox.comun);
+            }
+        }
+        else if (defeated.getPokemon().isShiny()) {
+            base = randomInRange(shiny[0], shiny[1]);
+            if (RNG.nextDouble() < 0.05) {
+                MysteryBoxHelper.tryDropOneOnEvent(player,
+                        MysteryBoxHelper.EventType.BEAT_BOSS, MysteryBoxesConfig.get().mysteryBox.comun);
+            }
+        }
+        else {
+            base = randomInRange(wild[0], wild[1]);
+        }
 
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
 
         // ── BLOQUE AMULETO DE CAMPEÓN ──
-        boolean hasAmulet = false;
-        for (ItemStack stack : player.inventory.items) {
-            if (stack != null && !stack.isEmpty()) {
-                String id = RangerItemDefinition.getIdFromStack(stack);
-                if (ChampionAmulet.ID.equals(id)) {
-                    hasAmulet = true;
-                    break;
-                }
-            }
-        }
+        boolean hasAmulet = player.inventory.items.stream()
+                .filter(Objects::nonNull).anyMatch(stack ->
+                        ChampionAmulet.ID.equals(RangerItemDefinition.getIdFromStack(stack))
+                );
         if (hasAmulet) {
-            ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
-
-            // 1) Aplicar bonus de EXP
-            double xpPercent = amCfg.xpPercent;
-            int bonusXp = (int) Math.floor(base * (xpPercent / 100.0));
-            base += bonusXp;
-
-            // 2) Iterar sobre cada comando configurado
-            for (ItemsConfig.ChampionAmuletConfig.CommandEntry entry : amCfg.commands) {
-                double chancePercent = entry.chancePercent;
-                String rawCmd = entry.command;
-                double roll = RNG.nextDouble() * 100.0;
-                if (roll < chancePercent) {
-                    String cmdToRun = rawCmd.replace("%player%", player.getName().getString());
+            MysteryBoxesConfig.ChampionAmuletConfig amCfg = MysteryBoxesConfig.get().championAmulet;
+            for (MysteryBoxesConfig.MysteryBoxConfig.CommandEntry entry : amCfg.commands) {
+                // ahora entry.chancePercent y entry.command existen
+                if (RNG.nextDouble() * 100 < entry.chancePercent) {
+                    String cmdToRun = entry.command.replace("%player%", player.getName().getString());
                     MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
                     if (server != null) {
                         server.getCommands().performCommand(
@@ -323,7 +326,6 @@ public class PixelmonEventHandler {
                 }
             }
         }
-        // ────────────────────────────────────
 
         // ── Cálculo normal (sin gema) ──
         int totalSinGema = applyMultipliers(player, base, "beatWild");
@@ -343,45 +345,28 @@ public class PixelmonEventHandler {
         String key = isBoss ? "beatBoss" : "beatTrainer";
 
         // ── calculamos baseExp antes del amuleto ──
-        int[] range = isBoss
-                ? Objects.requireNonNull(getCfg("beatBoss")).getExpRange()
-                : Objects.requireNonNull(getCfg("beatTrainer")).getExpRange();
+        int[] range = Objects.requireNonNull(getCfg(key)).getExpRange();
         int base = randomInRange(range[0], range[1]);
         Integer vip = getVipRangeExp(player, Objects.requireNonNull(getCfg(key)).getSpecificRangePermissions());
         if (vip != null) base = vip;
 
         // ── BLOQUE AMULETO DE CAMPEÓN ──
-        boolean hasAmulet = false;
-        for (ItemStack stack : player.inventory.items) {
-            if (stack != null && !stack.isEmpty()) {
-                String id = RangerItemDefinition.getIdFromStack(stack);
-                if (ChampionAmulet.ID.equals(id)) {
-                    hasAmulet = true;
-                    break;
-                }
-            }
-        }
+        boolean hasAmulet = player.inventory.items.stream()
+                .filter(Objects::nonNull)
+                .anyMatch(stack -> ChampionAmulet.ID.equals(RangerItemDefinition.getIdFromStack(stack)));
         if (hasAmulet) {
-            ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
-
-            // 1) Aplicar bonus de EXP
+            MysteryBoxesConfig.ChampionAmuletConfig amCfg = MysteryBoxesConfig.get().championAmulet;
+            // 1) bonus de EXP
             double xpPercent = amCfg.xpPercent;
             int bonusXp = (int) Math.floor(base * (xpPercent / 100.0));
             base += bonusXp;
-
-            // 2) Iterar sobre cada comando configurado
-            for (ItemsConfig.ChampionAmuletConfig.CommandEntry entry : amCfg.commands) {
-                double chancePercent = entry.chancePercent;
-                String rawCmd = entry.command;
-                double roll = RNG.nextDouble() * 100.0;
-                if (roll < chancePercent) {
-                    String cmdToRun = rawCmd.replace("%player%", player.getName().getString());
-                    MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-                    if (server != null) {
-                        server.getCommands().performCommand(
-                                server.createCommandSourceStack(),
-                                cmdToRun
-                        );
+            // 2) comandos configurados
+            for (MysteryBoxesConfig.MysteryBoxConfig.CommandEntry entry : amCfg.commands) {
+                if (RNG.nextDouble() * 100 < entry.chancePercent) {
+                    String cmd = entry.command.replace("%player%", player.getName().getString());
+                    MinecraftServer srv = ServerLifecycleHooks.getCurrentServer();
+                    if (srv != null) {
+                        srv.getCommands().performCommand(srv.createCommandSourceStack(), cmd);
                     }
                 }
             }
@@ -392,6 +377,7 @@ public class PixelmonEventHandler {
         int total = applyMultipliers(player, base, key);
         LimiterHelper.giveExpWithLimit(player, total);
     }
+
 
 
     @SubscribeEvent

@@ -1,6 +1,7 @@
 // File: rl/sage/rangerlevels/items/frasco/FrascoCalmaEstelar.java
 package rl.sage.rangerlevels.items.frasco;
 
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
@@ -11,6 +12,8 @@ import net.minecraft.util.text.StringTextComponent;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.EnchantUtils;
+import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -73,20 +76,10 @@ public class FrascoCalmaEstelar extends RangerItemDefinition {
         tag.putInt("CustomPotionColor", 0x00AAAA);
 
         // 6) Añadir encantamiento Unbreaking I (oculto)
-        ListNBT enchList = new ListNBT();
-        CompoundNBT ench = new CompoundNBT();
-        ench.putString("id", "minecraft:unbreaking");
-        ench.putShort("lvl", (short) 1);
-        enchList.add(ench);
-        tag.put("Enchantments", enchList);
+        EnchantUtils.addEnchantment(stack, Enchantments.UNBREAKING, 1);
 
         // 7) Ocultar atributos y encantamientos con HideFlags:
-        //    - bit 1 (encantamientos)
-        //    - bit 32 (potion effects o custom potion color)
-        int hide = tag.contains("HideFlags") ? tag.getInt("HideFlags") : 0;
-        hide |= 1;   // oculta encantamientos
-        hide |= 32;  // oculta color de poción
-        tag.putInt("HideFlags", hide);
+        NBTUtils.applyAllHideFlags(tag);
 
         stack.setTag(tag);
         return stack;

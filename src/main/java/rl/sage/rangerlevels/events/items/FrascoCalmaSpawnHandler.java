@@ -1,4 +1,4 @@
-package rl.sage.rangerlevels.events;
+package rl.sage.rangerlevels.events.items;
 
 import com.pixelmonmod.pixelmon.api.events.spawning.PixelmonSpawnerEvent;
 import com.pixelmonmod.pixelmon.entities.pixelmon.PixelmonEntity;

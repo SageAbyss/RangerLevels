@@ -46,7 +46,7 @@ public class RangerLevels {
     public RangerLevels() {
         INSTANCE = this;
         ExpConfig.load();  // Pre-carga de config
-        ItemsConfig.load();
+        MysteryBoxesConfig.load();
 
         // 3) Inicializar gestores de datos
         this.dataManager   = FlatFilePlayerDataManager.getInstance();

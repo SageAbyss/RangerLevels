@@ -4,3 +4,216 @@ championAmulet:
     - chancePercent: 2.5
       command: "give %player% minecraft:diamond 1"
 
+# Configuración de items para RangerLevels
+# =============================
+
+mysteryBox:
+  comun:
+    # → Habilitado
+    enable: true
+
+    # → Cajas de upgrade y probabilidad
+    boxesUpgrade:
+      - caja_misteriosa_raro
+    upgradeBoxChance: 12%
+
+    # → Comandos aleatorios con probabilidad
+    commands:
+      - chancePercent: 100%
+        command: "say %player% obtuvo una sorpresa de Caja Misteriosa Común"
+
+    # → Probabilidades de drop
+    DropsChance:
+      - BeatBoss: 15.0%
+      - LevelUp:  10.0%
+      - Raid:     12.0%
+
+    # → Rango de experiencia
+    ExpRange:
+      - Max: 50
+      - Min: 20
+
+    # → Probabilidad de cada Pokéball
+    pokeballsChance:
+      x8: 80%
+      x16: 30%
+      x32: 10%
+
+    # → Ítems aleatorios de tu mod
+    randomItemMax: 1
+    randomItemMin: 0
+
+
+  raro:
+    # → Habilitado
+    enable: true
+
+    # → Cajas de upgrade y probabilidad
+    boxesUpgrade:
+      - caja_misteriosa_epico
+    upgradeBoxChance: 10%
+
+    # → Comandos aleatorios con probabilidad
+    commands:
+      - chancePercent: 100%
+        command: "say %player% obtuvo una sorpresa de Caja Misteriosa Raro"
+
+    # → Probabilidades de drop
+    DropsChance:
+      - BeatBoss: 10.0%
+      - LevelUp:  5.0%
+      - Raid:     8.0%
+
+    # → Rango de experiencia
+    ExpRange:
+      - Max: 100
+      - Min: 50
+
+    # → Probabilidad de cada Pokéball
+    pokeballsChance:
+      x8: 70%
+      x16: 30%
+
+    # → Ítems aleatorios de tu mod
+    randomItemMax: 3
+    randomItemMin: 1
+
+
+  epico:
+    # → Habilitado
+    enable: true
+
+    # → Cajas de upgrade y probabilidad
+    boxesUpgrade:
+      - caja_misteriosa_legendario
+    upgradeBoxChance: 8%
+
+    # → Comandos aleatorios con probabilidad
+    commands:
+      - chancePercent: 100%
+        command: "say %player% obtuvo una sorpresa de Caja Misteriosa Épico"
+
+    # → Probabilidades de drop
+    DropsChance:
+      - BeatBoss: 7.0%
+      - LevelUp:  3.0%
+      - Raid:     5.0%
+
+    # → Rango de experiencia
+    ExpRange:
+      - Max: 200
+      - Min: 100
+
+    # → Probabilidad de cada Pokéball
+    pokeballsChance:
+      x8: 60%
+      x16: 40%
+
+    # → Ítems aleatorios de tu mod
+    randomItemMax: 3
+    randomItemMin: 1
+
+
+  legendario:
+    # → Habilitado
+    enable: true
+
+    # → Cajas de upgrade y probabilidad
+    boxesUpgrade:
+      - caja_misteriosa_estelar
+    upgradeBoxChance: 6%
+
+    # → Comandos aleatorios con probabilidad
+    commands:
+      - chancePercent: 100%
+        command: "say %player% obtuvo una sorpresa de Caja Misteriosa Legendario"
+
+    # → Probabilidades de drop
+    DropsChance:
+      - BeatBoss: 5.0%
+      - LevelUp:  1.5%
+      - Raid:     4.0%
+
+    # → Rango de experiencia
+    ExpRange:
+      - Max: 400
+      - Min: 200
+
+    # → Probabilidad de cada Pokéball
+    pokeballsChance:
+      x8: 50%
+      x16: 50%
+
+    # → Ítems aleatorios de tu mod
+    randomItemMax: 3
+    randomItemMin: 1
+
+
+  estelar:
+    # → Habilitado
+    enable: true
+
+    # → Cajas de upgrade y probabilidad
+    boxesUpgrade:
+      - caja_misteriosa_mitico
+    upgradeBoxChance: 4%
+
+    # → Comandos aleatorios con probabilidad
+    commands:
+      - chancePercent: 100%
+        command: "say %player% obtuvo una sorpresa de Caja Misteriosa Estelar"
+
+    # → Probabilidades de drop
+    DropsChance:
+      - BeatBoss: 3.0%
+      - LevelUp:  1.0%
+      - Raid:     2.5%
+
+    # → Rango de experiencia
+    ExpRange:
+      - Max: 600
+      - Min: 400
+
+    # → Probabilidad de cada Pokéball
+    pokeballsChance:
+      x8: 40%
+      x16: 60%
+
+    # → Ítems aleatorios de tu mod
+    randomItemMax: 3
+    randomItemMin: 1
+
+  mitico:
+    # → Habilitado
+    enable: true
+
+    # → Cajas de upgrade y probabilidad
+    boxesUpgrade:
+    upgradeBoxChance: 0%
+
+    # → Comandos aleatorios con probabilidad
+    commands:
+      - chancePercent: 100%
+        command: "say %player% obtuvo una sorpresa de Caja Misteriosa Mítico"
+
+    # → Probabilidades de drop
+    DropsChance:
+      - BeatBoss: 2.0%
+      - LevelUp:  0.5%
+      - Raid:     1.0%
+
+    # → Rango de experiencia
+    ExpRange:
+      - Max: 1000
+      - Min: 600
+
+    # → Probabilidad de cada Pokéball
+    pokeballsChance:
+      x8: 30%
+      x16: 70%
+
+    # → Ítems aleatorios de tu mod
+    randomItemMax: 3
+    randomItemMin: 1
+
+

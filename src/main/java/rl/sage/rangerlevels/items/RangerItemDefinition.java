@@ -6,11 +6,13 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.ITextComponent;
+import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Clase base para cualquier “ítem” de RangerLevels que use un ítem vanilla + NBT.
@@ -21,6 +23,7 @@ import java.util.List;
  *  - tierColor (TextFormatting) para colorear el nombre
  *  - displayName (String) que aparecerá como nombre del ítem
  *  - defaultLore (List<IFormattableTextComponent>) con las líneas de lore por defecto
+ *  - HideFlags completos para que NO se muestren atributos extra (encantos, atributos, etc.).
  */
 public class RangerItemDefinition {
     public static final String NBT_TIER_KEY = "RangerTier";
@@ -62,7 +65,6 @@ public class RangerItemDefinition {
 
     public static final String NBT_ID_KEY = "RangerID";
 
-
     public Item getBaseItem() {
         return baseItem;
     }
@@ -82,26 +84,32 @@ public class RangerItemDefinition {
     /**
      * Crea un ItemStack con la cantidad indicada, marcándolo en NBT con “RangerTier”,
      * asignando el nombre coloreado y agregando el lore definido en defaultLore.
+     * Además aplica todos los bits de HideFlags para:
+     *   1  → oculta encantamientos
+     *   2  → oculta modificadores de atributo
+     *   4  → oculta “unbreakable”
+     *   8  → oculta “CanDestroy”
+     *   16 → oculta “CanPlaceOn”
+     *   32 → oculta efectos de poción
      */
     public ItemStack createStack(int amount) {
         ItemStack stack = new ItemStack(baseItem, amount);
 
-        // 1) Guardar NBT igual que antes...
+        // 1) Guardar ID y Tier en NBT
         CompoundNBT tag = stack.getOrCreateTag();
         tag.putString(NBT_ID_KEY, id);
         tag.putString(NBT_TIER_KEY, tier.name());
 
-        // 2) ------------------ Aquí cambiamos ------------------
-        // En lugar de usar TextFormatting y concatenar:
-        // IFormattableTextComponent nombreColoreado = new StringTextComponent(tierColor + displayName);
-        // ahora pintamos el displayName con degradado:
+        // 2) Asignar hover-name con degradado (usando el Tier)
         IFormattableTextComponent nombreColoreado = tier.applyGradient(displayName);
         stack.setHoverName(nombreColoreado);
-        // --------------------------------------------------------
 
-        // 3) Lore (si existe)
+        // 3) Si hay lore definido, inyectarlo en display → Lore
         if (defaultLore != null && !defaultLore.isEmpty()) {
-            CompoundNBT displayTag = tag.getCompound("display");
+            CompoundNBT displayTag = tag.contains("display")
+                    ? tag.getCompound("display")
+                    : new CompoundNBT();
+
             ListNBT loreList = new ListNBT();
             for (IFormattableTextComponent line : defaultLore) {
                 String json = ITextComponent.Serializer.toJson(line);
@@ -111,11 +119,12 @@ public class RangerItemDefinition {
             tag.put("display", displayTag);
         }
 
-        // 4) Finalmente, setTag y return
+        NBTUtils.applyAllHideFlags(tag);
+
+        // 5) Asignar el tag modificado al ItemStack y devolverlo
         stack.setTag(tag);
         return stack;
     }
-
 
     /**
      * Dado un ItemStack, intenta extraer el Tier según el tag NBT “RangerTier”.
@@ -144,5 +153,4 @@ public class RangerItemDefinition {
         if (!tag.contains(NBT_ID_KEY)) return null;
         return tag.getString(NBT_ID_KEY);
     }
-
 }

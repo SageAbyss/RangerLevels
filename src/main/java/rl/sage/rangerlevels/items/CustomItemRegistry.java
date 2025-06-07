@@ -2,9 +2,7 @@ package rl.sage.rangerlevels.items;
 
 import net.minecraft.item.ItemStack;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Registry estático que mantiene un mapa id → RangerItemDefinition.
@@ -12,13 +10,11 @@ import java.util.Set;
  *  - registrar nuevas definiciones (register)
  *  - verificar si existe una definición (contains)
  *  - crear el ItemStack correspondiente (create)
+ *  - obtener todas las IDs registradas (getAllIds)
  */
 public class CustomItemRegistry {
     private static final Map<String, RangerItemDefinition> DEFINITIONS = new HashMap<>();
 
-    /**
-     * Registra una definición nueva. La clave será def.getId().
-     */
     public static void register(RangerItemDefinition def) {
         DEFINITIONS.put(def.getId(), def);
     }
@@ -27,19 +23,24 @@ public class CustomItemRegistry {
         return DEFINITIONS.containsKey(ID);
     }
 
-    /**
-     * Crea un ItemStack con la definición asociada a “id”.
-     * Si no existe, devuelve ItemStack.EMPTY.
-     */
     public static ItemStack create(String ID, int amount) {
         RangerItemDefinition def = DEFINITIONS.get(ID);
-        if (def == null) {
-            return ItemStack.EMPTY;
-        }
-        return def.createStack(amount);
+        return def == null ? ItemStack.EMPTY : def.createStack(amount);
     }
 
+    /**
+     * Devuelve un Set inmodificable con todas las IDs registradas.
+     * Si necesitas una List, basta con hacer new ArrayList<>(getAllIds()).
+     */
     public static Set<String> getAllIds() {
-        return DEFINITIONS.keySet();
+        return Collections.unmodifiableSet(DEFINITIONS.keySet());
+    }
+
+    /**
+     * (Opcional) Devuelve una List con todas las IDs registradas,
+     * en caso de que prefieras trabajar con List en lugar de Set.
+     */
+    public static RangerItemDefinition getDefinition(String id) {
+        return DEFINITIONS.get(id);
     }
 }

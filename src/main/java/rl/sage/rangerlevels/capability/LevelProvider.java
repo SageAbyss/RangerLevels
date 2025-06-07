@@ -26,19 +26,22 @@ import rl.sage.rangerlevels.broadcast.BroadcastUtil;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.ExpConfig.SoundConfig;
 import rl.sage.rangerlevels.config.ExpConfig.MaxLevelBroadcastConfig;
-import rl.sage.rangerlevels.config.ItemsConfig;
+import rl.sage.rangerlevels.config.MysteryBoxesConfig;
 import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
+import rl.sage.rangerlevels.items.boxes.MysteryBoxHelper;
 import rl.sage.rangerlevels.rewards.RewardManager;
 import rl.sage.rangerlevels.util.*;
-
 import java.util.List;
+import java.util.Random;
 
 @Mod.EventBusSubscriber(modid = RangerLevels.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class LevelProvider {
 
     @CapabilityInject(ILevel.class)
     public static Capability<ILevel> LEVEL_CAP = null;
+
+    private static final Random RANDOM = new Random();
 
     public static void register() {
         CapabilityManager.INSTANCE.register(
@@ -83,11 +86,11 @@ public class LevelProvider {
         }
 
         if (hasAmulet) {
-            // 1.1) Leemos configuración de ItemsConfig.yml
-            ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
+            // 1.1) Leemos configuración de MysteryBoxesConfig.yml
+            MysteryBoxesConfig.ChampionAmuletConfig amCfg = MysteryBoxesConfig.get().championAmulet;
 
             // 1.2) Aplicar bonus de EXP
-            double xpPercent = amCfg.xpPercent;                // ej. 15.0
+            double xpPercent = amCfg.xpPercent; // ej. 15.0
             int bonusXp = (int) Math.floor(amount * (xpPercent / 100.0));
             amount += bonusXp;
         }
@@ -103,7 +106,7 @@ public class LevelProvider {
 
         ExpConfig cfg = ExpConfig.get();
 
-        // 1) Preparar sonidos
+        // 2) Preparar sonidos
         SoundConfig normalCfg = cfg.levelUpSound;
         SoundEvent normalSound = ForgeRegistries.SOUND_EVENTS
                 .getValue(new ResourceLocation(normalCfg.soundEvent));
@@ -114,7 +117,7 @@ public class LevelProvider {
                 .getValue(new ResourceLocation(bc.soundEvent));
         if (maxSound == null) maxSound = SoundEvents.UI_TOAST_CHALLENGE_COMPLETE;
 
-        // 2) Obtener capability
+        // 3) Obtener capability
         LazyOptional<ILevel> capOpt = player.getCapability(LEVEL_CAP, null);
         if (!capOpt.isPresent()) return;
         ILevel cap = capOpt.orElseThrow(IllegalStateException::new);
@@ -123,21 +126,22 @@ public class LevelProvider {
         int maxLvl = cfg.getMaxLevel();
         if (oldLvl >= maxLvl) return;
 
-        // 3) Mostrar EXP ganada (legacy)
+        // 4) Mostrar EXP ganada (legacy)
         player.displayClientMessage(
                 new StringTextComponent("§b+" + amount + " EXP"),
                 true
         );
 
-        // 4) Sumar EXP y obtener niveles subidos
+        // 5) Sumar EXP y obtener niveles subidos
         List<Integer> niveles = cap.addExp(amount);
 
-        // 5) Procesar cada nivel subido
+        // 6) Procesar cada nivel subido
         for (int lvl : niveles) {
             if (lvl > maxLvl) break;
             RewardManager.handleLevelUp(player, lvl);
+            MysteryBoxHelper.tryDropOneOnEvent(player, MysteryBoxHelper.EventType.LEVEL_UP, MysteryBoxesConfig.get().mysteryBox.comun);
 
-            // 5.1) Separador degradado
+            // 6.1) Separador degradado
             IFormattableTextComponent sep = GradientText.of(
                             "                                                                      ",
                             "#FF0000", "#FF7F00", "#FFFF00",
@@ -147,7 +151,7 @@ public class LevelProvider {
                     .setStyle(Style.EMPTY.withColor(TextColorUtil.fromHex("#FFFFFF")));
             player.displayClientMessage(sep, false);
 
-            // 5.2) Título (usa legacy directo, no necesita TextFormatterUtil)
+            // 6.2) Título (usa legacy directo, no necesita TextFormatterUtil)
             String titleRaw = (lvl >= maxLvl)
                     ? "§6¡Alcanzaste el Nivel Máximo! ¡Felicidades!"
                     : "§6Subiste a Nivel §7(§f" + lvl + "§7)";
@@ -157,11 +161,9 @@ public class LevelProvider {
             );
             player.displayClientMessage(sep, false);
 
-
-            // Creamos Title y Subtitle con gradient, manteniendo el mismo texto:
+            // 6.3) Crear Title y Subtitle con gradient, manteniendo el mismo texto:
             IFormattableTextComponent titleGradient;
             IFormattableTextComponent subtitleGradient;
-
             if (lvl >= maxLvl) {
                 // Si es nivel máximo, degradado dorado→rojo
                 titleGradient = GradientText.of(
@@ -172,7 +174,6 @@ public class LevelProvider {
                         "¡Gracias por llegar tan lejos, Ranger!",
                         "#FFFFFF", "#AAAAAA", "#888888"
                 );
-
             } else {
                 // Si es nivel normal, degradado aqua→azul
                 titleGradient = GradientText.of(
@@ -185,29 +186,27 @@ public class LevelProvider {
                 );
             }
 
-            // Enviamos el TITLE (fadeIn = 10, stay = 70, fadeOut = 20)
+            // 6.4) Enviamos el TITLE (fadeIn = 10, stay = 70, fadeOut = 20)
             player.connection.send(new STitlePacket(
                     STitlePacket.Type.TITLE,
                     titleGradient,
                     10, 70, 20
             ));
 
-            // Enviamos el SUBTITLE (mismos tiempos)
+            // 6.5) Enviamos el SUBTITLE (mismos tiempos)
             player.connection.send(new STitlePacket(
                     STitlePacket.Type.SUBTITLE,
                     subtitleGradient,
                     10, 70, 20
             ));
 
-
-
-            // 5.3) Action bar
+            // 6.6) Action bar
             player.displayClientMessage(
                     new StringTextComponent("§e⇧ §3Nivel Ranger " + lvl),
                     true
             );
 
-            // 5.4) Sonido local
+            // 6.7) Sonido local
             if (lvl < maxLvl) {
                 player.connection.send(new SPlaySoundEffectPacket(
                         normalSound, SoundCategory.PLAYERS,
@@ -216,7 +215,7 @@ public class LevelProvider {
                 ));
             }
 
-            // 5.5) Broadcast nivel máximo
+            // 6.8) Broadcast nivel máximo
             if (lvl == maxLvl && bc.enable) {
                 MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
                 if (server != null) {
@@ -227,7 +226,6 @@ public class LevelProvider {
                             player.getName().getString(),
                             lvl
                     );
-
                     // Luego enviamos el sonido a cada jugador
                     for (ServerPlayerEntity pl : server.getPlayerList().getPlayers()) {
                         pl.connection.send(new SPlaySoundEffectPacket(

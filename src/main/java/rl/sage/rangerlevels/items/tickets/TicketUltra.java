@@ -10,6 +10,7 @@ import net.minecraft.util.text.TextFormatting;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -69,9 +70,7 @@ public class TicketUltra extends RangerItemDefinition {
         tag.put("display", display);
 
         // 5) Ocultamos atributos innecesarios (HideFlags bit 32)
-        int hide = tag.contains("HideFlags") ? tag.getInt("HideFlags") : 0;
-        hide |= 32;
-        tag.putInt("HideFlags", hide);
+        NBTUtils.applyAllHideFlags(tag);
 
         stack.setTag(tag);
         return stack;

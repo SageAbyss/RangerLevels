@@ -19,13 +19,11 @@ import rl.sage.rangerlevels.RangerLevels;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
-import java.util.Objects;
-
 /**
- * Listener de uso para Cetro Divino (Común, Épico, Mitico), adaptado a Pixelmon 9.1.12.
- * - Identifica el item (ID “RangerID”).
+ * Listener de uso para Cetro Divino (Común, Épico, Mítico), adaptado a Pixelmon 9.1.12.
+ * - Identifica el ítem (ID “RangerID”).
  * - Común/Épico: cura 50% de HP (jugador + party) y restaura 50% de PP.
- * - Mitico: si no está en cooldown, cura completamente (HP + PP) usando heal(); si está en cooldown, informa tiempo.
+ * - Mítico: si no está en cooldown, cura completamente (HP + PP) usando heal(); si está en cooldown, informa tiempo.
  *
  * Se usa StorageProxy.getParty(player) para obtener el PlayerPartyStorage.
  * Al modificar un Pokémon, se usa party.notifyListeners(pos, pkm) con StoragePosition obtenido desde party.getPosition(pkm).
@@ -66,6 +64,38 @@ public class CetroDivinoHandler {
         }
     }
 
+    // —— GETTERS PARA MENSAJES ——————————————————————————————————————————————————————————
+
+    /** Retorna el mensaje de “uso exitoso” para el Cetro Común */
+    public static String getMensajeUsoComun(double porcHp, int usosRestantes) {
+        String titulo = TextFormatting.DARK_GREEN + "✦ Cetro Divino (Común) Usado ✦";
+        String linea1 = TextFormatting.GREEN + "❖ HP restaurado: §b" + (int) (porcHp * 100) + "%";
+        String linea2 = TextFormatting.GREEN + "❖ PP del equipo: §b" + (int) (porcHp * 100) + "%";
+        String linea3 = TextFormatting.YELLOW + "❖ Usos restantes: §e" + usosRestantes;
+        return titulo + "\n" + linea1 + "\n" + linea2 + "\n" + linea3;
+    }
+
+    /** Retorna el mensaje de “se acabaron los usos” para el Cetro Común */
+    public static String getMensajeSinUsosComun() {
+        return TextFormatting.RED + "✦ Ya no quedan usos de tu Cetro Divino (Común).";
+    }
+
+    /** Retorna el mensaje de “uso exitoso” para el Cetro Épico */
+    public static String getMensajeUsoEpico(double porcHp, int usosRestantes) {
+        String titulo = TextFormatting.DARK_PURPLE + "✦ Cetro Divino (Épico) Usado ✦";
+        String linea1 = TextFormatting.GREEN + "❖ HP restaurado: §b" + (int) (porcHp * 100) + "%";
+        String linea2 = TextFormatting.GREEN + "❖ PP del equipo: §b" + (int) (porcHp * 100) + "%";
+        String linea3 = TextFormatting.YELLOW + "❖ Usos restantes: §e" + usosRestantes;
+        return titulo + "\n" + linea1 + "\n" + linea2 + "\n" + linea3;
+    }
+
+    /** Retorna el mensaje de “se acabaron los usos” para el Cetro Épico */
+    public static String getMensajeSinUsosEpico() {
+        return TextFormatting.RED + "✦ Ya no quedan usos de tu Cetro Divino (Épico).";
+    }
+
+    // —— MÉTODOS PRINCIPALES ——————————————————————————————————————————————————————————————
+
     /**
      * Cetro Divino (Común):
      * - 50% HP curado (jugador + cada Pokémon de la party)
@@ -75,57 +105,53 @@ public class CetroDivinoHandler {
     private static void usarCetroComun(ServerPlayerEntity player, ItemStack stack) {
         int usosRestantes = CetroDivinoComun.getUsosRestantes(stack);
         if (usosRestantes <= 0) {
-            // Ya no quedan usos → mensaje y eliminación
-            String msg = TextFormatting.RED
-                    + "✦ Ya no quedan usos de tu Cetro Divino (Común).";
-            player.sendMessage(new StringTextComponent(msg), player.getUUID());
+            // Si ya estaba a 0, mostramos mensaje y eliminamos
+            player.sendMessage(new StringTextComponent(getMensajeSinUsosComun()), player.getUUID());
             PlayerSoundUtils.playSoundToPlayer(
                     player, SoundEvents.ITEM_BREAK, SoundCategory.PLAYERS, 0.7f, 1.0f
             );
-            player.getServer().execute(() -> {
-                // Ejecutar en el siguiente tick del servidor
-                player.getServer().submitAsync(() -> {
-                    stack.shrink(1);
-                });
-            });
-
+            player.getServer().execute(() -> stack.shrink(1));
             return;
         }
 
-        // 1) Decrementar uso
+        // 1) Decrementar uso:
         CetroDivinoComun.decrementarUso(stack);
 
-        // 2) Curar 50% de HP al jugador
-        double porcHp = CetroDivinoComun.getHpRestorePorc(); // 0.50
-        float vidaActual = player.getHealth();
-        float vidaMax = player.getMaxHealth();
-        float cantidadCuracion = (float) (vidaMax * porcHp);
-        player.setHealth(Math.min(vidaActual + cantidadCuracion, vidaMax));
+        // 2) Ahora que ya restamos el uso, recalculamos cuántos quedan:
+        usosRestantes = CetroDivinoComun.getUsosRestantes(stack);
 
-        // 3) Curar a cada Pokémon de la party
+        // 3) Aplicamos el efecto de curación
+        double porcHp = CetroDivinoComun.getHpRestorePorc(); // 0.50
+        // 3.1) Curar 50% de HP al jugador
+        float vidaAct = player.getHealth();
+        float vidaMax = player.getMaxHealth();
+        float curar = (float) (vidaMax * porcHp);
+        player.setHealth(Math.min(vidaAct + curar, vidaMax));
+
+        // 3.2) Curar a cada Pokémon de la party
         PlayerPartyStorage party = StorageProxy.getParty(player);
         if (party != null) {
             double porcPp = CetroDivinoComun.getPpRestorePorc(); // 0.50
             for (Pokemon pkm : party.getTeam()) {
                 if (pkm == null || pkm.isEgg()) continue;
 
-                // 3.1) Curación parcial de HP (50%)
+                // Curamos 50% de la vida actual
                 int hpActual = pkm.getHealth();
-                int hpMax = pkm.getStats().getHP();
-                int curacion = (int) Math.floor(hpMax * porcHp);
-                pkm.setHealth(Math.min(hpActual + curacion, hpMax));
+                int hpMax   = pkm.getStats().getHP();
+                int restauraHp = (int) Math.floor(hpMax * porcHp);
+                pkm.setHealth(Math.min(hpActual + restauraHp, hpMax));
 
-                // 3.2) Restaurar 50% de PP de cada movimiento
+                // Curamos 50% de PP de cada movimiento
                 for (Attack atk : pkm.getMoveset()) {
                     int ppActual = atk.pp;
-                    int ppMax = atk.getMaxPP();
-                    int restorePp = (int) Math.floor(ppMax * porcPp);
-                    atk.pp = Math.min(ppActual + restorePp, ppMax);
+                    int ppMax    = atk.getMaxPP();
+                    int restauraPp = (int) Math.floor(ppMax * porcPp);
+                    atk.pp = Math.min(ppActual + restauraPp, ppMax);
                 }
 
-                // 3.3) Notificar al cliente el cambio en slot y Pokémon
+                // Notificar el cambio
                 StoragePosition pos = party.getPosition(pkm);
-                party.notifyListeners(pos, pkm); //
+                party.notifyListeners(pos, pkm);
             }
         }
 
@@ -134,24 +160,22 @@ public class CetroDivinoHandler {
                 player, SoundEvents.GENERIC_BURN, SoundCategory.PLAYERS, 1.0f, 0.5f
         );
 
-        // 5) Mensaje con usos restantes
-        usosRestantes = CetroDivinoComun.getUsosRestantes(stack);
-        String titulo = TextFormatting.DARK_GREEN
-                + "✦ Cetro Divino (Común) Usado ✦";
-        String linea1 = TextFormatting.GREEN
-                + "❖ HP restaurado: §b" + (int) (porcHp * 100) + "%";
-        String linea2 = TextFormatting.GREEN
-                + "❖ PP del equipo: §b" + (int) (porcHp * 100) + "%";
-        String linea3 = TextFormatting.YELLOW
-                + "❖ Usos restantes: §e" + usosRestantes;
-        String mensaje = titulo + "\n" + linea1 + "\n" + linea2 + "\n" + linea3;
-        player.sendMessage(new StringTextComponent(mensaje), player.getUUID());
-
-        // 6) Si se agotaron los usos → eliminar item
+        // 5) Si llegó a 0 usos tras este clic, enviar ambos mensajes y eliminar
         if (usosRestantes <= 0) {
-            stack.shrink(1);
+            player.sendMessage(new StringTextComponent(getMensajeSinUsosComun()), player.getUUID());
+            player.sendMessage(new StringTextComponent(getMensajeUsoComun(porcHp, 0)), player.getUUID());
+            PlayerSoundUtils.playSoundToPlayer(
+                    player, SoundEvents.ITEM_BREAK, SoundCategory.PLAYERS, 0.7f, 1.0f
+            );
+            player.getServer().execute(() -> stack.shrink(1));
+            return;
         }
+
+        // 6) Si aún quedan usos, mensaje de uso normal
+        String mensaje = getMensajeUsoComun(porcHp, usosRestantes);
+        player.sendMessage(new StringTextComponent(mensaje), player.getUUID());
     }
+
 
     /**
      * Cetro Divino (Épico):
@@ -162,93 +186,90 @@ public class CetroDivinoHandler {
     private static void usarCetroEpico(ServerPlayerEntity player, ItemStack stack) {
         int usosRestantes = CetroDivinoEpico.getUsosRestantes(stack);
         if (usosRestantes <= 0) {
-            String msg = TextFormatting.RED
-                    + "✦ Ya no quedan usos de tu Cetro Divino (Épico).";
-            player.sendMessage(new StringTextComponent(msg), player.getUUID());
+            // Si ya estaba a 0, mostramos mensaje y eliminamos
+            player.sendMessage(new StringTextComponent(getMensajeSinUsosEpico()), player.getUUID());
             PlayerSoundUtils.playSoundToPlayer(
                     player, SoundEvents.ITEM_BREAK, SoundCategory.PLAYERS, 0.7f, 1.0f
             );
-            player.getServer().execute(() -> {
-                // Ejecutar en el siguiente tick del servidor
-                player.getServer().submitAsync(() -> {
-                    stack.shrink(1);
-                });
-            });
+            player.getServer().execute(() -> stack.shrink(1));
             return;
         }
 
-        // 1) Decrementar uso
+        // 1) Decrementar uso:
         CetroDivinoEpico.decrementarUso(stack);
 
-        // 2) Curar 50% de HP al jugador
+        // 2) Ahora que ya restamos el uso, recalculamos cuántos quedan:
+        usosRestantes = CetroDivinoEpico.getUsosRestantes(stack);
+
+        // 3) Aplicamos el efecto de curación
         double porcHp = CetroDivinoEpico.getHpRestorePorc(); // 0.50
+        // 3.1) Curar 50% de HP al jugador
         float vidaAct = player.getHealth();
         float vidaMax = player.getMaxHealth();
         float cura = (float) (vidaMax * porcHp);
         player.setHealth(Math.min(vidaAct + cura, vidaMax));
 
-        // 3) Curar a cada Pokémon de la party
+        // 3.2) Curar a cada Pokémon de la party
         PlayerPartyStorage party = StorageProxy.getParty(player);
         if (party != null) {
             double porcPp = CetroDivinoEpico.getPpRestorePorc(); // 0.50
             for (Pokemon pkm : party.getTeam()) {
                 if (pkm == null || pkm.isEgg()) continue;
 
-                // 3.1) Curación parcial de HP (50%)
+                // Curación parcial de HP (50%)
                 int hpActual = pkm.getHealth();
                 int hpMax = pkm.getStats().getHP();
                 int curacion = (int) Math.floor(hpMax * porcHp);
                 pkm.setHealth(Math.min(hpActual + curacion, hpMax));
 
-                // 3.2) Restaurar 50% de PP de cada movimiento
+                // Restaurar 50% de PP de cada movimiento
                 for (Attack atk : pkm.getMoveset()) {
-                    if (atk == null) continue;
                     int ppCur = atk.pp;
                     int ppMax = atk.getMaxPP();
                     int restorePp = (int) Math.floor(ppMax * porcPp);
                     atk.pp = Math.min(ppCur + restorePp, ppMax);
                 }
 
-                // 3.3) Notificar al cliente el cambio en slot y Pokémon
+                // Notificar el cambio
                 StoragePosition pos = party.getPosition(pkm);
-                party.notifyListeners(pos, pkm); //
+                party.notifyListeners(pos, pkm);
             }
         }
 
+        // 4) Sonido de curación
         PlayerSoundUtils.playSoundToPlayer(
                 player, SoundEvents.GENERIC_BURN, SoundCategory.PLAYERS, 1.0f, 0.5f
         );
 
-        // 4) Mensaje con usos restantes
-        usosRestantes = CetroDivinoEpico.getUsosRestantes(stack);
-        String titulo = TextFormatting.DARK_PURPLE
-                + "✦ Cetro Divino (Épico) Usado ✦";
-        String linea1 = TextFormatting.GREEN
-                + "❖ HP restaurado: §b" + (int) (porcHp * 100) + "%";
-        String linea2 = TextFormatting.GREEN
-                + "❖ PP del equipo: §b" + (int) (porcHp * 100) + "%";
-        String linea3 = TextFormatting.YELLOW
-                + "❖ Usos restantes: §e" + usosRestantes;
-        String mensaje = titulo + "\n" + linea1 + "\n" + linea2 + "\n" + linea3;
-        player.sendMessage(new StringTextComponent(mensaje), player.getUUID());
-
+        // 5) Si llegó a 0 usos tras este clic, enviar ambos mensajes y eliminar
         if (usosRestantes <= 0) {
-            stack.shrink(1);
+            player.sendMessage(new StringTextComponent(getMensajeSinUsosEpico()), player.getUUID());
+            player.sendMessage(new StringTextComponent(getMensajeUsoEpico(porcHp, 0)), player.getUUID());
+            PlayerSoundUtils.playSoundToPlayer(
+                    player, SoundEvents.ITEM_BREAK, SoundCategory.PLAYERS, 0.7f, 1.0f
+            );
+            player.getServer().execute(() -> stack.shrink(1));
+            return;
         }
+
+        // 6) Si aún quedan usos, mensaje de uso normal
+        String mensaje = getMensajeUsoEpico(porcHp, usosRestantes);
+        player.sendMessage(new StringTextComponent(mensaje), player.getUUID());
     }
 
+
     /**
-     * Cetro Divino (Mitico):
+     * Cetro Divino (Mítico):
      * - Si no está en cooldown: cura completa (jugador + party) con heal() y aplica cooldown
      * - Si está en cooldown: informa tiempo restante
-     * - Siempre consume el item al usarlo
+     * - Siempre consume el ítem al usarlo
      */
     private static void usarCetroMitico(ServerPlayerEntity player, ItemStack stack) {
         long remainingMs = CetroDivinoMitico.getRemainingCooldownMs(player);
         if (remainingMs > 0) {
             long mins = (remainingMs + 59_999L) / 60_000L; // redondeo
             String msg = TextFormatting.RED
-                    + "✦ Cetro Divino (Mitico) en cooldown. \n§cTiempo restante: §e"
+                    + "✦ Cetro Divino (Mítico) en cooldown.\n§c✧ Tiempo restante: §e"
                     + mins + " min";
             player.sendMessage(new StringTextComponent(msg), player.getUUID());
             PlayerSoundUtils.playSoundToPlayer(
@@ -266,9 +287,9 @@ public class CetroDivinoHandler {
             for (Pokemon pkm : party.getTeam()) {
                 if (pkm == null || pkm.isEgg()) continue;
 
-                pkm.heal(); // cura HP + PP completos :contentReference[oaicite:6]{index=6}
+                pkm.heal(); // cura HP + PP completos
                 StoragePosition pos = party.getPosition(pkm);
-                party.notifyListeners(pos, pkm); //
+                party.notifyListeners(pos, pkm);
             }
         }
 
@@ -279,7 +300,7 @@ public class CetroDivinoHandler {
 
         // 4) Mensaje decorativo
         String titulo = TextFormatting.GOLD
-                + "✦ Cetro Divino (Mitico) Usado ✦";
+                + "✦ Cetro Divino (Mítico) Usado ✦";
         String linea1 = TextFormatting.GREEN
                 + "❖ HP restaurado: §b100%";
         String linea2 = TextFormatting.GREEN

@@ -1,5 +1,6 @@
 package rl.sage.rangerlevels.items.cetro;
 
+import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -11,6 +12,7 @@ import net.minecraft.util.text.StringTextComponent;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,7 +30,7 @@ public class CetroDivinoMitico extends RangerItemDefinition {
     public CetroDivinoMitico() {
         super(
                 ID,
-                Items.BLAZE_ROD,       // Nether Star de base (puedes cambiarlo)
+                PixelmonItems.fairy_wand,
                 Tier.MITICO,
                 null,
                 "✦ Cetro Divino Mítico ✦",
@@ -58,6 +60,8 @@ public class CetroDivinoMitico extends RangerItemDefinition {
         }
         displayTag.put("Lore", loreList);
         tag.put("display", displayTag);
+
+        NBTUtils.applyAllHideFlags(tag);
 
         stack.setTag(tag);
         return stack;
