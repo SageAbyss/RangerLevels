@@ -22,5 +22,9 @@ public class ItemsHelper {
                 .filter(id -> !id.startsWith("caja_misteriosa_"))
                 .collect(Collectors.toList());
     }
-
+    /** Nuevo: obtiene el Tier de un ítem de tu mod por su ID. */
+    public static Tier getTier(String id) {
+        RangerItemDefinition def = CustomItemRegistry.getDefinition(id);
+        return def != null ? def.getTier() : null;
+    }
 }

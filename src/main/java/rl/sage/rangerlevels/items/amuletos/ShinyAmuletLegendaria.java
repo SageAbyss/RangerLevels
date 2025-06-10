@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
+import rl.sage.rangerlevels.config.ItemsConfig;
 import rl.sage.rangerlevels.config.MysteryBoxesConfig;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
@@ -25,7 +26,7 @@ import java.util.List;
  */
 public class ShinyAmuletLegendaria extends RangerItemDefinition {
     public static final String ID = "amuleto_shiny_legendaria";
-    private static final double CHANCE_PERCENT = MysteryBoxesConfig.get().shinyAmulet.legendariaPercent;
+    private static final double CHANCE_PERCENT = ItemsConfig.get().shinyAmulet.legendariaPercent;
 
     public ShinyAmuletLegendaria() {
         super(
@@ -57,6 +58,10 @@ public class ShinyAmuletLegendaria extends RangerItemDefinition {
         generatedLore.add(new StringTextComponent(
                 TextFormatting.GRAY
                         + "✧ Se consume al cumplir su función"
+        ));
+        generatedLore.add(new StringTextComponent(
+                TextFormatting.GRAY
+                        + " "
         ));
         IFormattableTextComponent tierPrefix = new StringTextComponent("§7▶ Tier: ");
         IFormattableTextComponent tierGradient = Tier.LEGENDARIO.getColor();

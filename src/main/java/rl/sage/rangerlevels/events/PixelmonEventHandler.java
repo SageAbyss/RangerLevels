@@ -1,16 +1,25 @@
 package rl.sage.rangerlevels.events;
 
 import com.pixelmonmod.pixelmon.Pixelmon;
+
+import com.pixelmonmod.pixelmon.api.battles.BattleResults;
 import com.pixelmonmod.pixelmon.api.events.*;
+import com.pixelmonmod.pixelmon.api.events.battles.BattleEndEvent;
+import com.pixelmonmod.pixelmon.battles.BattleQueryPlayer;
+import com.pixelmonmod.pixelmon.battles.controller.participants.BattleParticipant;
+import com.pixelmonmod.pixelmon.battles.controller.participants.PlayerParticipant;
 import com.pixelmonmod.pixelmon.api.events.battles.CatchComboEvent;
 import com.pixelmonmod.pixelmon.api.events.legendary.ArceusEvent;
 import com.pixelmonmod.pixelmon.api.events.legendary.TimespaceEvent;
 import com.pixelmonmod.pixelmon.api.events.raids.StartRaidEvent;
 import com.pixelmonmod.pixelmon.api.pokedex.PokedexRegistrationStatus;
 import com.pixelmonmod.pixelmon.api.pokemon.boss.BossTierRegistry;
+import com.pixelmonmod.pixelmon.battles.controller.BattleController;
 import com.pixelmonmod.pixelmon.battles.controller.participants.BattleParticipant;
 import com.pixelmonmod.pixelmon.battles.controller.participants.PlayerParticipant;
 import com.pixelmonmod.pixelmon.entities.pixelmon.PixelmonEntity;
+import net.minecraft.item.Item;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.fml.common.Mod;
 import rl.sage.rangerlevels.capability.PassCapabilities;
 import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
@@ -18,8 +27,11 @@ import rl.sage.rangerlevels.items.RangerItemDefinition;
 
 import rl.sage.rangerlevels.items.amuletos.ShinyAmuletHandler;
 import rl.sage.rangerlevels.items.boxes.MysteryBoxHelper;
+import rl.sage.rangerlevels.items.flag.BattleBannerHandler;
 import rl.sage.rangerlevels.items.gemas.ExpGemHandler;
 import rl.sage.rangerlevels.config.*;
+import rl.sage.rangerlevels.items.manuales.ManualTrainingHandler;
+import rl.sage.rangerlevels.items.polvo.PolvoExpHandler;
 import rl.sage.rangerlevels.limiter.LimiterHelper;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.pass.PassType;
@@ -37,9 +49,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Function;
 
 @Mod.EventBusSubscriber(modid = "rangerlevels")
@@ -207,12 +217,36 @@ public class PixelmonEventHandler {
 
     @SubscribeEvent
     public static void onEggHatch(EggHatchEvent.Post ev) {
-        handleGeneric(ev.getPlayer(), "eggHatch", EventConfig::getExpRange);
+        ServerPlayerEntity player = ev.getPlayer();
+        EventConfig cfg = getCfg("eggHatch");
+        if (cfg == null || !cfg.isEnable() || player == null) return;
+        if (cfg.isRequiresPermission() && !hasAnyPermission(player, cfg.getPermissions())) return;
+        // 1) EXP base aleatoria
+        int base = randomInRange(cfg.getExpRange()[0], cfg.getExpRange()[1]);
+        // 2) VIP override si aplica
+        Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
+        if (vip != null) base = vip;
+        // 3) Aplicar sólo el bonus del polvo ancestral
+        int totalConPolvo = PolvoExpHandler.applyBonus(player, base);
+        // 4) Dar EXP con límite
+        LimiterHelper.giveExpWithLimit(player, totalConPolvo);
     }
 
     @SubscribeEvent
     public static void onEvolve(EvolveEvent.Post ev) {
-        handleGeneric(ev.getPlayer(), "evolve", EventConfig::getExpRange);
+        ServerPlayerEntity player = ev.getPlayer();
+        EventConfig cfg = getCfg("evolve");
+        if (cfg == null || !cfg.isEnable() || player == null) return;
+        if (cfg.isRequiresPermission() && !hasAnyPermission(player, cfg.getPermissions())) return;
+        // 1) EXP base aleatoria
+        int base = randomInRange(cfg.getExpRange()[0], cfg.getExpRange()[1]);
+        // 2) VIP override si aplica
+        Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
+        if (vip != null) base = vip;
+        // 3) Aplicar sólo el bonus del polvo ancestral
+        int totalConPolvo = PolvoExpHandler.applyBonus(player, base);
+        // 4) Dar EXP con límite
+        LimiterHelper.giveExpWithLimit(player, totalConPolvo);
     }
 
     @SubscribeEvent
@@ -311,7 +345,7 @@ public class PixelmonEventHandler {
                         ChampionAmulet.ID.equals(RangerItemDefinition.getIdFromStack(stack))
                 );
         if (hasAmulet) {
-            MysteryBoxesConfig.ChampionAmuletConfig amCfg = MysteryBoxesConfig.get().championAmulet;
+            ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
             for (MysteryBoxesConfig.MysteryBoxConfig.CommandEntry entry : amCfg.commands) {
                 // ahora entry.chancePercent y entry.command existen
                 if (RNG.nextDouble() * 100 < entry.chancePercent) {
@@ -326,12 +360,18 @@ public class PixelmonEventHandler {
                 }
             }
         }
+        // ——— AÑADIDO: bonus de Bandera de Batalla ———
+        if (BattleBannerHandler.isInControlledArea(player)) {
+            base = (int) Math.round(base * 1.5);
+            player.sendMessage(new StringTextComponent("§a+50% EXP de Bandera de Batalla!"), player.getUUID());
+        }
 
         // ── Cálculo normal (sin gema) ──
         int totalSinGema = applyMultipliers(player, base, "beatWild");
         double gemBonus = ExpGemHandler.getBonus(player); // 0.10, 0.30, 0.50 o 0.0
         int totalConGema = (int) Math.round(totalSinGema * (1.0 + gemBonus));
-        LimiterHelper.giveExpWithLimit(player, totalConGema);
+        int totalConManual = ManualTrainingHandler.applyBonus(player, totalConGema);
+        LimiterHelper.giveExpWithLimit(player, totalConManual);
     }
 
     @SubscribeEvent
@@ -355,7 +395,7 @@ public class PixelmonEventHandler {
                 .filter(Objects::nonNull)
                 .anyMatch(stack -> ChampionAmulet.ID.equals(RangerItemDefinition.getIdFromStack(stack)));
         if (hasAmulet) {
-            MysteryBoxesConfig.ChampionAmuletConfig amCfg = MysteryBoxesConfig.get().championAmulet;
+            ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
             // 1) bonus de EXP
             double xpPercent = amCfg.xpPercent;
             int bonusXp = (int) Math.floor(base * (xpPercent / 100.0));
@@ -372,10 +412,16 @@ public class PixelmonEventHandler {
             }
         }
         // ────────────────────────────────────
+        // ——— AÑADIDO: bonus de Bandera de Batalla ———
+        if (BattleBannerHandler.isInControlledArea(player)) {
+            base = (int) Math.round(base * 1.5);
+            player.sendMessage(new StringTextComponent("§a+50% EXP de Bandera de Batalla!"), player.getUUID());
+        }
 
         // ── Cálculo normal (sin gema) ──
         int total = applyMultipliers(player, base, key);
-        LimiterHelper.giveExpWithLimit(player, total);
+        int totalConManual = ManualTrainingHandler.applyBonus(player, total);
+        LimiterHelper.giveExpWithLimit(player, totalConManual);
     }
 
 
@@ -443,5 +489,65 @@ public class PixelmonEventHandler {
         if (vip != null) base = vip;
 
         giveExp(player, base, "pokeLootDrop");
+    }
+    @SubscribeEvent
+    public static void onBeatPlayer(BattleEndEvent ev) {
+        // Solo batallas 1 vs 1 de jugadores
+        List<ServerPlayerEntity> players = ev.getPlayers();
+        if (players.size() != 2) return;
+
+        EventConfig cfg = getCfg("beatPlayer");
+        if (cfg == null || !cfg.isEnable()) return;
+
+        for (ServerPlayerEntity player : players) {
+            Optional<BattleResults> resultOpt = ev.getResult(player);
+            if (!resultOpt.isPresent()) continue;
+            // Solo premiamos al ganador
+            if (resultOpt.get() != BattleResults.VICTORY) continue;
+
+            if (cfg.isRequiresPermission() && !hasAnyPermission(player, cfg.getPermissions())) continue;
+
+            // Calcular exp base
+            int[] range = cfg.getExpRange();
+            int base = randomInRange(range[0], range[1]);
+
+            // VIP override
+            Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
+            if (vip != null) base = vip;
+
+            // Amuleto de campeón
+            boolean hasAmulet = player.inventory.items.stream()
+                    .anyMatch(stack -> ChampionAmulet.ID.equals(RangerItemDefinition.getIdFromStack(stack)));
+            if (hasAmulet) {
+                ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
+                int bonusXp = (int) Math.floor(base * (amCfg.xpPercent / 100.0));
+                base += bonusXp;
+                for (MysteryBoxesConfig.MysteryBoxConfig.CommandEntry entry : amCfg.commands) {
+                    if (RNG.nextDouble() * 100 < entry.chancePercent) {
+                        String cmd = entry.command.replace("%player%", player.getName().getString());
+                        MinecraftServer srv = ServerLifecycleHooks.getCurrentServer();
+                        if (srv != null) {
+                            srv.getCommands().performCommand(srv.createCommandSourceStack(), cmd);
+                        }
+                    }
+                }
+            }
+
+            // ——— AÑADIDO: bonus de Bandera de Batalla ———
+            if (BattleBannerHandler.isInControlledArea(player)) {
+                base = (int) Math.round(base * 1.5);
+            }
+            // Multiplicadores (SIN GEMAS)
+            int total = applyMultipliers(player, base, "beatPlayer");
+            int totalConManual = ManualTrainingHandler.applyBonus(player, total);
+            // Dar exp con límite
+            LimiterHelper.giveExpWithLimit(player, totalConManual);
+            // Intento de drop de caja de misterio
+            MysteryBoxHelper.tryDropOneOnEvent(
+                    player,
+                    MysteryBoxHelper.EventType.BEAT_BOSS,
+                    MysteryBoxesConfig.get().mysteryBox.comun
+            );
+        }
     }
 }

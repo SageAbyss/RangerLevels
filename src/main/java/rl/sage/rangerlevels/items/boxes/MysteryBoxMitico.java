@@ -29,7 +29,7 @@ public class MysteryBoxMitico extends RangerItemDefinition {
                 Items.ENDER_CHEST,
                 Tier.MITICO,
                 TextFormatting.RED,
-                "❖ Caja Misteriosa Mítico ❖",
+                "❖ Caja Misteriosa Mítica ❖",
                 null
         );
         CustomItemRegistry.register(this);
@@ -43,7 +43,8 @@ public class MysteryBoxMitico extends RangerItemDefinition {
         MysteryBoxesConfig.MysteryBoxConfig.TierBoxConfig cfg = MysteryBoxesConfig.get().mysteryBox.mitico;
         List<IFormattableTextComponent> lore = Arrays.asList(
                 new StringTextComponent("§7✧ Recompensas míticas del pase"),
-                new StringTextComponent("§7✧ Haz clic izquierdo para abrir"),
+                new StringTextComponent("§7✧ Colocalo en el suelo y abrelo"),
+                new StringTextComponent(" "),
                 new StringTextComponent("§7▶ Tier: ").append(Tier.MITICO.getColor())
         );
         CompoundNBT tag = stack.getOrCreateTag();

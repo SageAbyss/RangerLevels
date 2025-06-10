@@ -29,7 +29,7 @@ public class MysteryBoxComun extends RangerItemDefinition {
                 Items.CHEST,
                 Tier.COMUN,
                 TextFormatting.GRAY,
-                "❖ Caja Misteriosa ❖",
+                "❖ Caja Misteriosa Común ❖",
                 null
         );
         CustomItemRegistry.register(this);
@@ -45,7 +45,8 @@ public class MysteryBoxComun extends RangerItemDefinition {
         MysteryBoxesConfig.MysteryBoxConfig.TierBoxConfig cfg = MysteryBoxesConfig.get().mysteryBox.comun;
         List<IFormattableTextComponent> lore = Arrays.asList(
                 new StringTextComponent("§7✧ Contiene recompensas exclusivas del pase"),
-                new StringTextComponent("§7✧ Haz clic izquierdo para abrir"),
+                new StringTextComponent("§7✧ Colocalo en el suelo y abrelo"),
+                new StringTextComponent(" "),
                 new StringTextComponent("§7▶ Tier: ").append(Tier.COMUN.getColor())
         );
         CompoundNBT tag = stack.getOrCreateTag();

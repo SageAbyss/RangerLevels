@@ -52,6 +52,8 @@ public class TicketMaster extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Usa este Ticket para ventajas de pase Ultra."),
                 // 3.2) Viñeta “✧” + caducidad en 24 horas
                 new StringTextComponent("§7✧ Caduca en §e24 §7horas"),
+                new StringTextComponent("§7✧ Click para activar"),
+                new StringTextComponent(" "),
                 // 3.3) “▶ Tier:” en gris + “MITICO” en degradado pastel
                 new StringTextComponent("§7▶ Tier: ").append(Tier.MITICO.getColor())
         );

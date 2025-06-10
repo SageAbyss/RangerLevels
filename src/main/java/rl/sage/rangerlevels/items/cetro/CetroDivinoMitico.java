@@ -49,6 +49,7 @@ public class CetroDivinoMitico extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Cura completamente tu HP y a tu equipo Pokémon"),
                 new StringTextComponent("§7✧ Restaura todos los PP de cada movimiento"),
                 new StringTextComponent("§7✧ Uso ilimitado, cooldown: §b30 min"),
+                new StringTextComponent(" "),
                 new StringTextComponent("§7▶ Tier: ").append(Tier.MITICO.getColor())
         );
         CompoundNBT tag = stack.getOrCreateTag();

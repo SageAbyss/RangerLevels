@@ -29,7 +29,7 @@ public class MysteryBoxLegendario extends RangerItemDefinition {
                 Items.ENDER_CHEST,
                 Tier.LEGENDARIO,
                 TextFormatting.GOLD,
-                "❖ Caja Misteriosa Legendario ❖",
+                "❖ Caja Misteriosa Legendaria ❖",
                 null
         );
         CustomItemRegistry.register(this);
@@ -43,7 +43,8 @@ public class MysteryBoxLegendario extends RangerItemDefinition {
         MysteryBoxesConfig.MysteryBoxConfig.TierBoxConfig cfg = MysteryBoxesConfig.get().mysteryBox.legendario;
         List<IFormattableTextComponent> lore = Arrays.asList(
                 new StringTextComponent("§7✧ Recompensas legendarias del pase"),
-                new StringTextComponent("§7✧ Haz clic izquierdo para abrir"),
+                new StringTextComponent("§7✧ Colocalo en el suelo y abrelo"),
+                new StringTextComponent(" "),
                 new StringTextComponent("§7▶ Tier: ").append(Tier.LEGENDARIO.getColor())
         );
         CompoundNBT tag = stack.getOrCreateTag();

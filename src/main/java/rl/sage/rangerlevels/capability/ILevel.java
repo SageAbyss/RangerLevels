@@ -23,4 +23,10 @@ public interface ILevel {
     /** Obtiene el multiplicador personal del jugador */
     float getPlayerMultiplier();
     void setPlayerMultiplier(float multiplier);
+
+    /** Devuelve la última cantidad de EXP que se agregó vía addExp(...) */
+    int getLastGain();
+
+    /** Interno: establece la última cantidad de EXP ganada */
+    void setLastGain(int amount);
 }

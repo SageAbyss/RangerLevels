@@ -383,6 +383,7 @@ public class CommandRegistry {
                                 })
                                 .executes(ctx -> {
                                     ConfigLoader.load();
+                                    ItemsConfig.reload();
                                     MysteryBoxesConfig.reload();
                                     ExpConfig.reload();
                                     MultiplierState.load();

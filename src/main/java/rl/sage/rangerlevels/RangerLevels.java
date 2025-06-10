@@ -25,6 +25,7 @@ import rl.sage.rangerlevels.config.*;
 import rl.sage.rangerlevels.database.*;
 import rl.sage.rangerlevels.events.ExpEventHandler;
 import rl.sage.rangerlevels.events.PixelmonEventHandler;
+import rl.sage.rangerlevels.items.amuletos.SelloCapturaHandler;
 import rl.sage.rangerlevels.limiter.LimiterManager;
 import rl.sage.rangerlevels.limiter.LimiterWorldData;
 import rl.sage.rangerlevels.util.GradientText;
@@ -65,6 +66,7 @@ public class RangerLevels {
         MinecraftForge.EVENT_BUS.register(ExpEventHandler.class);
         MinecraftForge.EVENT_BUS.register(CommandRegistry.class);
         Pixelmon.EVENT_BUS.register(PixelmonEventHandler.class);
+        Pixelmon.EVENT_BUS.register(SelloCapturaHandler.class);
 
     }
 

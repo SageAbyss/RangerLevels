@@ -1,24 +1,40 @@
-// src/main/java/rl/sage/rangerlevels/items/boxes/MysteryBoxHelper.java
 package rl.sage.rangerlevels.items.boxes;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.command.CommandSource;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.tileentity.ChestTileEntity;
+import net.minecraft.tileentity.EnderChestTileEntity;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+
 import net.minecraftforge.registries.ForgeRegistries;
+import rl.sage.rangerlevels.RangerLevels;
 import rl.sage.rangerlevels.capability.LevelProvider;
 import rl.sage.rangerlevels.config.MysteryBoxesConfig;
-import rl.sage.rangerlevels.config.MysteryBoxesConfig.MysteryBoxConfig.TierBoxConfig;
 import rl.sage.rangerlevels.config.MysteryBoxesConfig.MysteryBoxConfig.CommandEntry;
+import rl.sage.rangerlevels.config.MysteryBoxesConfig.MysteryBoxConfig.TierBoxConfig;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
-import rl.sage.rangerlevels.RangerLevels;
 import rl.sage.rangerlevels.items.ItemsHelper;
+import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.*;
 
+@Mod.EventBusSubscriber(modid = RangerLevels.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class MysteryBoxHelper {
     private static final Random RNG = new Random();
 
@@ -39,22 +55,35 @@ public class MysteryBoxHelper {
         }
         if (!c.enable) return;
 
-        // 1) Dar ítems aleatorios ponderados + no-drop
+        // 1) Dar ítems aleatorios ponderados + no-drop + peso por tier de ítem
         int count = c.randomItemMin + RNG.nextInt(c.randomItemMax - c.randomItemMin + 1);
         List<String> rewards = ItemsHelper.getRewardItemIds();
-
         for (int i = 0; i < count; i++) {
-            // Construir pesos: NONE vs cada ítem de tu mod
             LinkedHashMap<String, Double> weights = new LinkedHashMap<>();
             if (c.randomItemsNoDropChance > 0) {
                 weights.put("NONE", c.randomItemsNoDropChance);
             }
-            double itemWeight = (100.0 - c.randomItemsNoDropChance) / rewards.size();
-            for (String itemId : rewards) {
-                weights.put(itemId, itemWeight);
+            Map<Tier, List<String>> byTier = new EnumMap<>(Tier.class);
+            for (String id : rewards) {
+                Tier t = ItemsHelper.getTier(id);
+                if (t != null) {
+                    byTier.computeIfAbsent(t, k -> new ArrayList<>()).add(id);
+                }
             }
-
-            // Tirada ponderada
+            for (Map.Entry<String, Double> te : c.randomItemTierWeights.entrySet()) {
+                String tierKey = te.getKey().toUpperCase(Locale.ROOT);
+                double tierWeight = te.getValue();
+                try {
+                    Tier tierEnum = Tier.valueOf(tierKey);
+                    List<String> list = byTier.getOrDefault(tierEnum, Collections.emptyList());
+                    if (!list.isEmpty()) {
+                        double perItem = tierWeight / list.size();
+                        for (String id : list) {
+                            weights.put(id, perItem);
+                        }
+                    }
+                } catch (IllegalArgumentException ignored) {}
+            }
             double total = weights.values().stream().mapToDouble(d -> d).sum();
             double roll  = RNG.nextDouble() * total;
             double cum   = 0;
@@ -64,31 +93,20 @@ public class MysteryBoxHelper {
                     String key = e.getKey();
                     if (!"NONE".equals(key)) {
                         player.addItem(CustomItemRegistry.create(key, 1));
-                        player.sendMessage(
-                                new StringTextComponent(
-                                        TextFormatting.AQUA + "✦ ¡Has recibido " +
-                                                CustomItemRegistry.create(key, 1)
-                                                        .getHoverName().getString() + "!"
-                                ),
-                                player.getUUID()
-                        );
+                        player.sendMessage(new StringTextComponent(
+                                TextFormatting.AQUA + "✦ ¡Has recibido " +
+                                        CustomItemRegistry.create(key,1).getHoverName().getString() + "!"
+                        ), player.getUUID());
                     }
                     break;
                 }
             }
         }
 
+        // 2) Ejecutar comandos desde consola
+        executeCommands(player, c.commands);
 
-        // 2) Comandos configurados
-        for (CommandEntry ce : c.commands) {
-            if (RNG.nextDouble() * 100 < ce.chancePercent) {
-                String cmd = ce.command.replace("%player%", player.getName().getString());
-                player.getServer().getCommands().performCommand(
-                        player.createCommandSourceStack(), cmd);
-            }
-        }
-
-        // 3) Upgrade box (con nombre estilizado en lugar de ID)
+        // 3) Upgrade box
         if (c.upgradeBoxChance > 0 && RNG.nextDouble() * 100 < c.upgradeBoxChance) {
             List<String> upgrades = c.boxesUpgrade;
             if (upgrades != null && !upgrades.isEmpty()) {
@@ -96,10 +114,9 @@ public class MysteryBoxHelper {
                 if (CustomItemRegistry.contains(nextId)) {
                     ItemStack nextStack = CustomItemRegistry.create(nextId, 1);
                     player.addItem(nextStack);
-                    // Obtenemos el nombre con estilo del item
                     ITextComponent nameComp = nextStack.getHoverName();
                     player.sendMessage(
-                            new StringTextComponent(TextFormatting.GREEN + "¡Tu caja misteriosa se ha transformado en ")
+                            new StringTextComponent(TextFormatting.YELLOW + "¡Tu caja misteriosa se ha transformado en ")
                                     .append(nameComp)
                                     .append(new StringTextComponent(TextFormatting.GREEN + "!")),
                             player.getUUID()
@@ -110,8 +127,7 @@ public class MysteryBoxHelper {
             }
         }
 
-        // 4) Mensaje de apertura con nombre estilizado (gradient) en lugar de ID
-        //    Creamos un ItemStack temporal para obtener su nombre (con estilo)
+        // 4) Mensaje de apertura
         ItemStack boxStack = CustomItemRegistry.create(boxId, 1);
         ITextComponent nameComp = boxStack.getHoverName();
         player.sendMessage(
@@ -125,117 +141,104 @@ public class MysteryBoxHelper {
         int expGain = c.expMin + RNG.nextInt(c.expMax - c.expMin + 1);
         LevelProvider.giveExpAndNotify(player, expGain);
 
-        // 6) Recompensas de items configuradas
+        // 6) Recompensas de ítems configuradas
         giveConfiguredRewards(c, player);
 
-        // 7) Intento de drop de UNA caja adicional (o ninguna)
+        // 7) Intento de drop de caja adicional
         tryDropOneOnEvent(player, event, c);
+    }
+
+    /**
+     * Ejecuta la lista de CommandEntry siempre usando la consola (perm level 4).
+     */
+    private static void executeCommands(ServerPlayerEntity player, List<CommandEntry> commands) {
+        if (commands == null || commands.isEmpty()) return;
+        MinecraftServer server = player.getServer();
+        if (server == null) {
+            player.sendMessage(new StringTextComponent(
+                    TextFormatting.RED + "Error interno: servidor no disponible para comandos."
+            ), player.getUUID());
+            return;
+        }
+        // Creamos un CommandSource con nivel de permiso 4 (consola)
+        CommandSource consoleSource = server
+                .createCommandSourceStack()
+                .withPermission(4)
+                .withSuppressedOutput();
+
+        for (CommandEntry ce : commands) {
+            if (ce == null || ce.command == null || ce.chancePercent <= 0) continue;
+            try {
+                if (RNG.nextDouble() * 100 < ce.chancePercent) {
+                    String cmd = ce.command.replace("%player%", player.getName().getString());
+                    server.getCommands().performCommand(consoleSource, cmd);
+                }
+            } catch (Exception ex) {
+                RangerLevels.LOGGER.error("Error ejecutando comando de MysteryBox: {}", ce.command, ex);
+            }
+        }
     }
 
     public static void giveConfiguredRewards(TierBoxConfig c, ServerPlayerEntity player) {
         Map<String, Integer> itemsChance = c.itemsChance;
         if (itemsChance == null || itemsChance.isEmpty()) return;
-
-        // 1) Suma de pesos y tirada
         int totalWeight = itemsChance.values().stream().mapToInt(i -> i).sum();
         int roll = RNG.nextInt(totalWeight);
         int cumulative = 0;
-
         for (Map.Entry<String, Integer> entry : itemsChance.entrySet()) {
             cumulative += entry.getValue();
             if (roll < cumulative) {
-                String rawKey = entry.getKey();            // p.ej. "IRON_BLOCK" o "PIXELMON_MASTER_BALL"
-                String modid, path;
-
-                // 2) Decidir namespace y path
-                if (rawKey.startsWith("PIXELMON_")) {
-                    modid = "pixelmon";
-                    path = rawKey.substring("PIXELMON_".length()).toLowerCase(Locale.ROOT);
-                } else {
-                    modid = "minecraft";
-                    path = rawKey.toLowerCase(Locale.ROOT);
-                }
-
+                String rawKey = entry.getKey();
+                String modid = rawKey.startsWith("PIXELMON_") ? "pixelmon" : "minecraft";
+                String path  = rawKey.startsWith("PIXELMON_")
+                        ? rawKey.substring("PIXELMON_".length()).toLowerCase(Locale.ROOT)
+                        : rawKey.toLowerCase(Locale.ROOT);
                 ResourceLocation rl = new ResourceLocation(modid, path);
-                Item item = ForgeRegistries.ITEMS.getValue(rl);
-
-                if (item == null) {
-                    // Si no existe, avisa y sigue al siguiente
-                    RangerLevels.LOGGER.warn("Item desconocido en giveConfiguredRewards: {}", rl);
-                    continue;
-                }
-
-                // 3) Crea y entrega el ItemStack
-                ItemStack stack = new ItemStack(item, 1);
+                ItemStack stack = new ItemStack(ForgeRegistries.ITEMS.getValue(rl), 1);
                 player.addItem(stack);
                 break;
             }
         }
     }
 
-
     public enum EventType {
-        BEAT_BOSS,
-        LEVEL_UP,
-        RAID,
-        HUNDRED,
-        OPEN_BOX_BLOCK
+        BEAT_BOSS, LEVEL_UP, RAID, HUNDRED, OPEN_BOX_BLOCK
     }
 
-    /**
-     * Intenta soltar UNA caja basada en todos los tiers + la probabilidad de NO DROP
-     * del tier de la caja abierta (sourceTier.noDropChance).
-     */
     public static void tryDropOneOnEvent(ServerPlayerEntity player, EventType event, TierBoxConfig sourceTier) {
         MysteryBoxesConfig.MysteryBoxConfig cfg = MysteryBoxesConfig.get().mysteryBox;
-
-        // 0) Peso de NO DROP según el tier de la caja abierta
         LinkedHashMap<String, Double> weights = new LinkedHashMap<>();
         if (sourceTier.noDropChance > 0) {
             weights.put("NONE", sourceTier.noDropChance);
         }
-
-        // 1) Pesos de todas las cajas disponibles para este evento
         addWeight(cfg.comun,      MysteryBoxComun.ID,      event, weights);
         addWeight(cfg.raro,       MysteryBoxRaro.ID,       event, weights);
         addWeight(cfg.epico,      MysteryBoxEpico.ID,      event, weights);
         addWeight(cfg.legendario, MysteryBoxLegendario.ID, event, weights);
         addWeight(cfg.estelar,    MysteryBoxEstelar.ID,    event, weights);
         addWeight(cfg.mitico,     MysteryBoxMitico.ID,     event, weights);
-
-        // 2) Totalizar y salir si no hay nada
         double total = weights.values().stream().mapToDouble(d -> d).sum();
         if (total <= 0) return;
-
-        // 3) Tirada ponderada
         double roll = RNG.nextDouble() * total;
         double cumulative = 0;
         for (Map.Entry<String, Double> entry : weights.entrySet()) {
             cumulative += entry.getValue();
             if (roll <= cumulative) {
-                String key = entry.getKey();
-                if ("NONE".equals(key)) {
-                    // No drop: terminamos sin dar nada
-                    return;
+                if (!"NONE".equals(entry.getKey())) {
+                    ItemStack stack = CustomItemRegistry.create(entry.getKey(), 1);
+                    player.addItem(stack);
+                    player.sendMessage(new StringTextComponent(
+                            TextFormatting.GOLD + "✦ ¡Has recibido x1 "
+                                    + stack.getHoverName().getString()
+                                    + " por " + describeEvent(event) + "!"
+                    ), player.getUUID());
                 }
-                // Damos la caja seleccionada
-                ItemStack stack = CustomItemRegistry.create(key, 1);
-                player.addItem(stack);
-                String displayName = stack.getHoverName().getString();
-                player.sendMessage(
-                        new StringTextComponent(
-                                TextFormatting.GOLD + "✦ ¡Has recibido x1 " + displayName
-                                        + " por " + describeEvent(event) + "!"
-                        ),
-                        player.getUUID()
-                );
                 return;
             }
         }
     }
 
-    private static void addWeight(TierBoxConfig c, String boxId, EventType event,
-                                  LinkedHashMap<String, Double> weights) {
+    private static void addWeight(TierBoxConfig c, String boxId, EventType event, LinkedHashMap<String, Double> weights) {
         if (!c.enable) return;
         double chance;
         switch (event) {
@@ -245,19 +248,87 @@ public class MysteryBoxHelper {
             case HUNDRED:    chance = 100.0;                  break;
             default:         return;
         }
-        if (chance > 0) {
-            weights.put(boxId, chance);
-        }
+        if (chance > 0) weights.put(boxId, chance);
     }
 
     private static String describeEvent(EventType event) {
         switch (event) {
-            case BEAT_BOSS:       return "derrotar un jefe";
-            case LEVEL_UP:        return "subir de nivel";
-            case RAID:            return "completar una raid";
-            case HUNDRED:         return "evento especial";
-            case OPEN_BOX_BLOCK:  return "abrir una caja misteriosa";
-            default:              return "un evento";
+            case BEAT_BOSS:      return "derrotar un jefe";
+            case LEVEL_UP:       return "subir de nivel";
+            case RAID:           return "completar una raid";
+            case HUNDRED:        return "evento especial";
+            case OPEN_BOX_BLOCK: return "abrir una caja misteriosa";
+            default:             return "un evento";
         }
     }
+
+    @SubscribeEvent
+    public static void onRightClickBox(RightClickBlock event) {
+        if (event.getWorld().isClientSide()) return;
+        if (!(event.getPlayer() instanceof ServerPlayerEntity)) return;
+        ServerPlayerEntity opener = (ServerPlayerEntity) event.getPlayer();
+        ServerWorld world = (ServerWorld) event.getWorld();
+        BlockPos pos = event.getPos();
+        TileEntity te = world.getBlockEntity(pos);
+        if (te == null) return;
+
+        final String boxId;
+        final UUID ownerUuid;
+        if (te instanceof ChestTileEntity) {
+            ChestTileEntity chest = (ChestTileEntity) te;
+            if (!chest.getTileData().contains(NBT_BOX_ID)) return;
+            boxId = chest.getTileData().getString(NBT_BOX_ID);
+            ownerUuid = chest.getTileData().contains(NBT_BOX_OWNER)
+                    ? chest.getTileData().getUUID(NBT_BOX_OWNER) : null;
+
+        } else if (te instanceof EnderChestTileEntity) {
+            EnderChestTileEntity chest = (EnderChestTileEntity) te;
+            if (!chest.getTileData().contains(NBT_BOX_ID)) return;
+            boxId = chest.getTileData().getString(NBT_BOX_ID);
+            ownerUuid = chest.getTileData().contains(NBT_BOX_OWNER)
+                    ? chest.getTileData().getUUID(NBT_BOX_OWNER) : null;
+
+        } else {
+            return;
+        }
+
+        if (ownerUuid == null) {
+            opener.sendMessage(new StringTextComponent(TextFormatting.RED
+                            + "¡Esta caja no tiene dueño asignado, no se puede abrir!"),
+                    opener.getUUID()
+            );
+            return;
+        }
+
+        if (!ownerUuid.equals(opener.getUUID())) {
+            ServerPlayerEntity owner = world.getServer().getPlayerList().getPlayer(ownerUuid);
+            if (owner != null) {
+                owner.sendMessage(new StringTextComponent(TextFormatting.RED
+                                + opener.getName().getString()
+                                + " te robó la Caja Misteriosa!"),
+                        owner.getUUID()
+                );
+            }
+            opener.sendMessage(new StringTextComponent(TextFormatting.GRAY
+                            + "Poco moral pero válido... Le robaste la Caja Misteriosa a "
+                            + (owner != null ? owner.getName().getString() : "alguien") + "!"),
+                    opener.getUUID()
+            );
+        }
+
+        event.setCanceled(true);
+        event.setCancellationResult(ActionResultType.SUCCESS);
+        open(opener, boxId, EventType.OPEN_BOX_BLOCK);
+        world.removeBlock(pos, false);
+        PlayerSoundUtils.playSoundToPlayer(
+                opener,
+                SoundEvents.TOTEM_USE,
+                SoundCategory.MASTER,
+                1.0f,
+                0.7f
+        );
+    }
+
+    private static final String NBT_BOX_ID    = "RangerBoxID";
+    private static final String NBT_BOX_OWNER = "RangerBoxOwner";
 }

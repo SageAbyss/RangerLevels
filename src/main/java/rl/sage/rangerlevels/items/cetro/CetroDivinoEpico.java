@@ -56,6 +56,7 @@ public class CetroDivinoEpico extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Restaura el 50% de tu HP y del equipo Pokémon"),
                 new StringTextComponent("§7✧ Restaura 50% de PP de cada Pokémon"),
                 new StringTextComponent("§7✧ Usos restantes: §e" + usosRestantes),
+                new StringTextComponent(" "),
                 new StringTextComponent("§7▶ Tier: ").append(Tier.EPICO.getColor())
         );
 

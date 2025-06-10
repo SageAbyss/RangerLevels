@@ -1,4 +1,4 @@
-// File: rl/sage/rangerlevels/items/boxes/MysteryBoxPlaceHandler.java
+// File: src/main/java/rl/sage/rangerlevels/items/boxes/MysteryBoxPlaceHandler.java
 package rl.sage.rangerlevels.items.boxes;
 
 import net.minecraft.block.ChestBlock;
@@ -20,7 +20,8 @@ import rl.sage.rangerlevels.items.RangerItemDefinition;
 @Mod.EventBusSubscriber(modid = RangerLevels.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class MysteryBoxPlaceHandler {
 
-    private static final String NBT_BOX_ID = "RangerBoxID";
+    private static final String NBT_BOX_ID    = "RangerBoxID";
+    private static final String NBT_BOX_OWNER = "RangerBoxOwner";
 
     @SubscribeEvent
     public static void onPlaceBox(EntityPlaceEvent event) {
@@ -43,14 +44,18 @@ public class MysteryBoxPlaceHandler {
         }
         if (id == null) return;  // no era una MysteryBox
 
-        // Marca el TileEntity con nuestro ID
+        // Marca el TileEntity con nuestro ID y el UUID del jugador
         ServerWorld world = (ServerWorld) event.getWorld();
         BlockPos pos = event.getPos();
         TileEntity te = world.getBlockEntity(pos);
         if (te instanceof ChestTileEntity) {
-            ((ChestTileEntity) te).getTileData().putString(NBT_BOX_ID, id);
+            ChestTileEntity chest = (ChestTileEntity) te;
+            chest.getTileData().putString(NBT_BOX_ID, id);
+            chest.getTileData().putUUID(NBT_BOX_OWNER, player.getUUID());
         } else if (te instanceof EnderChestTileEntity) {
-            ((EnderChestTileEntity) te).getTileData().putString(NBT_BOX_ID, id);
+            EnderChestTileEntity chest = (EnderChestTileEntity) te;
+            chest.getTileData().putString(NBT_BOX_ID, id);
+            chest.getTileData().putUUID(NBT_BOX_OWNER, player.getUUID());
         }
     }
 }

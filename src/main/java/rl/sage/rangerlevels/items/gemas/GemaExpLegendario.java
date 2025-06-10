@@ -34,7 +34,7 @@ public class GemaExpLegendario extends RangerItemDefinition {
                 PixelmonItems.jade_orb,      // Ítem base: esmeralda
                 Tier.LEGENDARIO,    // Tier LEGENDARIO
                 null,               // Ya no pasamos TextFormatting
-                "✦ Gema de Dominio Legendario ✦",
+                "✦ Gema de Dominio Legendaria ✦",
                 null                // Lore se asigna en createStack()
         );
         CustomItemRegistry.register(this);
@@ -54,6 +54,8 @@ public class GemaExpLegendario extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Otorga +50% de EXP al capturar/derrotar Pokémon"),
                 // 3.2) Viñeta “✧” + duración
                 new StringTextComponent("§7✧ Dura 1 hora"),
+                new StringTextComponent("§7✧ Click para activar"),
+                new StringTextComponent(" "),
                 // 3.3) “▶ Tier:” en gris + “LEGENDARIO” en degradado pastel
                 new StringTextComponent("§7▶ Tier: ").append(Tier.LEGENDARIO.getColor())
         );

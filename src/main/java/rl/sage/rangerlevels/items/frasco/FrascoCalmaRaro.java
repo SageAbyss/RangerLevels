@@ -55,6 +55,8 @@ public class FrascoCalmaRaro extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Reduce un 15% la fuga de Pokémon salvajes"),
                 // Viñeta “✧” + duración
                 new StringTextComponent("§7✧ Dura 15 minutos"),
+                new StringTextComponent("§7✧ Click para activar"),
+                new StringTextComponent(" "),
                 // “▶ Tier:” en gris + “RARO” en degradado pastel
                 new StringTextComponent("§7▶ Tier: ").append(Tier.RARO.getColor())
         );

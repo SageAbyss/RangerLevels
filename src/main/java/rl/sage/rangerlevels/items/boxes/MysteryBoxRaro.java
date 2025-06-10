@@ -29,7 +29,7 @@ public class MysteryBoxRaro extends RangerItemDefinition {
                 Items.CHEST,
                 Tier.RARO,
                 TextFormatting.GREEN,
-                "❖ Caja Misteriosa Raro ❖",
+                "❖ Caja Misteriosa Rara ❖",
                 null
         );
         CustomItemRegistry.register(this);
@@ -43,7 +43,8 @@ public class MysteryBoxRaro extends RangerItemDefinition {
         MysteryBoxesConfig.MysteryBoxConfig.TierBoxConfig cfg = MysteryBoxesConfig.get().mysteryBox.raro;
         List<IFormattableTextComponent> lore = Arrays.asList(
                 new StringTextComponent("§7✧ Recompensas raras del pase"),
-                new StringTextComponent("§7✧ Haz clic izquierdo para abrir"),
+                new StringTextComponent("§7✧ Colocalo en el suelo y abrelo"),
+                new StringTextComponent(" "),
                 new StringTextComponent("§7▶ Tier: ").append(Tier.RARO.getColor())
         );
         CompoundNBT tag = stack.getOrCreateTag();

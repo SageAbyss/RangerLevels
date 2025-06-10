@@ -30,7 +30,7 @@ public class GemaExpEpico extends RangerItemDefinition {
                 PixelmonItems.jade_orb,
                 Tier.EPICO,       // Tier ÉPICO
                 null,             // Ya no pasamos TextFormatting
-                "✦ Gema de Dominio Épico ✦",
+                "✦ Gema de Dominio Épica ✦",
                 null              // Lore se asigna en createStack()
         );
         CustomItemRegistry.register(this);
@@ -50,6 +50,8 @@ public class GemaExpEpico extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Otorga +30% de EXP al capturar/derrotar Pokémon"),
                 // 3.2) Viñeta “✧” + duración
                 new StringTextComponent("§7✧ Dura 30 minutos"),
+                new StringTextComponent("§7✧ Click para activar"),
+                new StringTextComponent(" "),
                 // 3.3) “▶ Tier:” en gris + “ÉPICO” en degradado pastel
                 new StringTextComponent("§7▶ Tier: ").append(Tier.EPICO.getColor())
         );

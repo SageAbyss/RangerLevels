@@ -55,6 +55,8 @@ public class FrascoCalmaEstelar extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Reduce un 50% la fuga de Pokémon salvajes"),
                 // Viñeta “✧” + duración
                 new StringTextComponent("§7✧ Dura 60 minutos"),
+                new StringTextComponent("§7✧ Click para activar"),
+                new StringTextComponent(" "),
                 // “▶ Tier:” en gris + “ESTELAR” en degradado pastel
                 new StringTextComponent("§7▶ Tier: ").append(Tier.ESTELAR.getColor())
         );

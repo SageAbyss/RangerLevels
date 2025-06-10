@@ -1,6 +1,7 @@
 package rl.sage.rangerlevels.items.amuletos;
 
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
@@ -8,11 +9,13 @@ import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
+import rl.sage.rangerlevels.config.ItemsConfig;
 import rl.sage.rangerlevels.config.MysteryBoxesConfig;
 import rl.sage.rangerlevels.config.MysteryBoxesConfig.MysteryBoxConfig.CommandEntry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.EnchantUtils;
 import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.ArrayList;
@@ -50,7 +53,7 @@ public class ChampionAmulet extends RangerItemDefinition {
         stack.setHoverName(gradientName);
 
         // 2) Leemos configuración
-        MysteryBoxesConfig.ChampionAmuletConfig amCfg = MysteryBoxesConfig.get().championAmulet;
+        ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
         double xpPercent = amCfg.xpPercent;
 
         // Calculamos la probabilidad total sumando todas las entradas
@@ -81,6 +84,10 @@ public class ChampionAmulet extends RangerItemDefinition {
                 new StringTextComponent(
                         TextFormatting.GRAY
                                 + "✧ Debe estar en el inventario"
+                ),
+                new StringTextComponent(
+                        TextFormatting.GRAY
+                                + " "
                 )
         ));
 
@@ -97,12 +104,7 @@ public class ChampionAmulet extends RangerItemDefinition {
                 : new CompoundNBT();
 
         // Forzamos un encantamiento visual
-        ListNBT enchList = new ListNBT();
-        CompoundNBT ench = new CompoundNBT();
-        ench.putString("id", "minecraft:unbreaking");
-        ench.putShort("lvl", (short) 1);
-        enchList.add(ench);
-        tag.put("Enchantments", enchList);
+        EnchantUtils.addEnchantment(stack, Enchantments.UNBREAKING, 1);
 
         ListNBT loreList = new ListNBT();
         for (IFormattableTextComponent line : generatedLore) {

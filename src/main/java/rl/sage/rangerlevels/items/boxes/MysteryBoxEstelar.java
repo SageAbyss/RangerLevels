@@ -43,7 +43,8 @@ public class MysteryBoxEstelar extends RangerItemDefinition {
         MysteryBoxesConfig.MysteryBoxConfig.TierBoxConfig cfg = MysteryBoxesConfig.get().mysteryBox.estelar;
         List<IFormattableTextComponent> lore = Arrays.asList(
                 new StringTextComponent("§7✧ Recompensas estelares del pase"),
-                new StringTextComponent("§7✧ Haz clic izquierdo para abrir"),
+                new StringTextComponent("§7✧ Colocalo en el suelo y abrelo"),
+                new StringTextComponent(" "),
                 new StringTextComponent("§7▶ Tier: ").append(Tier.ESTELAR.getColor())
         );
         CompoundNBT tag = stack.getOrCreateTag();

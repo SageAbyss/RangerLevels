@@ -48,7 +48,8 @@ public class TicketNivel extends RangerItemDefinition {
                 // Viñeta “✧” + descripción genérica
                 new StringTextComponent("§7✧ Usa este Ticket para subir +1 nivel."),
                 // Viñeta “✧” + texto de consumo
-                new StringTextComponent("§7✧ Se consume al usarlo."),
+                new StringTextComponent("§7✧ Click para activar"),
+                new StringTextComponent(" "),
                 // “▶ Tier:” en gris + “RARO” en degradado pastel
                 new StringTextComponent("§7▶ Tier: ").append(Tier.RARO.getColor())
         );

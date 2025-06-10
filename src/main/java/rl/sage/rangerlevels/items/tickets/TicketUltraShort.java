@@ -65,6 +65,8 @@ public class TicketUltraShort extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Usa este Ticket para ventajas de pase Ultra rápido."),
                 // 3.2) Viñeta “✧” + caducidad en 10 segundos
                 new StringTextComponent("§7✧ Caduca en §e10 §7segundos"),
+                new StringTextComponent("§7✧ Click para activar"),
+                new StringTextComponent(" "),
                 // 3.3) “▶ Tier:” en gris + nombre del Tier en degradado pastel
                 //      Construimos el componente en dos partes: prefijo gris y degradado del Tier
                 new StringTextComponent("§7▶ Tier: ")

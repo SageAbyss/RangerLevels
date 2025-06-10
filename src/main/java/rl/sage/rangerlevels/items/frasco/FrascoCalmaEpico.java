@@ -55,6 +55,8 @@ public class FrascoCalmaEpico extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Reduce un 30% la fuga de Pokémon salvajes"),
                 // Viñeta “✧” + duración
                 new StringTextComponent("§7✧ Dura 30 minutos"),
+                new StringTextComponent("§7✧ Click para activar"),
+                new StringTextComponent(" "),
                 // “▶ Tier:” en gris + “ÉPICO” en degradado pastel
                 new StringTextComponent("§7▶ Tier: ").append(Tier.EPICO.getColor())
         );

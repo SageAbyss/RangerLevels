@@ -2,15 +2,18 @@
 package rl.sage.rangerlevels.items.amuletos;
 
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
+import rl.sage.rangerlevels.config.ItemsConfig;
 import rl.sage.rangerlevels.config.MysteryBoxesConfig;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.EnchantUtils;
 import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.ArrayList;
@@ -25,7 +28,7 @@ import java.util.List;
  */
 public class ShinyAmuletMitico extends RangerItemDefinition {
     public static final String ID = "amuleto_shiny_mitico";
-    private static final double CHANCE_PERCENT = MysteryBoxesConfig.get().shinyAmulet.miticoPercent;
+    private static final double CHANCE_PERCENT = ItemsConfig.get().shinyAmulet.miticoPercent;
 
     public ShinyAmuletMitico() {
         super(
@@ -58,6 +61,10 @@ public class ShinyAmuletMitico extends RangerItemDefinition {
                 TextFormatting.GRAY
                         + "✧ Se consume al cumplir su función"
         ));
+        generatedLore.add(new StringTextComponent(
+                TextFormatting.GRAY
+                        + " "
+        ));
         IFormattableTextComponent tierPrefix = new StringTextComponent("§7▶ Tier: ");
         IFormattableTextComponent tierGradient = Tier.MITICO.getColor();
         // Concatenamos ambos:
@@ -76,7 +83,7 @@ public class ShinyAmuletMitico extends RangerItemDefinition {
         }
         display.put("Lore", loreList);
         tag.put("display", display);
-
+        EnchantUtils.addEnchantment(stack, Enchantments.UNBREAKING, 1);
         NBTUtils.applyAllHideFlags(tag);
 
         stack.setTag(tag);

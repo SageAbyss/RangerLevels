@@ -5,14 +5,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.StringNBT;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.*;
 import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.List;
-import java.util.Stack;
+import java.util.UUID;
 
 /**
  * Clase base para cualquier “ítem” de RangerLevels que use un ítem vanilla + NBT.
@@ -23,10 +20,13 @@ import java.util.Stack;
  *  - tierColor (TextFormatting) para colorear el nombre
  *  - displayName (String) que aparecerá como nombre del ítem
  *  - defaultLore (List<IFormattableTextComponent>) con las líneas de lore por defecto
- *  - HideFlags completos para que NO se muestren atributos extra (encantos, atributos, etc.).
+ *  - HideFlags completos para que NO se muestren atributos extra
+ *  - Tag único por instancia para evitar stacking
  */
 public class RangerItemDefinition {
-    public static final String NBT_TIER_KEY = "RangerTier";
+    public static final String NBT_ID_KEY     = "RangerID";
+    public static final String NBT_TIER_KEY   = "RangerTier";
+    private static final String NBT_UNIQUE    = "RangerUniqueTag";
 
     private final String id;
     private final Item baseItem;
@@ -51,102 +51,81 @@ public class RangerItemDefinition {
             String displayName,
             List<IFormattableTextComponent> defaultLore
     ) {
-        this.id = id;
-        this.baseItem = baseItem;
-        this.tier = tier;
-        this.tierColor = tierColor;
-        this.displayName = displayName;
-        this.defaultLore = defaultLore;
+        this.id           = id;
+        this.baseItem     = baseItem;
+        this.tier         = tier;
+        this.tierColor    = tierColor;
+        this.displayName  = displayName;
+        this.defaultLore  = defaultLore;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public static final String NBT_ID_KEY = "RangerID";
-
-    public Item getBaseItem() {
-        return baseItem;
-    }
-
-    public Tier getTier() {
-        return tier;
-    }
-
-    public TextFormatting getTierColor() {
-        return tierColor;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
+    public String getId() { return id; }
+    public Item getBaseItem() { return baseItem; }
+    public Tier getTier() { return tier; }
+    public TextFormatting getTierColor() { return tierColor; }
+    public String getDisplayName() { return displayName; }
 
     /**
-     * Crea un ItemStack con la cantidad indicada, marcándolo en NBT con “RangerTier”,
-     * asignando el nombre coloreado y agregando el lore definido en defaultLore.
-     * Además aplica todos los bits de HideFlags para:
-     *   1  → oculta encantamientos
-     *   2  → oculta modificadores de atributo
-     *   4  → oculta “unbreakable”
-     *   8  → oculta “CanDestroy”
-     *   16 → oculta “CanPlaceOn”
-     *   32 → oculta efectos de poción
+     * Crea un ItemStack que:
+     *  - Siempre tiene count = 1.
+     *  - Incluye ID, tier, lore, hideflags.
+     *  - Aplica tierColor al nombre.
+     *  - Añade un UUID único para romper stacking.
      */
     public ItemStack createStack(int amount) {
-        ItemStack stack = new ItemStack(baseItem, amount);
+        // 1) Base stack de 1
+        ItemStack stack = new ItemStack(baseItem);
+        stack.setCount(1);
 
-        // 1) Guardar ID y Tier en NBT
+        // 2) Tag NBT inicial
         CompoundNBT tag = stack.getOrCreateTag();
         tag.putString(NBT_ID_KEY, id);
         tag.putString(NBT_TIER_KEY, tier.name());
 
-        // 2) Asignar hover-name con degradado (usando el Tier)
-        IFormattableTextComponent nombreColoreado = tier.applyGradient(displayName);
-        stack.setHoverName(nombreColoreado);
+        // 3) Nombre coloreado con tierColor y degradado de Tier
+        IFormattableTextComponent nombre = tier
+                .applyGradient(displayName)
+                .withStyle(style -> style
+                        .withColor(tierColor)
+                        .withItalic(false)
+                );
+        stack.setHoverName(nombre);
 
-        // 3) Si hay lore definido, inyectarlo en display → Lore
+        // 4) Lore por defecto (si lo hay)
         if (defaultLore != null && !defaultLore.isEmpty()) {
-            CompoundNBT displayTag = tag.contains("display")
+            CompoundNBT display = tag.contains("display")
                     ? tag.getCompound("display")
                     : new CompoundNBT();
-
             ListNBT loreList = new ListNBT();
             for (IFormattableTextComponent line : defaultLore) {
                 String json = ITextComponent.Serializer.toJson(line);
                 loreList.add(StringNBT.valueOf(json));
             }
-            displayTag.put("Lore", loreList);
-            tag.put("display", displayTag);
+            display.put("Lore", loreList);
+            tag.put("display", display);
         }
 
+        // 5) Ocultar atributos/encantos/etc.
         NBTUtils.applyAllHideFlags(tag);
 
-        // 5) Asignar el tag modificado al ItemStack y devolverlo
+        // 6) Tag único para romper stacking
+        tag.putUUID(NBT_UNIQUE, UUID.randomUUID());
+
+        // 7) Guardar NBT y devolver
         stack.setTag(tag);
         return stack;
     }
 
-    /**
-     * Dado un ItemStack, intenta extraer el Tier según el tag NBT “RangerTier”.
-     * @param stack ItemStack a inspeccionar
-     * @return Tier si coincide; null si no contiene el tag o no es válido
-     */
+    /** Extrae el Tier según el tag NBT “RangerTier”. */
     public static Tier getTierFromStack(ItemStack stack) {
         if (stack == null || !stack.hasTag()) return null;
         CompoundNBT tag = stack.getTag();
         if (!tag.contains(NBT_TIER_KEY)) return null;
-        try {
-            return Tier.valueOf(tag.getString(NBT_TIER_KEY));
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        try { return Tier.valueOf(tag.getString(NBT_TIER_KEY)); }
+        catch (IllegalArgumentException e) { return null; }
     }
 
-    /**
-     * Dado un ItemStack, intenta extraer el ID según el tag NBT “RangerID”.
-     * @param stack ItemStack a inspeccionar
-     * @return ID (ej. "ticket_nivel") si existe; null si no está presente o inválido
-     */
+    /** Extrae el ID según el tag NBT “RangerID”. */
     public static String getIdFromStack(ItemStack stack) {
         if (stack == null || !stack.hasTag()) return null;
         CompoundNBT tag = stack.getTag();

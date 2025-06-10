@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
+import rl.sage.rangerlevels.config.ItemsConfig;
 import rl.sage.rangerlevels.config.MysteryBoxesConfig;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
@@ -25,7 +26,7 @@ import java.util.List;
  */
 public class ShinyAmuletEstelar extends RangerItemDefinition {
     public static final String ID = "amuleto_shiny_estelar";
-    private static final double CHANCE_PERCENT = MysteryBoxesConfig.get().shinyAmulet.estelarPercent;
+    private static final double CHANCE_PERCENT = ItemsConfig.get().shinyAmulet.estelarPercent;
 
     public ShinyAmuletEstelar() {
         super(
@@ -57,6 +58,10 @@ public class ShinyAmuletEstelar extends RangerItemDefinition {
         generatedLore.add(new StringTextComponent(
                 TextFormatting.GRAY
                         + "✧ Se consume al cumplir su función"
+        ));
+        generatedLore.add(new StringTextComponent(
+                TextFormatting.GRAY
+                        + " "
         ));
         IFormattableTextComponent tierPrefix = new StringTextComponent("§7▶ Tier: ");
         IFormattableTextComponent tierGradient = Tier.ESTELAR.getColor();

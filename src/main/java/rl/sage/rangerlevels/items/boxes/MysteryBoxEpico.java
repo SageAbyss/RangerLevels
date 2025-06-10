@@ -29,7 +29,7 @@ public class MysteryBoxEpico extends RangerItemDefinition {
                 Items.CHEST,
                 Tier.EPICO,
                 TextFormatting.DARK_PURPLE,
-                "❖ Caja Misteriosa Épico ❖",
+                "❖ Caja Misteriosa Épica ❖",
                 null
         );
         CustomItemRegistry.register(this);
@@ -44,6 +44,7 @@ public class MysteryBoxEpico extends RangerItemDefinition {
         List<IFormattableTextComponent> lore = Arrays.asList(
                 new StringTextComponent("§7✧ Recompensas épicas del pase"),
                 new StringTextComponent("§7✧ Haz clic izquierdo para abrir"),
+                new StringTextComponent(" "),
                 new StringTextComponent("§7▶ Tier: ").append(Tier.EPICO.getColor())
         );
         CompoundNBT tag = stack.getOrCreateTag();

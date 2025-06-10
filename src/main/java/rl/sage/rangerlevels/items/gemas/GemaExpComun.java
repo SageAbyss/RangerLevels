@@ -30,7 +30,7 @@ public class GemaExpComun extends RangerItemDefinition {
                 PixelmonItems.jade_orb,    // Ítem base: esmeralda
                 Tier.COMUN,       // Tier COMÚN
                 null,             // Ya no pasamos TextFormatting
-                "✦ Gema de Dominio ✦",
+                "✦ Gema de Dominio Común ✦",
                 null              // Lore se asigna en createStack()
         );
         CustomItemRegistry.register(this);
@@ -50,6 +50,8 @@ public class GemaExpComun extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Otorga +10% de EXP al capturar/derrotar Pokémon"),
                 // 3.2) Viñeta “✧” + duración
                 new StringTextComponent("§7✧ Dura 15 minutos"),
+                new StringTextComponent("§7✧ Click para activar"),
+                new StringTextComponent(" "),
                 // 3.3) “▶ Tier:” en gris + “COMÚN” en degradado pastel
                 new StringTextComponent("§7▶ Tier: ").append(Tier.COMUN.getColor())
         );

@@ -9,6 +9,19 @@ public class LevelCapability implements ILevel {
     private int level = 1;
     private int exp = 0;
     private float playerMultiplier = 1.0f; // nuevo campo
+    private int lastGain = 0;
+
+
+    @Override
+    public int getLastGain() {
+        return lastGain;
+    }
+
+    @Override
+    public void setLastGain(int amount) {
+        this.lastGain = amount;
+    }
+
 
     @Override
     public int getLevel() {
@@ -33,6 +46,7 @@ public class LevelCapability implements ILevel {
 
     @Override
     public List<Integer> addExp(int amount) {
+        setLastGain(amount);
         exp += amount;
         List<Integer> nivelesSubidos = new ArrayList<>();
         while (true) {

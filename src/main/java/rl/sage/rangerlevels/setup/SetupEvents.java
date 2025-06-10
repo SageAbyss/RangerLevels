@@ -10,6 +10,7 @@ import rl.sage.rangerlevels.config.ConfigLoader;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.events.PixelmonEventHandler;
+import rl.sage.rangerlevels.items.amuletos.SelloCapturaEpico;
 import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
 import rl.sage.rangerlevels.items.amuletos.ShinyAmuletEstelar;
 import rl.sage.rangerlevels.items.amuletos.ShinyAmuletLegendaria;
@@ -17,13 +18,25 @@ import rl.sage.rangerlevels.items.amuletos.ShinyAmuletMitico;
 import rl.sage.rangerlevels.items.boxes.*;
 import rl.sage.rangerlevels.items.cetro.CetroDivinoComun;
 import rl.sage.rangerlevels.items.cetro.CetroDivinoEpico;
-import rl.sage.rangerlevels.items.cetro.CetroDivinoMitico;
+import rl.sage.rangerlevels.items.flag.BattleBannerEpico;
+import rl.sage.rangerlevels.items.flag.BattleBannerEstelar;
+import rl.sage.rangerlevels.items.flag.BattleBannerMitico;
 import rl.sage.rangerlevels.items.frasco.FrascoCalmaEpico;
 import rl.sage.rangerlevels.items.frasco.FrascoCalmaEstelar;
 import rl.sage.rangerlevels.items.frasco.FrascoCalmaRaro;
 import rl.sage.rangerlevels.items.gemas.GemaExpComun;
 import rl.sage.rangerlevels.items.gemas.GemaExpEpico;
 import rl.sage.rangerlevels.items.gemas.GemaExpLegendario;
+import rl.sage.rangerlevels.items.manuales.ManualEntrenamientoEpico;
+import rl.sage.rangerlevels.items.manuales.ManualEntrenamientoLegendario;
+import rl.sage.rangerlevels.items.manuales.ManualEntrenamientoRaro;
+import rl.sage.rangerlevels.items.polvo.PolvoExpEstelar;
+import rl.sage.rangerlevels.items.polvo.PolvoExpMitico;
+import rl.sage.rangerlevels.items.polvo.PolvoExpRaro;
+import rl.sage.rangerlevels.items.reliquias.ReliquiaTemporalComun;
+import rl.sage.rangerlevels.items.reliquias.ReliquiaTemporalEstelar;
+import rl.sage.rangerlevels.items.reliquias.ReliquiaTemporalLegendario;
+import rl.sage.rangerlevels.items.reliquias.ReliquiaTemporalRaro;
 import rl.sage.rangerlevels.items.tickets.*;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.multiplier.MultiplierState;
@@ -34,6 +47,7 @@ public class SetupEvents {
 
     // Extraemos la parte de texto del componente, sin estilos
     private static final String PREFIX_STR = RangerLevels.PREFIX.getString();
+    public static SelloCapturaEpico selloCapturaEpico;
 
     @SubscribeEvent
     public static void onCommonSetup(FMLCommonSetupEvent event) {
@@ -45,6 +59,7 @@ public class SetupEvents {
             MultiplierState.load();
             MultiplierManager.instance().reload();
         });
+        selloCapturaEpico = new SelloCapturaEpico();
         //ITEMS
         new TicketSuper();
         new TicketUltra();
@@ -70,6 +85,20 @@ public class SetupEvents {
         new MysteryBoxLegendario();
         new MysteryBoxEstelar();
         new MysteryBoxMitico();
+        new SelloCapturaEpico();
+        new BattleBannerEpico();
+        new BattleBannerEstelar();
+        new BattleBannerMitico();
+        new ManualEntrenamientoRaro();
+        new ManualEntrenamientoEpico();
+        new ManualEntrenamientoLegendario();
+        new ReliquiaTemporalComun();
+        new ReliquiaTemporalRaro();
+        new ReliquiaTemporalLegendario();
+        new ReliquiaTemporalEstelar();
+        new PolvoExpEstelar();
+        new PolvoExpRaro();
+        new PolvoExpMitico();
 
         PixelmonEventHandler.register();
         LOGGER.info("§8{}:§a Items cargados con éxito", PREFIX_STR);

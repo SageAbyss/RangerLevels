@@ -26,6 +26,7 @@ import rl.sage.rangerlevels.broadcast.BroadcastUtil;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.ExpConfig.SoundConfig;
 import rl.sage.rangerlevels.config.ExpConfig.MaxLevelBroadcastConfig;
+import rl.sage.rangerlevels.config.ItemsConfig;
 import rl.sage.rangerlevels.config.MysteryBoxesConfig;
 import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
@@ -87,7 +88,7 @@ public class LevelProvider {
 
         if (hasAmulet) {
             // 1.1) Leemos configuración de MysteryBoxesConfig.yml
-            MysteryBoxesConfig.ChampionAmuletConfig amCfg = MysteryBoxesConfig.get().championAmulet;
+            ItemsConfig.ChampionAmuletConfig amCfg = ItemsConfig.get().championAmulet;
 
             // 1.2) Aplicar bonus de EXP
             double xpPercent = amCfg.xpPercent; // ej. 15.0
