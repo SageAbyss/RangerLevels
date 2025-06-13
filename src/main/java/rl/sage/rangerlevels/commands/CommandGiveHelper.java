@@ -1,6 +1,5 @@
 package rl.sage.rangerlevels.commands;
 
-import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -8,37 +7,43 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 
-/**
- * Clase helper donde definimos giveItem(...)
- */
 public class CommandGiveHelper {
 
     /**
      * Intenta entregar al jugador el ítem <itemId> en la cantidad <count>.
+     * Dado que RangerItemDefinition.createStack siempre crea stacks de 1 con UUID único,
+     * se iterará count veces para generar count instancias.
+     *
      * @param player  Jugador a quien le damos el ítem
      * @param itemId  ID registrado en CustomItemRegistry
-     * @param count   Cantidad a otorgar
+     * @param count   Cantidad a otorgar (>=1)
      * @param source  CommandSource para enviar mensajes de éxito/fallo
-     * @return 1 si se entregó correctamente, 0 si hubo error (ítem desconocido)
+     * @return 1 si se procesó correctamente, 0 si hubo error (ítem desconocido)
      */
     public static int giveItem(ServerPlayerEntity player, String itemId, int count, CommandSource source) {
-        // 1) Generar el ItemStack desde el registry
-        ItemStack stack = CustomItemRegistry.create(itemId, count);
-        if (stack.isEmpty()) {
-            // Si devolvió EMPTY, el ID no existe en el registry
+        // 1) Verificar existencia del ID en CustomItemRegistry
+        if (!CustomItemRegistry.contains(itemId)) {
             source.sendFailure(new StringTextComponent(
                     TextFormatting.RED + "Ítem desconocido: " + itemId
             ));
             return 0;
         }
 
-        // 2) Intentar agregar al inventario. Si no cabe, se droppea al suelo.
-        boolean added = player.inventory.add(stack.copy());
-        if (!added) {
-            player.drop(stack.copy(), false);
+        // 2) Loop para crear y dar 'count' stacks de 1 unidad cada uno
+        for (int i = 0; i < count; i++) {
+            ItemStack stack = CustomItemRegistry.create(itemId, 1);
+            if (stack.isEmpty()) {
+                // En teoría no ocurre porque contains devolvió true, pero si falla, saltamos.
+                continue;
+            }
+            boolean added = player.inventory.add(stack);
+            if (!added) {
+                // Si no cabe en inventario, dropearlo en el suelo
+                player.drop(stack, false);
+            }
         }
 
-        // 3) Mensaje de éxito (broadcast=true para que aparece también en logs si es operador)
+        // 3) Mensaje de éxito
         source.sendSuccess(new StringTextComponent(
                 TextFormatting.GREEN + "Se entregó ×" + count + " " + itemId +
                         " a §b" + player.getName().getString()

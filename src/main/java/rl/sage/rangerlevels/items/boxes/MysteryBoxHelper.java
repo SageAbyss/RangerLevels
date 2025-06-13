@@ -2,6 +2,7 @@ package rl.sage.rangerlevels.items.boxes;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandSource;
+import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
@@ -37,11 +38,27 @@ import java.util.*;
 @Mod.EventBusSubscriber(modid = RangerLevels.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class MysteryBoxHelper {
     private static final Random RNG = new Random();
+    private static void giveOrDrop(ServerPlayerEntity player, ServerWorld world, BlockPos pos, ItemStack stack) {
+        // usamos copy() para no mutar el original por si acaso
+        ItemStack toGive = stack.copy();
+        boolean added = player.inventory.add(toGive);
+        if (!added) {
+            ItemEntity dropped = new ItemEntity(
+                    world,
+                    pos.getX() + 0.5,
+                    pos.getY() + 1.0,
+                    pos.getZ() + 0.5,
+                    toGive
+            );
+            // dropped.setDefaultPickupDelay(); // si quieres retrasar la recolección
+            world.addFreshEntity(dropped);
+        }
+    }
 
     /**
      * Abre la caja y ejecuta TODO lo configurado en MysteryBoxesConfig.yml para ese tier.
      */
-    public static void open(ServerPlayerEntity player, String boxId, EventType event) {
+    public static void open(ServerPlayerEntity player, String boxId, EventType event, ServerWorld world, BlockPos pos) {
         MysteryBoxesConfig.MysteryBoxConfig cfg = MysteryBoxesConfig.get().mysteryBox;
         TierBoxConfig c;
         switch(boxId) {
@@ -92,7 +109,7 @@ public class MysteryBoxHelper {
                 if (roll <= cum) {
                     String key = e.getKey();
                     if (!"NONE".equals(key)) {
-                        player.addItem(CustomItemRegistry.create(key, 1));
+                        giveOrDrop(player, world, pos, CustomItemRegistry.create(key, 1));
                         player.sendMessage(new StringTextComponent(
                                 TextFormatting.AQUA + "✦ ¡Has recibido " +
                                         CustomItemRegistry.create(key,1).getHoverName().getString() + "!"
@@ -113,7 +130,7 @@ public class MysteryBoxHelper {
                 String nextId = upgrades.get(RNG.nextInt(upgrades.size()));
                 if (CustomItemRegistry.contains(nextId)) {
                     ItemStack nextStack = CustomItemRegistry.create(nextId, 1);
-                    player.addItem(nextStack);
+                    giveOrDrop(player, world, pos, nextStack);
                     ITextComponent nameComp = nextStack.getHoverName();
                     player.sendMessage(
                             new StringTextComponent(TextFormatting.YELLOW + "¡Tu caja misteriosa se ha transformado en ")
@@ -142,10 +159,10 @@ public class MysteryBoxHelper {
         LevelProvider.giveExpAndNotify(player, expGain);
 
         // 6) Recompensas de ítems configuradas
-        giveConfiguredRewards(c, player);
+        giveConfiguredRewards(c, player, world, pos);
 
         // 7) Intento de drop de caja adicional
-        tryDropOneOnEvent(player, event, c);
+        tryDropOneOnEvent(player, event,world, pos, c);
     }
 
     /**
@@ -179,7 +196,7 @@ public class MysteryBoxHelper {
         }
     }
 
-    public static void giveConfiguredRewards(TierBoxConfig c, ServerPlayerEntity player) {
+    public static void giveConfiguredRewards(TierBoxConfig c, ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
         Map<String, Integer> itemsChance = c.itemsChance;
         if (itemsChance == null || itemsChance.isEmpty()) return;
         int totalWeight = itemsChance.values().stream().mapToInt(i -> i).sum();
@@ -195,7 +212,7 @@ public class MysteryBoxHelper {
                         : rawKey.toLowerCase(Locale.ROOT);
                 ResourceLocation rl = new ResourceLocation(modid, path);
                 ItemStack stack = new ItemStack(ForgeRegistries.ITEMS.getValue(rl), 1);
-                player.addItem(stack);
+                giveOrDrop(player, world, pos, stack);
                 break;
             }
         }
@@ -205,7 +222,7 @@ public class MysteryBoxHelper {
         BEAT_BOSS, LEVEL_UP, RAID, HUNDRED, OPEN_BOX_BLOCK
     }
 
-    public static void tryDropOneOnEvent(ServerPlayerEntity player, EventType event, TierBoxConfig sourceTier) {
+    public static void tryDropOneOnEvent(ServerPlayerEntity player, EventType event, ServerWorld world, BlockPos pos, TierBoxConfig sourceTier) {
         MysteryBoxesConfig.MysteryBoxConfig cfg = MysteryBoxesConfig.get().mysteryBox;
         LinkedHashMap<String, Double> weights = new LinkedHashMap<>();
         if (sourceTier.noDropChance > 0) {
@@ -226,7 +243,7 @@ public class MysteryBoxHelper {
             if (roll <= cumulative) {
                 if (!"NONE".equals(entry.getKey())) {
                     ItemStack stack = CustomItemRegistry.create(entry.getKey(), 1);
-                    player.addItem(stack);
+                    giveOrDrop(player, world, pos, stack);
                     player.sendMessage(new StringTextComponent(
                             TextFormatting.GOLD + "✦ ¡Has recibido x1 "
                                     + stack.getHoverName().getString()
@@ -318,7 +335,7 @@ public class MysteryBoxHelper {
 
         event.setCanceled(true);
         event.setCancellationResult(ActionResultType.SUCCESS);
-        open(opener, boxId, EventType.OPEN_BOX_BLOCK);
+        open(opener, boxId, EventType.OPEN_BOX_BLOCK, world, pos);
         world.removeBlock(pos, false);
         PlayerSoundUtils.playSoundToPlayer(
                 opener,

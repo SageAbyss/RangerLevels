@@ -5,7 +5,6 @@ import com.pixelmonmod.pixelmon.Pixelmon;
 import com.pixelmonmod.pixelmon.api.battles.BattleResults;
 import com.pixelmonmod.pixelmon.api.events.*;
 import com.pixelmonmod.pixelmon.api.events.battles.BattleEndEvent;
-import com.pixelmonmod.pixelmon.battles.BattleQueryPlayer;
 import com.pixelmonmod.pixelmon.battles.controller.participants.BattleParticipant;
 import com.pixelmonmod.pixelmon.battles.controller.participants.PlayerParticipant;
 import com.pixelmonmod.pixelmon.api.events.battles.CatchComboEvent;
@@ -14,14 +13,13 @@ import com.pixelmonmod.pixelmon.api.events.legendary.TimespaceEvent;
 import com.pixelmonmod.pixelmon.api.events.raids.StartRaidEvent;
 import com.pixelmonmod.pixelmon.api.pokedex.PokedexRegistrationStatus;
 import com.pixelmonmod.pixelmon.api.pokemon.boss.BossTierRegistry;
-import com.pixelmonmod.pixelmon.battles.controller.BattleController;
-import com.pixelmonmod.pixelmon.battles.controller.participants.BattleParticipant;
-import com.pixelmonmod.pixelmon.battles.controller.participants.PlayerParticipant;
 import com.pixelmonmod.pixelmon.entities.pixelmon.PixelmonEntity;
-import net.minecraft.item.Item;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.common.Mod;
 import rl.sage.rangerlevels.capability.PassCapabilities;
+import rl.sage.rangerlevels.items.totems.fragmentos.FragmentoCorazonGaiaHandler;
 import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 
@@ -32,6 +30,7 @@ import rl.sage.rangerlevels.items.gemas.ExpGemHandler;
 import rl.sage.rangerlevels.config.*;
 import rl.sage.rangerlevels.items.manuales.ManualTrainingHandler;
 import rl.sage.rangerlevels.items.polvo.PolvoExpHandler;
+import rl.sage.rangerlevels.items.totems.fragmentos.TotemRaizPrimordialHandler;
 import rl.sage.rangerlevels.limiter.LimiterHelper;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.pass.PassType;
@@ -167,8 +166,15 @@ public class PixelmonEventHandler {
             if (!(part instanceof PlayerParticipant)) continue;
             ServerPlayerEntity player = ((PlayerParticipant) part).player;
             handleGeneric(player, "raidParticipation", EventConfig::getExpRange);
-            MysteryBoxHelper.tryDropOneOnEvent(player,
-                    MysteryBoxHelper.EventType.RAID, MysteryBoxesConfig.get().mysteryBox.comun);
+            ServerWorld world = (ServerWorld) player.level;
+            BlockPos pos      = player.blockPosition();
+            MysteryBoxHelper.tryDropOneOnEvent(
+                    player,
+                    MysteryBoxHelper.EventType.RAID,
+                    world,
+                    pos,
+                    MysteryBoxesConfig.get().mysteryBox.comun
+            );
         }
     }
 
@@ -199,6 +205,8 @@ public class PixelmonEventHandler {
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
 
+        base = FragmentoCorazonGaiaHandler.applyBonusIfApplicable(player, pkmn, base);
+        base = TotemRaizPrimordialHandler.applyExpBonusIfApplicable(player, pkmn, base, true);
         int totalSinGema = applyMultipliers(player, base, "onCapture");
         double gemBonus = ExpGemHandler.getBonus(player);
         int totalConGema = (int) Math.round(totalSinGema * (1.0 + gemBonus));
@@ -265,23 +273,47 @@ public class PixelmonEventHandler {
     public static void onAdvancement(AdvancementEvent ev) {
         if (!(ev.getPlayer() instanceof ServerPlayerEntity)) return;
         ServerPlayerEntity player = (ServerPlayerEntity) ev.getPlayer();
+        Advancement adv = ev.getAdvancement();
+        ResourceLocation id = adv.getId();
+
+        // 1) Ignorar avances sin display (recetas u otros triggers internos)
+        if (adv.getDisplay() == null) {
+            return;
+        }
+
+        // 2) Opcionalmente, filtrar rutas concretas de Minecraft que no quieras:
+        if ("minecraft".equals(id.getNamespace())) {
+            String path = id.getPath();
+            // Por si acaso: descartar recetas
+            if (path.startsWith("recipes/")) {
+                return;
+            }
+            // Puedes añadir más filtros si hay otros avances que no te interesen
+        }
+        // 3) Para Pixelmon, asume que los avances que importan tienen display también.
+        //    Si quieres filtrar algún namespace o ruta de Pixelmon en particular, hazlo aquí.
+        //    Por ejemplo:
+        // if ("pixelmon".equals(id.getNamespace())) {
+        //     String path = id.getPath();
+        //     if (path.startsWith("some_unwanted_path")) return;
+        // }
+
+        // 4) Lógica de exp para avances válidos
         EventConfig cfg = getCfg("advancement");
         if (cfg == null || !cfg.isEnable()) return;
         if (cfg.isRequiresPermission() && !hasAnyPermission(player, cfg.getPermissions())) return;
 
-        Advancement adv = ev.getAdvancement();
-        ResourceLocation id = adv.getId();
-        String ns = id.getNamespace();
-        if (!"pixelmon".equals(ns) && !"minecraft".equals(ns)) return;
-
-        int base = randomInRange(cfg.getExpRange()[0], cfg.getExpRange()[1]);
-        if ("minecraft".equals(ns)) base /= 2;
-
+        int[] range = cfg.getExpRange();
+        int base = randomInRange(range[0], range[1]);
+        if ("minecraft".equals(id.getNamespace())) {
+            base /= 2; // tu lógica original para minecraft
+        }
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
 
         giveExp(player, base, "advancement");
     }
+
 
     @SubscribeEvent
     public static void onPokedexEntry(PokedexEvent.Post ev) {
@@ -321,15 +353,29 @@ public class PixelmonEventHandler {
                 || defeated.getPokemon().getSpecies().isUltraBeast()) {
             base = randomInRange(legendary[0], legendary[1]);
             if (RNG.nextDouble() < 0.05) {
-                MysteryBoxHelper.tryDropOneOnEvent(player,
-                        MysteryBoxHelper.EventType.BEAT_BOSS, MysteryBoxesConfig.get().mysteryBox.comun);
+                ServerWorld world = (ServerWorld) player.level;
+                BlockPos pos      = player.blockPosition();
+                MysteryBoxHelper.tryDropOneOnEvent(
+                        player,
+                        MysteryBoxHelper.EventType.BEAT_BOSS,
+                        world,
+                        pos,
+                        MysteryBoxesConfig.get().mysteryBox.comun
+                );
             }
         }
         else if (defeated.getPokemon().isShiny()) {
             base = randomInRange(shiny[0], shiny[1]);
             if (RNG.nextDouble() < 0.05) {
-                MysteryBoxHelper.tryDropOneOnEvent(player,
-                        MysteryBoxHelper.EventType.BEAT_BOSS, MysteryBoxesConfig.get().mysteryBox.comun);
+                ServerWorld world = (ServerWorld) player.level;
+                BlockPos pos      = player.blockPosition();
+                MysteryBoxHelper.tryDropOneOnEvent(
+                        player,
+                        MysteryBoxHelper.EventType.BEAT_BOSS,
+                        world,
+                        pos,
+                        MysteryBoxesConfig.get().mysteryBox.comun
+                );
             }
         }
         else {
@@ -365,7 +411,8 @@ public class PixelmonEventHandler {
             base = (int) Math.round(base * 1.5);
             player.sendMessage(new StringTextComponent("§a+50% EXP de Bandera de Batalla!"), player.getUUID());
         }
-
+        base = FragmentoCorazonGaiaHandler.applyBonusIfApplicable(player, defeated, base);
+        base = TotemRaizPrimordialHandler.applyExpBonusIfApplicable(player, defeated, base, false);
         // ── Cálculo normal (sin gema) ──
         int totalSinGema = applyMultipliers(player, base, "beatWild");
         double gemBonus = ExpGemHandler.getBonus(player); // 0.10, 0.30, 0.50 o 0.0
@@ -472,7 +519,10 @@ public class PixelmonEventHandler {
         int base = randomInRange(r[0], r[1]);
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
-
+        // Totem de Raíz Primordial
+        if (TotemRaizPrimordialHandler.hasTotem(player)) {
+            base = (int) Math.round(base * 1.30);
+        }
         giveExp(player, base, "timespaceAltarSpawn");
     }
 
@@ -543,9 +593,13 @@ public class PixelmonEventHandler {
             // Dar exp con límite
             LimiterHelper.giveExpWithLimit(player, totalConManual);
             // Intento de drop de caja de misterio
+            ServerWorld world = (ServerWorld) player.level;
+            BlockPos pos      = player.blockPosition();
             MysteryBoxHelper.tryDropOneOnEvent(
                     player,
                     MysteryBoxHelper.EventType.BEAT_BOSS,
+                    world,
+                    pos,
                     MysteryBoxesConfig.get().mysteryBox.comun
             );
         }

@@ -102,7 +102,7 @@ public class MysteryBoxOpenHandler {
         // Cancelar apertura vanilla y ejecutar recompensas
         event.setCanceled(true);
         event.setCancellationResult(ActionResultType.SUCCESS);
-        MysteryBoxHelper.open(opener, boxId, MysteryBoxHelper.EventType.OPEN_BOX_BLOCK);
+        MysteryBoxHelper.open(opener, boxId, MysteryBoxHelper.EventType.OPEN_BOX_BLOCK, world, pos);
 
         // Remover bloque y reproducir sonido
         world.removeBlock(pos, false);

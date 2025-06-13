@@ -10,6 +10,9 @@ import rl.sage.rangerlevels.config.ConfigLoader;
 import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.events.PixelmonEventHandler;
+import rl.sage.rangerlevels.items.AltarArcano;
+import rl.sage.rangerlevels.items.AltarRegistry;
+import rl.sage.rangerlevels.items.totems.fragmentos.FragmentoCorazonGaia;
 import rl.sage.rangerlevels.items.amuletos.SelloCapturaEpico;
 import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
 import rl.sage.rangerlevels.items.amuletos.ShinyAmuletEstelar;
@@ -38,6 +41,7 @@ import rl.sage.rangerlevels.items.reliquias.ReliquiaTemporalEstelar;
 import rl.sage.rangerlevels.items.reliquias.ReliquiaTemporalLegendario;
 import rl.sage.rangerlevels.items.reliquias.ReliquiaTemporalRaro;
 import rl.sage.rangerlevels.items.tickets.*;
+import rl.sage.rangerlevels.items.totems.fragmentos.TotemRaizPrimordial;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.multiplier.MultiplierState;
 
@@ -99,7 +103,12 @@ public class SetupEvents {
         new PolvoExpEstelar();
         new PolvoExpRaro();
         new PolvoExpMitico();
+        new FragmentoCorazonGaia();
+        new TotemRaizPrimordial();
+        new AltarArcano();
 
+
+        AltarRegistry.registerRecipes();
         PixelmonEventHandler.register();
         LOGGER.info("§8{}:§a Items cargados con éxito", PREFIX_STR);
     }

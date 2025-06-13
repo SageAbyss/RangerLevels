@@ -9,9 +9,11 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.SoundEvents;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.capabilities.CapabilityManager;
@@ -140,8 +142,15 @@ public class LevelProvider {
         for (int lvl : niveles) {
             if (lvl > maxLvl) break;
             RewardManager.handleLevelUp(player, lvl);
-            MysteryBoxHelper.tryDropOneOnEvent(player, MysteryBoxHelper.EventType.LEVEL_UP, MysteryBoxesConfig.get().mysteryBox.comun);
-
+            ServerWorld world = (ServerWorld) player.level;
+            BlockPos pos      = player.blockPosition();
+            MysteryBoxHelper.tryDropOneOnEvent(
+                    player,
+                    MysteryBoxHelper.EventType.LEVEL_UP,
+                    world,
+                    pos,
+                    MysteryBoxesConfig.get().mysteryBox.comun
+            );
             // 6.1) Separador degradado
             IFormattableTextComponent sep = GradientText.of(
                             "                                                                      ",
