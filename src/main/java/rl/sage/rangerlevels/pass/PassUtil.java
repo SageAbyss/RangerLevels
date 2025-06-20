@@ -1,27 +1,22 @@
+// src/main/java/rl/sage/rangerlevels/pass/PassUtil.java
 package rl.sage.rangerlevels.pass;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import rl.sage.rangerlevels.capability.IPassCapability;
-import rl.sage.rangerlevels.capability.PassCapabilities;
 
-/**
- * Clase utilitaria para verificar si un pase expiró, restaurar el anterior y notificar al jugador.
- */
 public class PassUtil {
 
     /**
-     * Chequea el pase actual; si expiró, restaura el anterior y notifica al jugador.
-     * @return PassType actualizado del jugador.
+     * Ahora recibe la capability ya segura (no volverá a lanzar excepción).
      */
-    public static PassType checkAndRestorePass(ServerPlayerEntity player) {
-        IPassCapability cap = PassCapabilities.get(player);
+    public static PassType checkAndRestorePass(ServerPlayerEntity player,
+                                               IPassCapability cap) {
         PassType antes = PassManager.getCurrentPass(player);
-        boolean sigueActivo = cap.hasActivePass();  // al llamar, restaurará si expiró
+        boolean sigueActivo = cap.hasActivePass();  // internamente restaura si expiró
         PassType despues = PassManager.getCurrentPass(player);
 
-        // Si “antes” tenía un tier mayor que “después”, el pase temporal expiró y se restauró algo menor
         if (antes.getTier() > despues.getTier()) {
             StringTextComponent msg = new StringTextComponent(
                     TextFormatting.GRAY + "❖ Tu pase temporal " +
@@ -30,7 +25,6 @@ public class PassUtil {
             );
             player.sendMessage(msg, player.getUUID());
         }
-
         return despues;
     }
 }

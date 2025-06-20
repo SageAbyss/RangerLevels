@@ -219,7 +219,7 @@ public class ExpConfig {
             cfg.enable     = true;
             cfg.message = Arrays.asList(
                     "§6═══════════════════════════",
-                    "§e§l¡Atención! §r§a%PLAYER% §aha alcanzado el §6§lNIVEL MÁXIMO§a§r (§f%LEVEL%§r)",
+                    "§r§a%PLAYER% §aha alcanzado el §6§lNIVEL MÁXIMO§a§r (§f%LEVEL%§r)",
                     "§6═══════════════════════════"
             );
             cfg.soundEvent = "minecraft:ui.toast.challenge_complete";

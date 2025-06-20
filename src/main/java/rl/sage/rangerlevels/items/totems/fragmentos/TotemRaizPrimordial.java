@@ -46,7 +46,7 @@ public class TotemRaizPrimordial extends RangerItemDefinition {
     public ItemStack createStack(int amount) {
         ItemStack stack = super.createStack(amount);
         // 1) Nombre con degradado DE CLASE UTIL
-        stack.setHoverName(GradientText.of(getDisplayName(), "#FF5151","#FFC16F")
+        stack.setHoverName(GradientText.of(getDisplayName(), "#FF9928","#84FF91")
                 .withStyle(style -> style.withItalic(false)));
 
         // 2) Lore con descripción de efectos
@@ -54,13 +54,13 @@ public class TotemRaizPrimordial extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Tipos Afectados: Bicho, Tierra, Roca, Normal, Eléctrico, Planta"),
                 new StringTextComponent("§7✧ Inmunidad al daño de caída"),
                 new StringTextComponent("§7✧ Captura de Tipos:"),
-                new StringTextComponent("   §7- 50% probabilidad de +5-12% IVs"),
-                new StringTextComponent("   §7-  5% probabilidad de convertir en Shiny"),
-                new StringTextComponent("   §7- Gracias al poder del Totem, el tamaño cambia"),
+                new StringTextComponent("   §7- 50% probabilidad de §6+5-12% IVs"),
+                new StringTextComponent("   §7- 5% probabilidad de convertir en Shiny"),
+                new StringTextComponent("   §7- Las dimensiones del Pokémon se ven afectadas"),
                 new StringTextComponent("§7✧ Bonus de §6+30%§7 EXP en:"),
                 new StringTextComponent("   §7- Capturas por Tipo"),
                 new StringTextComponent("   §7- Derrotas por Tipo"),
-                new StringTextComponent("   §7- Invocar a Dialga, Palkia o Giratina"),
+                new StringTextComponent("   §7- Invocación de Dialga, Palkia o Giratina"),
                 new StringTextComponent("§7✧ Debe estar en el inventario"),
                 new StringTextComponent(" "),
                 new StringTextComponent("§7▶ Tier: ").append(Tier.MITICO.getColor())

@@ -38,6 +38,9 @@ import rl.sage.rangerlevels.config.*;
 import rl.sage.rangerlevels.capability.LevelProvider;
 import rl.sage.rangerlevels.database.FlatFilePlayerDataManager;
 import rl.sage.rangerlevels.gui.help.HelpMenu;
+import rl.sage.rangerlevels.gui.invocations.AltarDeAlmasMenu;
+import rl.sage.rangerlevels.gui.invocations.InvocationsMenu;
+import rl.sage.rangerlevels.gui.modificadores.ShopMenu;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.multiplier.MultiplierState;
@@ -81,6 +84,27 @@ public class CommandRegistry {
                                 .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     HelpMenu.open(player);
+                                    return 1;
+                                })
+                        )
+                        .then(Commands.literal("shop")
+                                .executes(ctx -> {
+                                    ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+                                    ShopMenu.open(player);
+                                    return 1;
+                                })
+                        )
+                        .then(Commands.literal("invocaciones")
+                                .executes(ctx -> {
+                                    ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+                                    InvocationsMenu.open(player);
+                                    return 1;
+                                })
+                        )
+                        .then(Commands.literal("modificadores")
+                                .executes(ctx -> {
+                                    ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
+                                    AltarDeAlmasMenu.open(player);
                                     return 1;
                                 })
                         )
@@ -386,6 +410,8 @@ public class CommandRegistry {
                                     ItemsConfig.reload();
                                     MysteryBoxesConfig.reload();
                                     ExpConfig.reload();
+                                    ShopConfig.reload();
+                                    ShopState.save();
                                     MultiplierState.load();
                                     FlatFilePlayerDataManager.getInstance().reload();
                                     AdminConfig.load();

@@ -19,7 +19,10 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.common.Mod;
 import rl.sage.rangerlevels.capability.PassCapabilities;
-import rl.sage.rangerlevels.items.totems.fragmentos.FragmentoCorazonGaiaHandler;
+import rl.sage.rangerlevels.items.sacrificios.ConcentradoDeAlmasHandler;
+import rl.sage.rangerlevels.items.sacrificios.EspecieEssenceHelper;
+import rl.sage.rangerlevels.items.sello.SelloReflejoMaestroHandler;
+import rl.sage.rangerlevels.items.totems.fragmentos.*;
 import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 
@@ -30,7 +33,6 @@ import rl.sage.rangerlevels.items.gemas.ExpGemHandler;
 import rl.sage.rangerlevels.config.*;
 import rl.sage.rangerlevels.items.manuales.ManualTrainingHandler;
 import rl.sage.rangerlevels.items.polvo.PolvoExpHandler;
-import rl.sage.rangerlevels.items.totems.fragmentos.TotemRaizPrimordialHandler;
 import rl.sage.rangerlevels.limiter.LimiterHelper;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.pass.PassType;
@@ -207,11 +209,19 @@ public class PixelmonEventHandler {
 
         base = FragmentoCorazonGaiaHandler.applyBonusIfApplicable(player, pkmn, base);
         base = TotemRaizPrimordialHandler.applyExpBonusIfApplicable(player, pkmn, base, true);
+        base = FragmentoIraAncestralHandler.applyBonusIfApplicable(player, pkmn, base);
+        base = TotemLamentoDiosesHandler.applyExpBonusIfApplicable(player, pkmn, base, true);
+        base = FragmentoRealidadAlternaHandler.applyBonusIfApplicable(player, pkmn, base);
+        base = TotemAbismoGlacialHandler.applyExpBonusIfApplicable(player, pkmn, base, true);
         int totalSinGema = applyMultipliers(player, base, "onCapture");
         double gemBonus = ExpGemHandler.getBonus(player);
         int totalConGema = (int) Math.round(totalSinGema * (1.0 + gemBonus));
-        LimiterHelper.giveExpWithLimit(player, totalConGema);
+        // ── **Bonus de Concentrado de Almas** ──
+        double xpMul = ConcentradoDeAlmasHandler.getXpMultiplier(player, legendary);
+        int totalConAlmas = (int) Math.round(totalConGema * xpMul);
+        LimiterHelper.giveExpWithLimit(player, totalConAlmas);
     }
+
 
     @SubscribeEvent
     public static void onLevelUp(LevelUpEvent.Post ev) {
@@ -351,6 +361,7 @@ public class PixelmonEventHandler {
         }
         else if (defeated.getPokemon().isLegendary()
                 || defeated.getPokemon().getSpecies().isUltraBeast()) {
+            EspecieEssenceHelper.giveEssence(player, defeated);
             base = randomInRange(legendary[0], legendary[1]);
             if (RNG.nextDouble() < 0.05) {
                 ServerWorld world = (ServerWorld) player.level;
@@ -406,13 +417,24 @@ public class PixelmonEventHandler {
                 }
             }
         }
+        // ---- SELLO REFLEJO DEL MAISTRO
+        double chance = SelloReflejoMaestroHandler.getChanceForPlayer(player);
+        if (chance > 0) {
+            if (new Random().nextDouble() < chance) {
+                base *= 2;
+            }
+        }
         // ——— AÑADIDO: bonus de Bandera de Batalla ———
         if (BattleBannerHandler.isInControlledArea(player)) {
             base = (int) Math.round(base * 1.5);
             player.sendMessage(new StringTextComponent("§a+50% EXP de Bandera de Batalla!"), player.getUUID());
         }
+        base = FragmentoIraAncestralHandler.applyBonusIfApplicable(player, defeated, base);
         base = FragmentoCorazonGaiaHandler.applyBonusIfApplicable(player, defeated, base);
+        base = FragmentoRealidadAlternaHandler.applyBonusIfApplicable(player, defeated, base);
+        base = TotemLamentoDiosesHandler.applyExpBonusIfApplicable(player, defeated, base, false);
         base = TotemRaizPrimordialHandler.applyExpBonusIfApplicable(player, defeated, base, false);
+        base = TotemAbismoGlacialHandler.applyExpBonusIfApplicable(player, defeated, base, false);
         // ── Cálculo normal (sin gema) ──
         int totalSinGema = applyMultipliers(player, base, "beatWild");
         double gemBonus = ExpGemHandler.getBonus(player); // 0.10, 0.30, 0.50 o 0.0
@@ -458,13 +480,19 @@ public class PixelmonEventHandler {
                 }
             }
         }
+        // ---- SELLO REFLEJO DEL MAISTRO
+        double chance = SelloReflejoMaestroHandler.getChanceForPlayer(player);
+        if (chance > 0) {
+            if (new Random().nextDouble() < chance) {
+                base *= 2;
+            }
+        }
         // ────────────────────────────────────
         // ——— AÑADIDO: bonus de Bandera de Batalla ———
         if (BattleBannerHandler.isInControlledArea(player)) {
             base = (int) Math.round(base * 1.5);
             player.sendMessage(new StringTextComponent("§a+50% EXP de Bandera de Batalla!"), player.getUUID());
         }
-
         // ── Cálculo normal (sin gema) ──
         int total = applyMultipliers(player, base, key);
         int totalConManual = ManualTrainingHandler.applyBonus(player, total);
@@ -484,7 +512,9 @@ public class PixelmonEventHandler {
         int base = randomInRange(r[0], r[1]);
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
-
+        if (TotemAbismoGlacialHandler.hasTotem(player)) {
+            base = (int) Math.round(base * 1.30);
+        }
         giveExp(player, base, "arceusPlayFlute");
     }
 
@@ -500,7 +530,9 @@ public class PixelmonEventHandler {
         int base = randomInRange(r[0], r[1]);
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
-
+        if (TotemLamentoDiosesHandler.hasTotem(player)) {
+            base = (int) Math.round(base * 1.30);
+        }
         giveExp(player, base, "playerActivateShrine");
     }
 
@@ -582,6 +614,15 @@ public class PixelmonEventHandler {
                     }
                 }
             }
+            // ---- SELLO REFLEJO DEL MAISTRO
+            double chance = SelloReflejoMaestroHandler.getChanceForPlayer(player);
+            if (chance > 0) {
+                if (new Random().nextDouble() < chance) {
+                    base *= 2;
+                }
+            }
+
+            base = FragmentoIraAncestralHandler.applyBonusIfApplicable(player, null, base);
 
             // ——— AÑADIDO: bonus de Bandera de Batalla ———
             if (BattleBannerHandler.isInControlledArea(player)) {

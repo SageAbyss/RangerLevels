@@ -10,7 +10,9 @@ public enum Tier {
     EPICO     ("ᴇᴘɪᴄ",     new String[]{"#BB8CFF", "#A346FF"}),
     LEGENDARIO("ʟᴇɢᴇɴᴅ",   new String[]{"#FFE87C", "#FFD700"}),
     ESTELAR   ("ᴇꜱᴛᴇʟᴀʀ", new String[]{"#6EE3DC", "#996FEA"}),
-    MITICO    ("ᴍʏᴛʜɪᴄ",   new String[]{"#11998E", "#38EF7D"});
+    MITICO    ("ᴍʏᴛʜɪᴄ",   new String[]{"#11998E", "#38EF7D"}),
+    SINGULAR    ("⨳⨳⨳⨳⨳",   new String[]{"#FF4500", "#8B0000"});
+
 
     private final String displayName;
     private final String[] gradientHex;

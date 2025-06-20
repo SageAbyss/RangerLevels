@@ -127,6 +127,15 @@ pixelmonEvents:
       enable: false
       permissions: []
 
+  beatPlayer:
+    enable: true
+    expRange: [20, 40]
+    requiresPermission: false
+    permissions: []
+    specificRangePermissions:
+      enable: false
+      permissions: []
+
   arceusPlayFlute:
     enable: true
     expRange: [150, 450]

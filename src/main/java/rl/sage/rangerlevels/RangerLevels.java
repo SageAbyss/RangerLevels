@@ -25,7 +25,7 @@ import rl.sage.rangerlevels.config.*;
 import rl.sage.rangerlevels.database.*;
 import rl.sage.rangerlevels.events.ExpEventHandler;
 import rl.sage.rangerlevels.events.PixelmonEventHandler;
-import rl.sage.rangerlevels.items.amuletos.SelloCapturaHandler;
+import rl.sage.rangerlevels.items.sello.SelloCapturaHandler;
 import rl.sage.rangerlevels.limiter.LimiterManager;
 import rl.sage.rangerlevels.limiter.LimiterWorldData;
 import rl.sage.rangerlevels.util.GradientText;
@@ -89,6 +89,8 @@ public class RangerLevels {
         ExpConfig.load();
         RewardConfig.load();
         AdminConfig.load();
+        ShopConfig.reload();
+        ShopState.get();
 
         LevelProvider.register();
         LimiterProvider.register();

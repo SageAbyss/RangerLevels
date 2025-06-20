@@ -70,6 +70,7 @@ public abstract class BaseMenuContainer6 extends ChestContainer {
         return ItemStack.EMPTY;
     }
 
+
     // ------------- BLOQUEO DE “PICK‐ALL” (Ctrl+Click) -------------
 
     @Override

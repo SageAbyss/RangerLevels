@@ -33,6 +33,7 @@ import rl.sage.rangerlevels.config.MysteryBoxesConfig;
 import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.boxes.MysteryBoxHelper;
+import rl.sage.rangerlevels.items.reliquias.SangreQuetzalHandler;
 import rl.sage.rangerlevels.rewards.RewardManager;
 import rl.sage.rangerlevels.util.*;
 import java.util.List;
@@ -95,6 +96,14 @@ public class LevelProvider {
             // 1.2) Aplicar bonus de EXP
             double xpPercent = amCfg.xpPercent; // ej. 15.0
             int bonusXp = (int) Math.floor(amount * (xpPercent / 100.0));
+            amount += bonusXp;
+        }
+        // ===================================
+        // 2) ¿Bonus general de Sangre de Quetzal?
+        // ===================================
+        double bloodBonus = SangreQuetzalHandler.getBonus(player);  // e.g. 0.5 para +50%
+        if (bloodBonus > 0) {
+            int bonusXp = (int) Math.floor(amount * bloodBonus);
             amount += bonusXp;
         }
 

@@ -44,23 +44,19 @@ public class LimiterCapability implements ILimiter {
         this.accumulatedExp = exp;
     }
 
-    @Override
-    public void resetWindow(long newStartTimestamp) {
+    public void resetWindowSilent(long newStartTimestamp) {
         this.windowStart    = newStartTimestamp;
         this.accumulatedExp = 0;
         this.notified       = false;
-
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-        if (server != null) {
-            IFormattableTextComponent sep = new StringTextComponent("§7———————————————————————————————");
-            IFormattableTextComponent msg = new StringTextComponent("§6§l¡El límite de EXP diario fue reseteado!");
-            server.getPlayerList().broadcastMessage(sep, ChatType.SYSTEM, Util.NIL_UUID);
-            server.getPlayerList().broadcastMessage(msg, ChatType.SYSTEM, Util.NIL_UUID);
-            server.getPlayerList().broadcastMessage(sep, ChatType.SYSTEM, Util.NIL_UUID);
-        }
-
-        LOGGER.info("[Limiter] Ventana reiniciada y broadcast enviado");
+        LOGGER.debug("[LimiterCapability] Ventana reiniciada (silent)");
     }
+
+    /** Ya no hace broadcast: solo setea estado y loggea */
+    @Override
+    public void resetWindow(long newStartTimestamp) {
+        resetWindowSilent(newStartTimestamp);
+    }
+
 
     @Override
     public int addExp(int amount, int maxAllowed) {

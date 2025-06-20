@@ -25,6 +25,8 @@ import rl.sage.rangerlevels.config.EventConfig;
 import rl.sage.rangerlevels.config.ExpConfig;
 import org.apache.logging.log4j.LogManager;
 import rl.sage.rangerlevels.config.SpecificRangePermissions;
+import rl.sage.rangerlevels.items.herramientas.MinerLostHandler;
+import rl.sage.rangerlevels.items.herramientas.WorkerCompulsiveHandler;
 import rl.sage.rangerlevels.limiter.LimiterHelper;
 import rl.sage.rangerlevels.multiplier.MultiplierManager;
 import rl.sage.rangerlevels.pass.PassManager;
@@ -175,6 +177,8 @@ public class ExpEventHandler {
 
         Block block = ev.getState().getBlock();
         String key;
+        boolean isAxeEvent = false;
+        boolean isPickEvent = false;
         if (block instanceof CropsBlock) {
             CropsBlock cb = (CropsBlock) block;
             if (ev.getState().getValue(cb.getAgeProperty()) < cb.getMaxAge()) return;
@@ -183,16 +187,21 @@ public class ExpEventHandler {
             key = "spawnerBreak";
         } else if (ev.getState().is(BlockTags.LOGS)) {
             key = "logBreak";
+            isAxeEvent = true;
         } else if (block == Blocks.MELON || block == Blocks.PUMPKIN) {
             key = "melonPumpkinBreak";
         } else if (block == Blocks.COAL_ORE) {
             key = "coalOreBreak";
+            isPickEvent = true;
         } else if (block == Blocks.IRON_ORE) {
             key = "ironOreBreak";
+            isPickEvent = true;
         } else if (block == Blocks.LAPIS_ORE || block == Blocks.REDSTONE_ORE) {
             key = "lapisRedstoneBreak";
+            isPickEvent = true;
         } else if (block == Blocks.DIAMOND_ORE || block == Blocks.EMERALD_ORE) {
             key = "diamondEmeraldBreak";
+            isPickEvent = true;
             // --- Pixelmon gem ores ---
         } else if (block == PixelmonBlocks.ruby_ore
                 || block == PixelmonBlocks.sapphire_ore
@@ -200,12 +209,14 @@ public class ExpEventHandler {
                 || block == PixelmonBlocks.crystal_ore
                 || block == PixelmonBlocks.silicon_ore) {
             key = "pixelmonGemOreBreak";
+            isPickEvent = true;
 
 // --- Pixelmon metal ores ---
         } else if (block == PixelmonBlocks.bauxite_ore
                 || block == PixelmonBlocks.silver_ore
                 || block == PixelmonBlocks.platinum_ore) {
             key = "pixelmonMetalOreBreak";
+            isPickEvent = true;
 
 // --- Pixelmon evolution stone ores ---
         } else if (block == PixelmonBlocks.moon_stone_ore
@@ -219,6 +230,7 @@ public class ExpEventHandler {
                 || block == PixelmonBlocks.dusk_stone_ore
                 || block == PixelmonBlocks.dawn_stone_ore) {
             key = "pixelmonEvolutionOreBreak";
+            isPickEvent = true;
         } else {
             return;
         }
@@ -227,15 +239,24 @@ public class ExpEventHandler {
         if (cfg == null || !cfg.isEnable()) return;
         if (cfg.isRequiresPermission() && !hasAnyPermission(player, cfg.getPermissions())) return;
 
+        // 1) EXP base aleatoria o VIP
         int[] range = cfg.getExpRange();
         int base = randomInRange(range[0], range[1]);
         Integer vip = getVipRangeExp(player, cfg.getSpecificRangePermissions());
         if (vip != null) base = vip;
 
-        LimiterHelper.giveExpWithLimit(
-                player,
-                applyMultipliers(player, base, key)
-        );
+        // 2) Multiplicadores globales/personal/pass
+        int xp = applyMultipliers(player, base, key);
+
+        // 3) Aplicar bonus de hacha o pico
+        if (isAxeEvent) {
+            xp = WorkerCompulsiveHandler.applyBonus(player, xp);
+        } else if (isPickEvent) {
+            xp = MinerLostHandler.applyBonus(player, xp);
+        }
+
+        // 4) Entregar EXP con tu limitador
+        LimiterHelper.giveExpWithLimit(player, xp);
     }
 
     @SubscribeEvent

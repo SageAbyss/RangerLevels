@@ -24,6 +24,7 @@ public interface ILimiter {
      * - y resetea el flag de notificación
      */
     void resetWindow(long newStartTimestamp);
+    void resetWindowSilent(long newStartTimestamp);
 
     /**
      * Intenta sumar EXP, sin superar maxAllowed.

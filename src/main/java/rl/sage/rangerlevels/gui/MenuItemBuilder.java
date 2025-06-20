@@ -21,10 +21,12 @@ import java.util.List;
 public class MenuItemBuilder {
 
     /**
+     * Crea un botón nuevo: ItemStack de material con nombre, lore y tags de menú.
+     *
      * @param nameComponent Componente de texto ya formateado (ej. gradiente).
      * @param lore          Lista de líneas de lore (cada String se convierte a JSON en gris).
      * @param material      Tipo de ítem (Items.CHEST, Items.BOOK, etc.).
-     * @param idTag         Identificador interno del botón (p.ej. “rewards”, “help”, …).
+     * @param idTag         Identificador interno del botón (p.ej. “shop_select_Pikachu”).
      * @param slotIndex     Índice del slot (0..menuSize-1) donde estará el botón.
      */
     public static ItemStack createButton(ITextComponent nameComponent,
@@ -33,28 +35,14 @@ public class MenuItemBuilder {
                                          String idTag,
                                          int slotIndex)
     {
+        // Creamos el ItemStack base
         ItemStack item = new ItemStack(material);
 
-        // 1) Construir TAG “display” para nombre y lore:
-        CompoundNBT display = new CompoundNBT();
-        // Serializamos el nombre (puede venir con colores o gradientes)
-        display.putString("Name", ITextComponent.Serializer.toJson(nameComponent));
+        // Añadimos nombre y lore
+        addDisplayAndLore(item, nameComponent, lore);
 
-        // Convertir cada línea de lore a JSON y agregarla en un ListNBT
-        if (lore != null && !lore.isEmpty()) {
-            ListNBT loreList = new ListNBT();
-            for (String line : lore) {
-                // Lo coloreamos en gris a nivel de texto
-                ITextComponent lineComp = new StringTextComponent(line);
-                String json = ITextComponent.Serializer.toJson(lineComp);
-                loreList.add(StringNBT.valueOf(json));
-            }
-            display.put("Lore", loreList);
-        }
-
-        // 2) Añadir TAG de identificación y de posición:
+        // Añadimos tags de menú
         CompoundNBT tag = item.getOrCreateTag();
-        tag.put("display", display);
         tag.putString("MenuButtonID", idTag);
         tag.putInt("MenuSlot", slotIndex);
         item.setTag(tag);
@@ -72,5 +60,100 @@ public class MenuItemBuilder {
                                          int slotIndex)
     {
         return createButton(new StringTextComponent(name), lore, material, idTag, slotIndex);
+    }
+
+    /**
+     * Decora un ItemStack existente con nombre y lore (sin tags de menú).
+     *
+     * @param stack     ItemStack base.
+     * @param name      Nombre a mostrar (String).
+     * @param loreLines Líneas de lore.
+     * @return El mismo ItemStack modificado con display name y lore.
+     */
+    public static ItemStack decorateWithNameAndLore(ItemStack stack,
+                                                    String name,
+                                                    List<String> loreLines) {
+        return decorateWithNameAndLore(stack, new StringTextComponent(name), loreLines);
+    }
+
+    /**
+     * Decora un ItemStack existente con nombre y lore (sin tags de menú).
+     *
+     * @param stack          ItemStack base.
+     * @param nameComponent  Nombre a mostrar (ITextComponent).
+     * @param loreLines      Líneas de lore.
+     * @return El mismo ItemStack modificado con display name y lore.
+     */
+    public static ItemStack decorateWithNameAndLore(ItemStack stack,
+                                                    ITextComponent nameComponent,
+                                                    List<String> loreLines) {
+        addDisplayAndLore(stack, nameComponent, loreLines);
+        return stack;
+    }
+
+    /**
+     * Decora un ItemStack existente con nombre, lore y tags de menú.
+     *
+     * @param stack      ItemStack base.
+     * @param name       Nombre a mostrar.
+     * @param loreLines  Líneas de lore.
+     * @param idTag      Identificador interno del botón.
+     * @param slotIndex  Índice del slot donde estará.
+     * @return El mismo ItemStack modificado.
+     */
+    public static ItemStack decorateWithNameAndLore(ItemStack stack,
+                                                    String name,
+                                                    List<String> loreLines,
+                                                    String idTag,
+                                                    int slotIndex) {
+        return decorateWithNameAndLore(stack, new StringTextComponent(name), loreLines, idTag, slotIndex);
+    }
+
+    /**
+     * Decora un ItemStack existente con nombre, lore y tags de menú.
+     *
+     * @param stack          ItemStack base.
+     * @param nameComponent  Nombre a mostrar.
+     * @param loreLines      Líneas de lore.
+     * @param idTag          Identificador interno del botón.
+     * @param slotIndex      Índice del slot donde estará.
+     * @return El mismo ItemStack modificado.
+     */
+    public static ItemStack decorateWithNameAndLore(ItemStack stack,
+                                                    ITextComponent nameComponent,
+                                                    List<String> loreLines,
+                                                    String idTag,
+                                                    int slotIndex) {
+        addDisplayAndLore(stack, nameComponent, loreLines);
+        CompoundNBT tag = stack.getOrCreateTag();
+        tag.putString("MenuButtonID", idTag);
+        tag.putInt("MenuSlot", slotIndex);
+        stack.setTag(tag);
+        return stack;
+    }
+
+    /**
+     * Método interno que aplica el display name y el lore en el tag "display".
+     */
+    private static void addDisplayAndLore(ItemStack stack,
+                                          ITextComponent nameComponent,
+                                          List<String> loreLines) {
+        if (stack == null) return;
+        CompoundNBT tag = stack.getOrCreateTag();
+        CompoundNBT display = new CompoundNBT();
+        // Nombre en JSON
+        display.putString("Name", ITextComponent.Serializer.toJson(nameComponent));
+        // Lore
+        if (loreLines != null && !loreLines.isEmpty()) {
+            ListNBT loreList = new ListNBT();
+            for (String line : loreLines) {
+                ITextComponent lineComp = new StringTextComponent(line);
+                String json = ITextComponent.Serializer.toJson(lineComp);
+                loreList.add(StringNBT.valueOf(json));
+            }
+            display.put("Lore", loreList);
+        }
+        tag.put("display", display);
+        stack.setTag(tag);
     }
 }

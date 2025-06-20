@@ -29,7 +29,7 @@ public class CarameloNivel extends RangerItemDefinition {
                 PixelmonItems.rare_candy,
                 Tier.RARO,     // Tier RARO
                 null,          // Ya no pasamos TextFormatting, sobreescribimos en createStack()
-                "✹ Caramelo de Nivel ✹",
+                "✹ Caramelo Nivel ✹",
                 null           // Lore por defecto se asigna en createStack()
         );
         CustomItemRegistry.register(this);

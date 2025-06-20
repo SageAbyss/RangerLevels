@@ -1,0 +1,34 @@
+# Configuración de la Tienda rotativa de RangerLevels
+rotation:
+  periodDays: 7                # Cada cuántos días rota la selección
+  selectionSize: 4             # Cuántos legendarios/ultraentes mostrar cada rotación
+  avoidRepeatPrevious: true    # Si es true, no repetir ninguno de los de la rotación anterior
+cost:
+  essenceItem: "rangerlevels:legendary_essence"  # Identificador del Item de “esencia”
+  amount: 16                   # Cantidad requerida para comprar
+allowed:
+  legendarios:
+    - "Pikachu"                # Nombres de especies Pixelmon (deben coincidir con registry names)
+    - "Mewtwo"
+    - "Rayquaza"
+    # ...
+  ultraentes:
+    - "Nihilego"
+    - "Xurkitree"
+    # ...
+menu:
+  title: "§6Tienda Rotativa"
+  size: 54                     # Tamaño del inventario (múltiplo de 9)
+  slots:
+    items: [10, 12, 14, 16]    # Slots donde poner los 4 ítems; si cambias selectionSize, ajustar lógica
+    randomButton: 22           # Slot para botón “Comprar random”
+    timeDisplay: 4             # Slot para mostrar tiempo restante
+    backButton: 53             # Slot para botón “Volver”
+  icons:
+    random: "minecraft:nether_star"  # Ítem para botón “random” (puede ser un ItemStack configurable)
+    time: "minecraft:clock"             # Ítem para mostrar tiempo restante
+    back: "minecraft:arrow"             # Ítem para volver al menú anterior
+messages:
+  noEssence: "§cNo tienes suficientes esencias (se requieren %amount%)."
+  bought: "§a¡Has comprado %pokemon%! Revisa tu equipo."
+  error: "§cOcurrió un error al procesar la compra."

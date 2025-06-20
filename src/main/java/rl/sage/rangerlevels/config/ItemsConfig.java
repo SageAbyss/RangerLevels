@@ -28,6 +28,11 @@ public class ItemsConfig {
     // =======================
     public ChampionAmuletConfig championAmulet = ChampionAmuletConfig.createDefault();
     public ShinyAmuletConfig shinyAmulet = ShinyAmuletConfig.createDefault();
+    public SelloReflejoConfig selloReflejo = SelloReflejoConfig.createDefault();
+    public LagrimaTiempoConfig lagrimaTiempo = LagrimaTiempoConfig.createDefault();
+    public AxeBonusConfig axeBonus = AxeBonusConfig.createDefault();
+    public PickBonusConfig pickBonus = PickBonusConfig.createDefault();
+    public BloodConfig blood = BloodConfig.createDefault();
 
     // =======================
     // Carga y acceso singleton
@@ -62,6 +67,11 @@ public class ItemsConfig {
                     root.put("championAmulet", INSTANCE.championAmulet);
                     root.put("shinyAmulet", INSTANCE.shinyAmulet);
                     root.put("battleBanner", INSTANCE.battleBanner);
+                    root.put("selloReflejo", INSTANCE.selloReflejo);
+                    root.put("lagrimaTiempo", INSTANCE.lagrimaTiempo);
+                    root.put("axeBonus", INSTANCE.axeBonus);
+                    root.put("pickBonus", INSTANCE.pickBonus);
+                    root.put("blood", INSTANCE.blood);
                     yaml.dump(root, w);
                 }
                 LOGGER.info("ItemsConfig.yml creado con valores por defecto.");
@@ -156,6 +166,92 @@ public class ItemsConfig {
             c.durationStellar= 30;
             c.radiusMythic   = 15.0;
             c.durationMythic = 30;
+            return c;
+        }
+    }
+    // =======================
+    // b) Sello Reflejo del Maestro
+    // =======================
+    public static class SelloReflejoConfig {
+        public double chanceRaro;
+        public int    durationRaro;    // en minutos
+        public double chanceLegendario;
+        public int    durationLegendario;
+        public double chanceEstelar;
+        public int    durationEstelar;
+
+        public static SelloReflejoConfig createDefault() {
+            SelloReflejoConfig c = new SelloReflejoConfig();
+            c.chanceRaro         = 5.0;
+            c.durationRaro       = 10;
+            c.chanceLegendario   = 10.0;
+            c.durationLegendario = 20;
+            c.chanceEstelar      = 20.0;
+            c.durationEstelar    = 60;
+            return c;
+        }
+    }
+    // =======================
+    // b) Lagrima de la diosa del tiempo
+    // =======================
+    public static class LagrimaTiempoConfig {
+        public int expAmount;       // cantidad de EXP a dar
+        public int intervalMinutes; // intervalo en minutos
+
+        public static LagrimaTiempoConfig createDefault() {
+            LagrimaTiempoConfig c = new LagrimaTiempoConfig();
+            c.expAmount = 5;
+            c.intervalMinutes = 5;
+            return c;
+        }
+    }
+    // =======================
+    // d) Bonus por Hacha
+    // =======================
+    public static class AxeBonusConfig {
+        public double rarePercent;   // p.ej. 30.0
+        public double epicPercent;   // p.ej. 50.0
+
+        public static AxeBonusConfig createDefault() {
+            AxeBonusConfig c = new AxeBonusConfig();
+            c.rarePercent = 30.0;
+            c.epicPercent = 50.0;
+            return c;
+        }
+    }
+    // =======================
+    // d) Bonus por Pico
+    // =======================
+    public static class PickBonusConfig {
+        public double rarePercent;   // p.ej. 30.0
+        public double epicPercent;   // p.ej. 50.0
+
+        public static PickBonusConfig createDefault() {
+            PickBonusConfig c = new PickBonusConfig();
+            c.rarePercent = 30.0;
+            c.epicPercent = 50.0;
+            return c;
+        }
+    }
+    // =========================
+    // e) Sangre de Quetzalcóatl
+    // =========================
+    public static class BloodConfig {
+        public double legendarioPercent;
+        public int    legendarioDurationMinutes;
+        public double estelarPercent;
+        public int    estelarDurationMinutes;
+        public double miticoPercent;
+        public int    miticoDurationMinutes;
+
+        public static BloodConfig createDefault() {
+            BloodConfig c = new BloodConfig();
+            c.legendarioPercent           = 50.0;
+            c.legendarioDurationMinutes   = 15;
+            c.estelarPercent              = 70.0;
+            c.estelarDurationMinutes      = 30;
+            c.miticoPercent               = 100.0;
+            c.miticoDurationMinutes       = 60;
             return c;
         }
     }

@@ -110,7 +110,7 @@ public class TotemRaizPrimordialHandler {
         }
 
         if (isCapture && tipoOk) {
-            if (RNG.nextDouble() < 0.99) {
+            if (RNG.nextDouble() < 0.30) {
                 IVStore ivs = p.getIVs();
                 if (ivs != null) {
                     for (BattleStatsType stat : BattleStatsType.values()) {
@@ -140,7 +140,7 @@ public class TotemRaizPrimordialHandler {
             if (RNG.nextDouble() < 0.01) {
                 p.setShiny(true);
                 player.sendMessage(
-                        new StringTextComponent("§6→ ¡Tu " + p.getLocalizedName() + " se ha convertido en §e✧Shiny✧"),
+                        new StringTextComponent("§6→ ¡Tu " + p.getLocalizedName() + " surgió de la tierra como §e✧Shiny✧"),
                         player.getUUID()
                 );
             }

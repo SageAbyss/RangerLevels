@@ -26,6 +26,7 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.Heightmap;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TickEvent.ServerTickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -196,14 +197,19 @@ public class SpawnBoxesHandler {
 
 
         // 9) Efectos
-        ItemStack fw = makeFirework(tierKey);
-        FireworkRocketEntity rocket = new FireworkRocketEntity(world, x+0.5, yInt+1, z+0.5, fw);
-        world.addFreshEntity(rocket);
-        world.playSound(null, pos, SoundEvents.LIGHTNING_BOLT_THUNDER,
-                SoundCategory.MASTER, 2.5f, 0.5f);
-        PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.ENDER_DRAGON_DEATH, SoundCategory.MASTER, 0.5f, 0.5f);
-        PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.GENERIC_EXPLODE, SoundCategory.MASTER, 1.0f, 0.5f);
-
+        world.playSound(null, pos, SoundEvents.BEACON_DEACTIVATE,
+                SoundCategory.MASTER, 2.5f, 1.0f);
+        // Programar el bloque original de efectos para 40 ticks después (2 segundos)
+        DelayedTaskScheduler.schedule(() -> {
+            // 9) Efectos (idéntico a antes, sin modificar):
+            ItemStack fw = makeFirework(tierKey);
+            FireworkRocketEntity rocket = new FireworkRocketEntity(world, x+0.5, yInt+1, z+0.5, fw);
+            world.addFreshEntity(rocket);
+            world.playSound(null, pos, SoundEvents.LIGHTNING_BOLT_THUNDER,
+                    SoundCategory.MASTER, 2.5f, 0.5f);
+            PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.ENDER_DRAGON_DEATH, SoundCategory.MASTER, 0.5f, 0.5f);
+            PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.GENERIC_EXPLODE, SoundCategory.MASTER, 1.0f, 0.5f);
+        }, 40);
         // 10) Broadcast
         String sep = TextFormatting.DARK_GRAY + "" + TextFormatting.STRIKETHROUGH
                 + "                                                                      \n";
@@ -222,6 +228,38 @@ public class SpawnBoxesHandler {
                 new StringTextComponent(TextFormatting.GOLD + "¡Caja Misteriosa!"), 10,70,20));
         player.connection.send(new STitlePacket(Type.SUBTITLE,
                 new StringTextComponent(TextFormatting.YELLOW + "¡Encuéntrala ahora!"), 10,70,20));
+    }
+    @Mod.EventBusSubscriber(modid = "rangerlevels")
+    public static class DelayedTaskScheduler {
+        private static class Task {
+            Runnable action;
+            int ticksRemaining;
+            Task(Runnable a, int t) { action = a; ticksRemaining = t; }
+        }
+        private static final java.util.List<Task> tasks = new java.util.ArrayList<>();
+
+        /** Programa una acción a ejecutar tras delayTicks ticks */
+        public static void schedule(Runnable action, int delayTicks) {
+            tasks.add(new Task(action, delayTicks));
+        }
+
+        @SubscribeEvent
+        public static void onServerTick(TickEvent.ServerTickEvent ev) {
+            if (ev.phase != TickEvent.Phase.END) return;
+            java.util.Iterator<Task> it = tasks.iterator();
+            while (it.hasNext()) {
+                Task t = it.next();
+                t.ticksRemaining--;
+                if (t.ticksRemaining <= 0) {
+                    try {
+                        t.action.run();
+                    } catch (Exception e) {
+                        // opcional: log error
+                    }
+                    it.remove();
+                }
+            }
+        }
     }
 
     private static ItemStack makeFirework(String tier) {

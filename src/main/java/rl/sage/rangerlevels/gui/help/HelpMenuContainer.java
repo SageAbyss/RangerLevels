@@ -4,8 +4,10 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import rl.sage.rangerlevels.gui.BaseMenuContainer;
-import rl.sage.rangerlevels.gui.HelpButtonUtils;
 import rl.sage.rangerlevels.gui.MainMenu;
+import rl.sage.rangerlevels.gui.invocations.InvocationsMenu;
+
+import java.util.Objects;
 
 /**
  * Contenedor para el menú de Ayuda. Extiende BaseMenuContainer para heredar
@@ -26,7 +28,7 @@ public class HelpMenuContainer extends BaseMenuContainer {
             case "back":
                 // Volver al menú principal
                 player.closeContainer();
-                player.getServer().execute(() -> {
+                Objects.requireNonNull(player.getServer()).execute(() -> {
                     MainMenu.open(player);
                 });
                 break;
@@ -44,6 +46,12 @@ public class HelpMenuContainer extends BaseMenuContainer {
                 break;
             case "topic5":
                 HelpButtonUtils.sendHelpTopic(player, 5);
+                break;
+            case "invocaciones":
+                player.closeContainer();
+                Objects.requireNonNull(player.getServer()).execute(() -> {
+                    InvocationsMenu.open(player);
+                });
                 break;
             default:
                 break;

@@ -1,3 +1,4 @@
+// src/main/java/rl/sage/rangerlevels/items/tickets/TicketSuperHandler.java
 package rl.sage.rangerlevels.items.tickets;
 
 import net.minecraft.entity.player.PlayerEntity;
@@ -16,23 +17,16 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.common.util.LazyOptional;
 import rl.sage.rangerlevels.RangerLevels;
 import rl.sage.rangerlevels.capability.IPassCapability;
 import rl.sage.rangerlevels.capability.PassCapabilities;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
-import rl.sage.rangerlevels.pass.PassManager;
 import rl.sage.rangerlevels.pass.PassType;
 import rl.sage.rangerlevels.pass.PassUtil;
 
 import java.time.Duration;
 
-/**
- * Listener para “Ticket Super” (ID = "ticket_super"):
- *  1) Comprueba que el ItemStack tenga NBT “RangerID” = "ticket_super".
- *  2) Restaura el pase anterior si expiró y notifica.
- *  3) Si no tiene Super, lo otorga por 1 día; si ya tiene, muestra tiempo restante.
- *  4) Cancela cualquier RightClickBlock si el ID coincide.
- */
 @Mod.EventBusSubscriber(modid = RangerLevels.MODID)
 public class TicketSuperHandler {
 
@@ -46,110 +40,104 @@ public class TicketSuperHandler {
         Hand hand = event.getHand();
 
         ItemStack held = player.getItemInHand(hand);
-        if (held == null || held.isEmpty()) return;
+        if (held.isEmpty()) return;
 
-        // 1) Verificar ID NBT
         String id = RangerItemDefinition.getIdFromStack(held);
         if (!ID_TICKET_SUPER.equals(id)) return;
 
-        // Bloquear uso vanilla
         event.setCanceled(true);
         event.setCancellationResult(ActionResultType.SUCCESS);
 
-        if (world.isClientSide) return;
-        if (!(player instanceof ServerPlayerEntity)) return;
+        if (world.isClientSide || !(player instanceof ServerPlayerEntity)) return;
         ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
 
-        // 2) Verificar/restaurar pase expirado y notificar
-        PassType actual = PassUtil.checkAndRestorePass(serverPlayer);
+        LazyOptional<IPassCapability> capOpt = PassCapabilities.getOptional(serverPlayer);
+        capOpt.ifPresent(cap -> {
+            PassType actual = PassUtil.checkAndRestorePass(serverPlayer, cap);
 
-        // 3) Si ya tiene Super (o Master), mostrar tiempo restante
-        if (actual.getTier() >= PassType.SUPER.getTier()) {
-            IPassCapability cap = PassCapabilities.get(serverPlayer);
-            long expiresAt = cap.getExpiresAt();
-            String remainingTime = "Desconocido";
-            if (expiresAt != Long.MAX_VALUE) {
-                long millisLeft = expiresAt - System.currentTimeMillis();
-                if (millisLeft > 0) {
-                    Duration duration = Duration.ofMillis(millisLeft);
-                    long hours = duration.toHours();
-                    long minutes = duration.minusHours(hours).toMinutes();
-                    remainingTime = hours + "h " + minutes + "m";
-                } else {
-                    remainingTime = "Expirado";
+            if (actual.getTier() >= PassType.SUPER.getTier()) {
+                long expiresAt = cap.getExpiresAt();
+                String remainingTime = "Desconocido";
+                if (expiresAt != Long.MAX_VALUE) {
+                    long millisLeft = expiresAt - System.currentTimeMillis();
+                    if (millisLeft > 0) {
+                        long hours = Duration.ofMillis(millisLeft).toHours();
+                        long minutes = Duration.ofMillis(millisLeft).minusHours(hours).toMinutes();
+                        remainingTime = hours + "h " + minutes + "m";
+                    } else {
+                        remainingTime = "Expirado";
+                    }
                 }
+                serverPlayer.sendMessage(
+                        new StringTextComponent(TextFormatting.DARK_PURPLE + "✦ Pase Ranger ✦"),
+                        serverPlayer.getUUID()
+                );
+                serverPlayer.sendMessage(
+                        new StringTextComponent(TextFormatting.RED + "❖ Ya tienes el pase ")
+                                .append(actual.getGradientDisplayName())
+                                .append(new StringTextComponent(TextFormatting.RED + " activo.")),
+                        serverPlayer.getUUID()
+                );
+                serverPlayer.sendMessage(
+                        new StringTextComponent(TextFormatting.GRAY + "❖ Tiempo restante: ")
+                                .append(new StringTextComponent(TextFormatting.YELLOW + remainingTime)),
+                        serverPlayer.getUUID()
+                );
+                return;
             }
 
-            StringTextComponent titulo = new StringTextComponent(TextFormatting.DARK_PURPLE + "✦ Pase Ranger ✦");
-            IFormattableTextComponent linea1 = new StringTextComponent(TextFormatting.RED + "❖ Ya tienes el pase ")
-                    .append(actual.getGradientDisplayName())
-                    .append(new StringTextComponent(TextFormatting.RED + " activo."));
-            IFormattableTextComponent linea2 = new StringTextComponent(TextFormatting.GRAY + "❖ Tiempo restante: ")
-                    .append(new StringTextComponent(TextFormatting.YELLOW + remainingTime));
-            serverPlayer.sendMessage(titulo.copy(), serverPlayer.getUUID());
-            serverPlayer.sendMessage(linea1, serverPlayer.getUUID());
-            serverPlayer.sendMessage(linea2, serverPlayer.getUUID());
-            return;
-        }
+            cap.grantPass(PassType.SUPER.getTier(), SUPER_DURATION_MS);
+            cap.syncToClient(serverPlayer);
 
-        // 4) Otorgar Super (1 día), guardando el pase anterior
-        IPassCapability cap = PassCapabilities.get(serverPlayer);
-        cap.grantPass(PassType.SUPER.getTier(), SUPER_DURATION_MS);
-        cap.syncToClient(serverPlayer);
-
-        // 5) Notificar fecha de expiración en chat
-        long expiresAt = cap.getExpiresAt();
-        String expirationTime;
-        if (expiresAt == Long.MAX_VALUE) {
-            expirationTime = "Nunca";
-        } else {
-            expirationTime = java.time.format.DateTimeFormatter
+            long expiresAt = cap.getExpiresAt();
+            String expirationTime = expiresAt == Long.MAX_VALUE
+                    ? "Nunca"
+                    : java.time.format.DateTimeFormatter
                     .ofPattern("yyyy-MM-dd HH:mm")
                     .withZone(java.time.ZoneOffset.UTC)
-                    .format(java.time.Instant.ofEpochMilli(expiresAt))
-                    + " UTC";
-        }
+                    .format(java.time.Instant.ofEpochMilli(expiresAt)) + " UTC";
 
-        StringTextComponent titulo = new StringTextComponent(TextFormatting.DARK_PURPLE + "✦ Pase Ranger ✦");
-        IFormattableTextComponent linea1 = new StringTextComponent(TextFormatting.GREEN + "❖ ᴀᴄᴛɪᴠᴀᴅᴏ ")
-                .append(PassType.SUPER.getGradientDisplayName())
-                .append(new StringTextComponent(TextFormatting.GREEN + " por 1 día!"));
-        IFormattableTextComponent linea2 = new StringTextComponent(TextFormatting.GRAY + "❖ Expira: ")
-                .append(new StringTextComponent(TextFormatting.YELLOW + expirationTime));
-        serverPlayer.sendMessage(titulo.copy(), serverPlayer.getUUID());
-        serverPlayer.sendMessage(linea1, serverPlayer.getUUID());
-        serverPlayer.sendMessage(linea2, serverPlayer.getUUID());
+            serverPlayer.sendMessage(
+                    new StringTextComponent(TextFormatting.DARK_PURPLE + "✦ Pase Ranger ✦"),
+                    serverPlayer.getUUID()
+            );
+            serverPlayer.sendMessage(
+                    new StringTextComponent(TextFormatting.GREEN + "❖ ᴀᴄᴛɪᴠᴀᴅᴏ ")
+                            .append(PassType.SUPER.getGradientDisplayName())
+                            .append(new StringTextComponent(TextFormatting.GREEN + " por 1 día!")),
+                    serverPlayer.getUUID()
+            );
+            serverPlayer.sendMessage(
+                    new StringTextComponent(TextFormatting.GRAY + "❖ Expira: ")
+                            .append(new StringTextComponent(TextFormatting.YELLOW + expirationTime)),
+                    serverPlayer.getUUID()
+            );
 
-        // 6) Enviar título y subtítulo
-        IFormattableTextComponent titleText = new StringTextComponent("Pase Ranger").withStyle(TextFormatting.GOLD);
-        IFormattableTextComponent subTitleText = new StringTextComponent("ᴀᴄᴛɪᴠᴀᴅᴏ ")
-                .withStyle(TextFormatting.AQUA)
-                .append(PassType.SUPER.getGradientDisplayName());
-        STitlePacket packetTitle = new STitlePacket(STitlePacket.Type.TITLE, titleText);
-        STitlePacket packetSub = new STitlePacket(STitlePacket.Type.SUBTITLE, subTitleText);
-        serverPlayer.connection.send(packetTitle);
-        serverPlayer.connection.send(packetSub);
+            IFormattableTextComponent titleText = new StringTextComponent("Pase Ranger")
+                    .withStyle(TextFormatting.GOLD);
+            IFormattableTextComponent subTitleText = new StringTextComponent("ᴀᴄᴛɪᴠᴀᴅᴏ ")
+                    .withStyle(TextFormatting.AQUA)
+                    .append(PassType.SUPER.getGradientDisplayName());
+            serverPlayer.connection.send(new STitlePacket(STitlePacket.Type.TITLE, titleText));
+            serverPlayer.connection.send(new STitlePacket(STitlePacket.Type.SUBTITLE, subTitleText));
 
-        // 7) Consumir ticket (si no está en creativo)
-        if (!serverPlayer.isCreative()) {
-            held.shrink(1);
-        }
+            if (!serverPlayer.isCreative()) held.shrink(1);
 
-        // 8) Reproducir sonido de confirmación
-        serverPlayer.level.playSound(
-                null,
-                serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
-                SoundEvents.IRON_DOOR_OPEN,
-                SoundCategory.MASTER,
-                1.0f, 0.5f
-        );
+            serverPlayer.level.playSound(
+                    null,
+                    serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
+                    SoundEvents.IRON_DOOR_OPEN,
+                    SoundCategory.MASTER,
+                    1.0f, 0.5f
+            );
+        });
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         PlayerEntity player = event.getPlayer();
         ItemStack held = player.getItemInHand(event.getHand());
-        if (held == null || held.isEmpty()) return;
+        if (held.isEmpty()) return;
 
         String id = RangerItemDefinition.getIdFromStack(held);
         if (ID_TICKET_SUPER.equals(id)) {

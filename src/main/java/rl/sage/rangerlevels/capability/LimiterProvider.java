@@ -4,16 +4,20 @@ package rl.sage.rangerlevels.capability;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import rl.sage.rangerlevels.RangerLevels;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import rl.sage.rangerlevels.limiter.LimiterManager;
 
 @Mod.EventBusSubscriber(modid = RangerLevels.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class LimiterProvider {
@@ -49,6 +53,16 @@ public class LimiterProvider {
                     newCap.setNotified(oldCap.wasNotified());
                 })
         );
+    }
+    /** Cada tick de servidor chequeamos reseteo global */
+    @SubscribeEvent
+    public static void onServerTick(TickEvent.ServerTickEvent ev) {
+        if (ev.phase == TickEvent.Phase.END) {
+            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+            if (server != null) {
+                LimiterManager.checkGlobalReset(server);
+            }
+        }
     }
 
     /** Storage NBT */

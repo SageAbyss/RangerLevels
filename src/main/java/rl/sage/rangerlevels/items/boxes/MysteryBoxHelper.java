@@ -1,6 +1,5 @@
 package rl.sage.rangerlevels.items.boxes;
 
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -31,6 +30,16 @@ import rl.sage.rangerlevels.config.MysteryBoxesConfig.MysteryBoxConfig.TierBoxCo
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.ItemsHelper;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.items.modificadores.ModificadorIVs;
+import rl.sage.rangerlevels.items.modificadores.ModificadorNaturaleza;
+import rl.sage.rangerlevels.items.modificadores.ModificadorShiny;
+import rl.sage.rangerlevels.items.modificadores.ModificadorTamano;
+import rl.sage.rangerlevels.items.randoms.LagrimaDiosaTiempo;
+import rl.sage.rangerlevels.items.reliquias.SangreQuetzalMitico;
+import rl.sage.rangerlevels.items.sacrificios.*;
+import rl.sage.rangerlevels.items.totems.fragmentos.TotemAbismoGlacial;
+import rl.sage.rangerlevels.items.totems.fragmentos.TotemLamentoDioses;
+import rl.sage.rangerlevels.items.totems.fragmentos.TotemRaizPrimordial;
 import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.*;
@@ -75,6 +84,18 @@ public class MysteryBoxHelper {
         // 1) Dar ítems aleatorios ponderados + no-drop + peso por tier de ítem
         int count = c.randomItemMin + RNG.nextInt(c.randomItemMax - c.randomItemMin + 1);
         List<String> rewards = ItemsHelper.getRewardItemIds();
+        //EXCEPTO ESTOS ITEMS
+        rewards.remove(TotemRaizPrimordial.ID);
+        rewards.remove(TotemLamentoDioses.ID);
+        rewards.remove(TotemAbismoGlacial.ID);
+        rewards.remove(LagrimaDiosaTiempo.ID);
+        rewards.remove(SangreQuetzalMitico.ID);
+        rewards.remove(ModificadorShiny.ID);
+        rewards.remove(ModificadorIVs.ID);
+        rewards.remove(ModificadorNaturaleza.ID);
+        rewards.remove(ModificadorTamano.ID);
+        rewards.remove(ConcentradoDeAlmas.ID);
+
         for (int i = 0; i < count; i++) {
             LinkedHashMap<String, Double> weights = new LinkedHashMap<>();
             if (c.randomItemsNoDropChance > 0) {

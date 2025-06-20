@@ -144,6 +144,7 @@ public class MysteryBoxesConfig {
             legendItemTiers.put("legendario", 13.0);
             legendItemTiers.put("estelar", 8.5);
             legendItemTiers.put("mitico", 1.5);
+            legendItemTiers.put("singular", 0.01);
             // Pesos de ítem por tier para caja COMÚN
             LinkedHashMap<String, Double> estelarItemTiers = new LinkedHashMap<>();
             estelarItemTiers.put("comun", 40.0);
@@ -152,6 +153,7 @@ public class MysteryBoxesConfig {
             estelarItemTiers.put("legendario", 18.0);
             estelarItemTiers.put("estelar", 17.5);
             estelarItemTiers.put("mitico", 4.5);
+            estelarItemTiers.put("singular", 0.5);
             // Pesos de ítem por tier para caja COMÚN
             LinkedHashMap<String, Double> mythicItemTiers = new LinkedHashMap<>();
             mythicItemTiers.put("comun", 20.0);
@@ -160,26 +162,27 @@ public class MysteryBoxesConfig {
             mythicItemTiers.put("legendario", 13.0);
             mythicItemTiers.put("estelar", 11.5);
             mythicItemTiers.put("mitico", 9.5);
+            mythicItemTiers.put("singular", 9.5);
 
             MysteryBoxConfig m = new MysteryBoxConfig();
             m.comun = createTier(true, 15.0, 10.0, 12.0, 80.0, 12, 20, 50,
-                    Arrays.asList("caja_misteriosa_raro"),
+                    Collections.singletonList("caja_misteriosa_raro"),
                     Collections.singletonList(new CommandEntry(100, "say %player% obtuvo sorpresa Común")),
                     map(80, 30, 10), 50.0, commonItemTiers, 0, 3);
             m.raro = createTier(true, 10.0, 5.0, 8.0, 70.0, 10, 50, 100,
-                    Arrays.asList("caja_misteriosa_epico"),
+                    Collections.singletonList("caja_misteriosa_epico"),
                     Collections.singletonList(new CommandEntry(100, "say %player% obtuvo sorpresa Raro")),
                     map(70, 30), 40.0, rareItemTiers, 1, 3);
             m.epico = createTier(true, 7.0, 3.0, 5.0, 60.0, 8, 100, 200,
-                    Arrays.asList("caja_misteriosa_legendario"),
+                    Collections.singletonList("caja_misteriosa_legendario"),
                     Collections.singletonList(new CommandEntry(100, "say %player% obtuvo sorpresa Épico")),
                     map(60, 40), 30.0, epicItemTiers, 1, 3);
             m.legendario = createTier(true, 5.0, 1.5, 4.0, 50.0, 6, 200, 400,
-                    Arrays.asList("caja_misteriosa_estelar"),
+                    Collections.singletonList("caja_misteriosa_estelar"),
                     Collections.singletonList(new CommandEntry(100, "say %player% obtuvo sorpresa Legendario")),
                     map(50, 50), 15.0, legendItemTiers, 1, 3);
             m.estelar = createTier(true, 3.0, 1.0, 2.5, 40.0, 4, 400, 600,
-                    Arrays.asList("caja_misteriosa_mitico"),
+                    Collections.singletonList("caja_misteriosa_mitico"),
                     Collections.singletonList(new CommandEntry(100, "say %player% obtuvo sorpresa Estelar")),
                     map(40, 60), 8.0, estelarItemTiers, 1, 3);
             m.mitico = createTier(true, 2.0, 0.5, 1.0, 30.0, 0, 600, 1000,

@@ -29,7 +29,7 @@ public class TicketNivel extends RangerItemDefinition {
                 PixelmonItems.ss_ticket,
                 Tier.RARO,     // Tier RARO
                 null,          // Ya no pasamos TextFormatting, sobreescribimos en createStack()
-                "✹ Ticket de Nivel ✹",
+                "✹ Ticket Nivel ✹",
                 null           // Lore por defecto se asigna en createStack()
         );
         CustomItemRegistry.register(this);

@@ -62,8 +62,7 @@ public class MainMenu {
                 16
         ));
 
-        // 3) Abrir el contenedor con SimpleNamedContainerProvider (GENERIC_9x3)
-        ITextComponent title = new StringTextComponent("§6RangerLevels");
+        ITextComponent title = new StringTextComponent("§8෴҉ Ranger Levels ҉෴");
         player.openMenu(new SimpleNamedContainerProvider(
                 (windowId, playerInv, p) -> new MainMenuContainer(windowId, playerInv, inv),
                 title

@@ -1,14 +1,17 @@
 package rl.sage.rangerlevels.gui.help;
 
+import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.SimpleNamedContainerProvider;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.StringTextComponent;
-import rl.sage.rangerlevels.gui.HelpButtonUtils;
+import net.minecraftforge.registries.ForgeRegistries;
 import rl.sage.rangerlevels.gui.MenuItemBuilder;
 import rl.sage.rangerlevels.gui.PlayerInfoUtils;
 import rl.sage.rangerlevels.util.PlayerSoundUtils;
@@ -21,6 +24,11 @@ import java.util.Arrays;
  * para confirmar que llevan correctamente MenuButtonID y MenuSlot.
  */
 public class HelpMenu {
+    private static Item findArcChalice() {
+        Item i = ForgeRegistries.ITEMS
+                .getValue(new ResourceLocation("pixelmon", "arc_chalice"));
+        return i != null ? i : Items.NETHER_STAR;
+    }
 
     public static void open(ServerPlayerEntity player) {
         // Reproducir sonido al abrir
@@ -41,6 +49,16 @@ public class HelpMenu {
 
         // 2) Botones “Help” (estos sí llevan NBT de botón)
 
+        //Sección Invocaciones
+        ItemStack botonInvocaciones = MenuItemBuilder.createButton(
+                "§f§l✦ Altar Arcano de la Creación ✦",
+                Arrays.asList(HelpButtonUtils.buildInvocaciones().getString().split("\n")),
+                findArcChalice(),
+                "invocaciones",
+                0
+        );
+        inv.setItem(0, botonInvocaciones);
+
         // – Eventos Activos (slot 22)
         ItemStack botonTopic1 = MenuItemBuilder.createButton(
                 "§f§l✦ Eventos Activos",
@@ -53,7 +71,7 @@ public class HelpMenu {
 
         // – Cómo comprar el pase (slot 10)
         ItemStack botonTopic2 = MenuItemBuilder.createButton(
-                "§e§l✧ Cómo comprar el pase",
+                "§e§l✧ Cómo tener un pase",
                 Arrays.asList(HelpButtonUtils.buildCompraHover().getString().split("\n")),
                 Items.EMERALD,
                 "topic2",
