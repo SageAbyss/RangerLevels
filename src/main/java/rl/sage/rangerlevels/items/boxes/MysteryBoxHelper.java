@@ -37,6 +37,7 @@ import rl.sage.rangerlevels.items.modificadores.ModificadorTamano;
 import rl.sage.rangerlevels.items.randoms.LagrimaDiosaTiempo;
 import rl.sage.rangerlevels.items.reliquias.SangreQuetzalMitico;
 import rl.sage.rangerlevels.items.sacrificios.*;
+import rl.sage.rangerlevels.items.tickets.TicketMaster;
 import rl.sage.rangerlevels.items.totems.fragmentos.TotemAbismoGlacial;
 import rl.sage.rangerlevels.items.totems.fragmentos.TotemLamentoDioses;
 import rl.sage.rangerlevels.items.totems.fragmentos.TotemRaizPrimordial;
@@ -95,6 +96,11 @@ public class MysteryBoxHelper {
         rewards.remove(ModificadorNaturaleza.ID);
         rewards.remove(ModificadorTamano.ID);
         rewards.remove(ConcentradoDeAlmas.ID);
+        rewards.remove(EsenciaUltraente.ID);
+        rewards.remove(EsenciaLegendaria.ID);
+        rewards.remove(EsenciaBoss.ID);
+        rewards.remove(CatalizadorAlmas.ID);
+        rewards.remove(TicketMaster.ID);
 
         for (int i = 0; i < count; i++) {
             LinkedHashMap<String, Double> weights = new LinkedHashMap<>();

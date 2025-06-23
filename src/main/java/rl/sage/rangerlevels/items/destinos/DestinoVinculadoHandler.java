@@ -1,5 +1,5 @@
 // File: rl/sage/rangerlevels/items/randoms/DestinoVinculadoHandler.java
-package rl.sage.rangerlevels.items.randoms;
+package rl.sage.rangerlevels.items.destinos;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;

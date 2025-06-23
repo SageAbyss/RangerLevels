@@ -25,6 +25,7 @@ import rl.sage.rangerlevels.capability.PassCapabilities;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.pass.PassType;
 import rl.sage.rangerlevels.pass.PassUtil;
+import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.time.Duration;
 
@@ -117,15 +118,12 @@ public class TicketMasterHandler {
             serverPlayer.connection.send(new STitlePacket(STitlePacket.Type.TITLE, titleText));
             serverPlayer.connection.send(new STitlePacket(STitlePacket.Type.SUBTITLE, subTitleText));
 
-            if (!serverPlayer.isCreative()) held.shrink(1);
+            held.shrink(1);
 
-            serverPlayer.level.playSound(
-                    null,
-                    serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
-                    SoundEvents.IRON_DOOR_OPEN,
-                    SoundCategory.MASTER,
-                    1.0f, 0.5f
-            );
+            PlayerSoundUtils.playSoundToPlayer((ServerPlayerEntity)
+                    player, SoundEvents.BEACON_DEACTIVATE, SoundCategory.MASTER, 1f, 1f);
+            PlayerSoundUtils.playSoundToPlayer((ServerPlayerEntity)
+                    player, SoundEvents.END_PORTAL_SPAWN, SoundCategory.MASTER, 1f, 0.8f);
         });
     }
 

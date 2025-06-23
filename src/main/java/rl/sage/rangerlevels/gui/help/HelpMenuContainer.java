@@ -6,6 +6,7 @@ import net.minecraft.inventory.Inventory;
 import rl.sage.rangerlevels.gui.BaseMenuContainer;
 import rl.sage.rangerlevels.gui.MainMenu;
 import rl.sage.rangerlevels.gui.invocations.InvocationsMenu;
+import rl.sage.rangerlevels.gui.pass.BuyPassMenu;
 
 import java.util.Objects;
 
@@ -36,7 +37,10 @@ public class HelpMenuContainer extends BaseMenuContainer {
                 HelpButtonUtils.sendHelpTopic(player, 1);
                 break;
             case "topic2":
-                HelpButtonUtils.sendHelpTopic(player, 2);
+                player.closeContainer();
+                Objects.requireNonNull(player.getServer()).execute(() -> {
+                    BuyPassMenu.open(player);
+                });
                 break;
             case "topic3":
                 HelpButtonUtils.sendHelpTopic(player, 3);

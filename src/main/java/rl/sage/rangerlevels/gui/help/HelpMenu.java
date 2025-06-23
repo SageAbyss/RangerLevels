@@ -1,5 +1,6 @@
 package rl.sage.rangerlevels.gui.help;
 
+import com.pixelmonmod.pixelmon.Pixelmon;
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
@@ -28,6 +29,10 @@ public class HelpMenu {
         Item i = ForgeRegistries.ITEMS
                 .getValue(new ResourceLocation("pixelmon", "arc_chalice"));
         return i != null ? i : Items.NETHER_STAR;
+    }
+    private static Item findClock() {
+        Item i = ForgeRegistries.ITEMS.getValue(new ResourceLocation("pixelmon", "black_clock"));
+        return i != null ? i : Items.CLOCK;
     }
 
     public static void open(ServerPlayerEntity player) {
@@ -94,7 +99,7 @@ public class HelpMenu {
         ItemStack botonTopic4 = MenuItemBuilder.createButton(
                 "§e§l✧ Próximo Reinicio del pase",
                 Arrays.asList(HelpButtonUtils.buildReinicioHover(player).getString().split("\n")),
-                Items.CLOCK,
+                findClock(),
                 "topic4",
                 14
         );

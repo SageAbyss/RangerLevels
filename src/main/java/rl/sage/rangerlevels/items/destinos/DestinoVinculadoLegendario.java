@@ -1,5 +1,5 @@
-// File: rl/sage/rangerlevels/items/randoms/DestinoVinculadoEpico.java
-package rl.sage.rangerlevels.items.randoms;
+// File: rl/sage/rangerlevels/items/randoms/DestinoVinculadoLegendario.java
+package rl.sage.rangerlevels.items.destinos;
 
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import net.minecraft.item.ItemStack;
@@ -16,14 +16,14 @@ import rl.sage.rangerlevels.util.NBTUtils;
 import java.util.Arrays;
 import java.util.List;
 
-public class DestinoVinculadoEpico extends RangerItemDefinition {
-    public static final String ID = "destino_vinculado_epico";
+public class DestinoVinculadoLegendario extends RangerItemDefinition {
+    public static final String ID = "destino_vinculado_legendario";
 
-    public DestinoVinculadoEpico() {
+    public DestinoVinculadoLegendario() {
         super(
                 ID,
                 PixelmonItems.escape_rope,
-                Tier.EPICO,
+                Tier.LEGENDARIO,
                 null,
                 "✦ Destino Vinculado ✦",
                 null
@@ -33,16 +33,16 @@ public class DestinoVinculadoEpico extends RangerItemDefinition {
     @Override
     public ItemStack createStack(int amount) {
         ItemStack stack = super.createStack(1);
-        stack.setHoverName(Tier.EPICO.applyGradient(getDisplayName()));
+        stack.setHoverName(Tier.LEGENDARIO.applyGradient(getDisplayName()));
 
         List<IFormattableTextComponent> lore = Arrays.asList(
                 new StringTextComponent("§7✧ Usa este ítem sobre otro jugador"),
                 new StringTextComponent("§7   para compartir un bonus privado de EXP"),
-                new StringTextComponent("§7✧ Bonus: §6+50% EXP"),
-                new StringTextComponent("§7✧ Tiempo: §61 hora"),
+                new StringTextComponent("§7✧ Bonus: §6+100% EXP"),
+                new StringTextComponent("§7✧ Tiempo: §63 horas"),
                 new StringTextComponent("§7▶ Haz click derecho sobre un jugador"),
                 new StringTextComponent(" "),
-                new StringTextComponent("§7▶ Tier: ").append(Tier.EPICO.getColor())
+                new StringTextComponent("§7▶ Tier: ").append(Tier.LEGENDARIO.getColor())
         );
         CompoundNBT tag = stack.getOrCreateTag();
         CompoundNBT display = tag.contains("display") ? tag.getCompound("display") : new CompoundNBT();

@@ -2,6 +2,7 @@
 package rl.sage.rangerlevels.items.tickets;
 
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
@@ -10,6 +11,7 @@ import net.minecraft.util.text.TextFormatting;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.EnchantUtils;
 import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.Arrays;
@@ -19,7 +21,7 @@ import java.util.List;
  * Define todo lo que identifica al “ticket_ultra”:
  *  - id = "ticket_ultra"
  *  - baseItem = PixelmonItems.rainbow_pass (Ultra Ball de Pixelmon)
- *  - tier = Tier.LEGENDARIO, pero usamos degradado pastel para el nombre y el lore
+ *  - tier = Tier.ESTELAR, pero usamos degradado pastel para el nombre y el lore
  *  - displayName = "✦ Ticket Pase Ultra ✦"
  *  - defaultLore: viñetas, caducidad y “Tier” en degradado.
  */
@@ -30,9 +32,9 @@ public class TicketUltra extends RangerItemDefinition {
         super(
                 ID,
                 PixelmonItems.rainbow_pass,
-                Tier.LEGENDARIO,
+                Tier.ESTELAR,
                 null,                               // Color sólido ya no se usa
-                "✦ Ticket Pase Ultra ✦",
+                "✦ Ticket Pase Ultra Temporal ✦",
                 null                                // Lore se asigna en createStack()
         );
         CustomItemRegistry.register(this);
@@ -43,8 +45,8 @@ public class TicketUltra extends RangerItemDefinition {
         // 1) Creamos el ItemStack base
         ItemStack stack = super.createStack(amount);
 
-        // 2) Asignamos el hover-name con degradado pastel de Tier.LEGENDARIO
-        stack.setHoverName(Tier.LEGENDARIO.applyGradient(getDisplayName()));
+        // 2) Asignamos el hover-name con degradado pastel de Tier.ESTELAR
+        stack.setHoverName(Tier.ESTELAR.applyGradient(getDisplayName()));
 
         // 3) Creamos el lore con la línea de Tier en degradado
         List<IFormattableTextComponent> generatedLore = Arrays.asList(
@@ -54,8 +56,8 @@ public class TicketUltra extends RangerItemDefinition {
                 new StringTextComponent("§7✧ Caduca en §e24 §7horas"),
                 new StringTextComponent("§7✧ Click para activar"),
                 new StringTextComponent(" "),
-                // 3.3) “▶ Tier:” en gris + “LEGENDARIO” en degradado pastel
-                new StringTextComponent("§7▶ Tier: ").append(Tier.LEGENDARIO.getColor())
+                // 3.3) “▶ Tier:” en gris + “ESTELAR” en degradado pastel
+                new StringTextComponent("§7▶ Tier: ").append(Tier.ESTELAR.getColor())
         );
 
         // 4) Insertamos el lore en NBT
@@ -70,10 +72,8 @@ public class TicketUltra extends RangerItemDefinition {
         }
         display.put("Lore", loreList);
         tag.put("display", display);
-
-        // 5) Ocultamos atributos innecesarios (HideFlags bit 32)
+        EnchantUtils.addEnchantment(stack, Enchantments.UNBREAKING, 1);
         NBTUtils.applyAllHideFlags(tag);
-
         stack.setTag(tag);
         return stack;
     }

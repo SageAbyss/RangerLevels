@@ -94,14 +94,14 @@ public class CommandRegistry {
                                     return 1;
                                 })
                         )
-                        .then(Commands.literal("invocaciones")
+                        .then(Commands.literal("AltarArcano")
                                 .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     InvocationsMenu.open(player);
                                     return 1;
                                 })
                         )
-                        .then(Commands.literal("modificadores")
+                        .then(Commands.literal("AltarDeAlmas")
                                 .executes(ctx -> {
                                     ServerPlayerEntity player = ctx.getSource().getPlayerOrException();
                                     AltarDeAlmasMenu.open(player);

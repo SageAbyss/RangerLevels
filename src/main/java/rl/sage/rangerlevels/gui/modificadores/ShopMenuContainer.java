@@ -22,6 +22,7 @@ import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class ShopMenuContainer extends BaseMenuContainer6 {
@@ -47,7 +48,9 @@ public class ShopMenuContainer extends BaseMenuContainer6 {
             }
         } else if ("shop_back".equals(buttonId)) {
             player.closeContainer();
-            MainMenu.open(player);
+            Objects.requireNonNull(player.getServer(), "MinecraftServer es nulo").execute(() ->
+                    MainMenu.open(player)
+            );
         }
     }
 
@@ -156,7 +159,8 @@ public class ShopMenuContainer extends BaseMenuContainer6 {
         player.sendMessage(new StringTextComponent(
                 cfg.messages.bought.replace("%pokemon%", capitalize(raw))
         ), player.getUUID());
-        PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.PLAYER_LEVELUP, SoundCategory.MASTER, 1f, 1f);
+        PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.WITHER_SPAWN, SoundCategory.MASTER, 1f, 1.5f);
+        PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.BEACON_DEACTIVATE, SoundCategory.MASTER, 2f, 1f);
     }
 
     private static String capitalize(String s) {

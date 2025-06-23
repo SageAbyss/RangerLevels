@@ -22,8 +22,8 @@ public class CatalizadorAlmas extends RangerItemDefinition {
     public CatalizadorAlmas() {
         super(
                 ID,
-                PixelmonItems.dna_splicers,      // base Pixelmon: dna_splicers
-                Tier.MITICO,                     // tier mítico
+                PixelmonItems.professors_mask,      // base Pixelmon: dna_splicers
+                Tier.SINGULAR,                     // tier mítico
                 TextFormatting.DARK_PURPLE,      // color del nombre
                 "✦ Catalizador de Almas ✦",      // nombre visible
                 getDefaultLore()                 // lore completo y dinámico
@@ -42,7 +42,11 @@ public class CatalizadorAlmas extends RangerItemDefinition {
                 new StringTextComponent("§7   que luego sirve para crear modificadores"),
                 new StringTextComponent("§7   de ADN únicos para ese Pokémon."),
                 new StringTextComponent(" "),
-                new StringTextComponent("§7▶ Tier: ").append(Tier.MITICO.getColor())
+                new StringTextComponent("§7✧ También extrae la Esencia de Jefes,"),
+                new StringTextComponent("§7   las cuales sirven para usarlas en el Altar"),
+                new StringTextComponent("§7   para intercambiarlas por Esencias."),
+                new StringTextComponent(" "),
+                new StringTextComponent("§7▶ Tier: ").append(Tier.SINGULAR.getColor())
         );
     }
 

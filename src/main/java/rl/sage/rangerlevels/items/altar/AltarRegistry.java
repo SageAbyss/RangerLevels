@@ -10,12 +10,16 @@ import rl.sage.rangerlevels.items.randoms.LagrimaDiosaTiempo;
 import rl.sage.rangerlevels.items.reliquias.SangreQuetzalEstelar;
 import rl.sage.rangerlevels.items.reliquias.SangreQuetzalLegendario;
 import rl.sage.rangerlevels.items.reliquias.SangreQuetzalMitico;
-import rl.sage.rangerlevels.items.tickets.CarameloNivel;
-import rl.sage.rangerlevels.items.tickets.TicketNivel;
+import rl.sage.rangerlevels.items.sacrificios.CatalizadorAlmas;
+import rl.sage.rangerlevels.items.sacrificios.EsenciaBoss;
+import rl.sage.rangerlevels.items.sacrificios.EsenciaLegendaria;
+import rl.sage.rangerlevels.items.sacrificios.EsenciaUltraente;
+import rl.sage.rangerlevels.items.tickets.*;
 import rl.sage.rangerlevels.items.totems.fragmentos.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.Supplier;
 
 public class AltarRegistry {
@@ -25,8 +29,11 @@ public class AltarRegistry {
         registerTotemAbismoGlacial();
         registerLagrimaTiempo();
         registerSangreQuetzal();
+        registerCatalizadorAlmas();
+        registerTicketMaster();
         // ... aquí tantas recetas como necesites
     }
+    private static final Random RNG = new Random();
 
     public static void registerTotemRaizPrimordial() {
         Map<String,Integer> ingredients = new HashMap<>();
@@ -114,6 +121,43 @@ public class AltarRegistry {
 
         AltarRecipe recipe = new AltarRecipe(
                 new ResourceLocation("rangerlevels","sangre_quetzal_mitico"),
+                ingredients,
+                result,
+                Tier.ESTELAR.applyGradient("§5☁ El lamento de Aurora resonó y apareció el Tótem del Abismo Glacial ☁"),
+                new StringTextComponent("§c❌ No cumples los requisitos del ritual para el Tótem del Abismo Glacial.")
+        );
+        AltarCraftHelper.registerRecipe(recipe);
+    }
+    private static void registerTicketMaster() {
+        Map<String,Integer> ingredients = new HashMap<>();
+        ingredients.put(TicketSuper.ID, 2);
+        ingredients.put(TicketUltra.ID, 1);
+        ingredients.put(GenesisArcano.ID, 1);
+
+        Supplier<ItemStack> result = () ->
+                CustomItemRegistry.create(TicketMaster.ID, 1);
+
+        AltarRecipe recipe = new AltarRecipe(
+                new ResourceLocation("rangerlevels","ticket_master"),
+                ingredients,
+                result,
+                Tier.ESTELAR.applyGradient("§5☁ El lamento de Aurora resonó y apareció el Tótem del Abismo Glacial ☁"),
+                new StringTextComponent("§c❌ No cumples los requisitos del ritual para el Tótem del Abismo Glacial.")
+        );
+        AltarCraftHelper.registerRecipe(recipe);
+    }
+    private static void registerCatalizadorAlmas() {
+        Map<String,Integer> ingredients = new HashMap<>();
+        ingredients.put(EsenciaLegendaria.ID, 4);
+        ingredients.put(EsenciaUltraente.ID, 4);
+        ingredients.put(EsenciaBoss.ID, 32);
+        ingredients.put(GenesisArcano.ID, 2);
+
+        Supplier<ItemStack> result = () ->
+                CustomItemRegistry.create(CatalizadorAlmas.ID, 1);
+
+        AltarRecipe recipe = new AltarRecipe(
+                new ResourceLocation("rangerlevels","catalizador_almas"),
                 ingredients,
                 result,
                 Tier.ESTELAR.applyGradient("§5☁ El lamento de Aurora resonó y apareció el Tótem del Abismo Glacial ☁"),

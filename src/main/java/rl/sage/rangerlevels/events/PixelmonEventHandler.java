@@ -19,6 +19,8 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.common.Mod;
 import rl.sage.rangerlevels.capability.PassCapabilities;
+import rl.sage.rangerlevels.items.randoms.GuantesEntrenadorHandler;
+import rl.sage.rangerlevels.items.sacrificios.BossEssenceHelper;
 import rl.sage.rangerlevels.items.sacrificios.ConcentradoDeAlmasHandler;
 import rl.sage.rangerlevels.items.sacrificios.EspecieEssenceHelper;
 import rl.sage.rangerlevels.items.sello.SelloReflejoMaestroHandler;
@@ -356,7 +358,8 @@ public class PixelmonEventHandler {
         int[] legendary = cfg.getExpRangeLegendary();
         int[] boss      = cfg.getExpRangeBoss();
         int base;
-        if (defeated.isBossPokemon()) {
+        if (BossEssenceHelper.isBoss(defeated)) {
+            BossEssenceHelper.tryGiveBossEssenceOnDefeat(player, defeated);
             base = randomInRange(boss[0], boss[1]);
         }
         else if (defeated.getPokemon().isLegendary()
@@ -437,8 +440,11 @@ public class PixelmonEventHandler {
         base = TotemAbismoGlacialHandler.applyExpBonusIfApplicable(player, defeated, base, false);
         // ── Cálculo normal (sin gema) ──
         int totalSinGema = applyMultipliers(player, base, "beatWild");
+
+        double glovesBonus = GuantesEntrenadorHandler.getBonus(player, defeated);
+        int totalWithGloves = (int) Math.round(totalSinGema * (1.0 + glovesBonus));
         double gemBonus = ExpGemHandler.getBonus(player); // 0.10, 0.30, 0.50 o 0.0
-        int totalConGema = (int) Math.round(totalSinGema * (1.0 + gemBonus));
+        int totalConGema = (int) Math.round(totalWithGloves * (1.0 + gemBonus));
         int totalConManual = ManualTrainingHandler.applyBonus(player, totalConGema);
         LimiterHelper.giveExpWithLimit(player, totalConManual);
     }

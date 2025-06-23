@@ -11,6 +11,10 @@ import rl.sage.rangerlevels.config.ExpConfig;
 import rl.sage.rangerlevels.config.RewardConfig;
 import rl.sage.rangerlevels.events.PixelmonEventHandler;
 import rl.sage.rangerlevels.items.altar.*;
+import rl.sage.rangerlevels.items.amuletos.*;
+import rl.sage.rangerlevels.items.destinos.DestinoVinculadoEpico;
+import rl.sage.rangerlevels.items.destinos.DestinoVinculadoLegendario;
+import rl.sage.rangerlevels.items.destinos.DestinoVinculadoRaro;
 import rl.sage.rangerlevels.items.herramientas.HachaTrabajadorCompulsivoEpico;
 import rl.sage.rangerlevels.items.herramientas.HachaTrabajadorCompulsivoRaro;
 import rl.sage.rangerlevels.items.herramientas.PicoMineroPerdidoEpico;
@@ -24,10 +28,6 @@ import rl.sage.rangerlevels.items.sello.SelloReflejoMaestroLegendario;
 import rl.sage.rangerlevels.items.sello.SelloReflejoMaestroRaro;
 import rl.sage.rangerlevels.items.totems.fragmentos.*;
 import rl.sage.rangerlevels.items.sello.SelloCapturaEpico;
-import rl.sage.rangerlevels.items.amuletos.ChampionAmulet;
-import rl.sage.rangerlevels.items.amuletos.ShinyAmuletEstelar;
-import rl.sage.rangerlevels.items.amuletos.ShinyAmuletLegendaria;
-import rl.sage.rangerlevels.items.amuletos.ShinyAmuletMitico;
 import rl.sage.rangerlevels.items.boxes.*;
 import rl.sage.rangerlevels.items.cetro.CetroDivinoComun;
 import rl.sage.rangerlevels.items.cetro.CetroDivinoEpico;
@@ -72,7 +72,6 @@ public class SetupEvents {
         //ITEMS
         new TicketSuper();
         new TicketUltra();
-        new TicketUltraShort();
         new TicketMaster();
         new TicketNivel();
         new CarameloNivel();
@@ -134,10 +133,14 @@ public class SetupEvents {
         new DestinoVinculadoRaro();
         new DestinoVinculadoEpico();
         new DestinoVinculadoLegendario();
+        new GuantesDelEntrenador();
+        new CapsulaExperienciaVolatil();
 
         new CatalizadorAlmas();
+        new CatalizadorAlmasLimitado();
         new EsenciaUltraente();
         new EsenciaLegendaria();
+        new EsenciaBoss();
         new ModificadorNaturaleza();
         new ModificadorTamano();
         new ModificadorShiny();

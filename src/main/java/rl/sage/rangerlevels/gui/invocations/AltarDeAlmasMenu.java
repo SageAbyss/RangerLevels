@@ -114,6 +114,10 @@ public class AltarDeAlmasMenu {
                         "§7Ingredientes requeridos:",
                         " §f• x5 Esencias Legendarias | UltraEntes",
                         " §f• x1 Estrellas del Nether",
+                        " §f• x2 Núcleo de Sacrificio",
+                        "§7Segunda opción: ",
+                        " §f• x64 Esencias de Jefes",
+                        " §f• x1 Estrellas del Nether",
                         " §f• x2 Núcleo de Sacrificio"
                 ),
                 PixelmonItems.intriguing_stone,

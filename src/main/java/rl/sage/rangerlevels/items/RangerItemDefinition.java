@@ -21,12 +21,12 @@ import java.util.UUID;
  *  - displayName (String) que aparecerá como nombre del ítem
  *  - defaultLore (List<IFormattableTextComponent>) con las líneas de lore por defecto
  *  - HideFlags completos para que NO se muestren atributos extra
- *  - Tag único por instancia para evitar stacking
+ *  - Flag stackable: si es false, añade un UUID único para romper stacking; si es true, permite stackear y respeta amount.
  */
 public class RangerItemDefinition {
-    public static final String NBT_ID_KEY     = "RangerID";
-    public static final String NBT_TIER_KEY   = "RangerTier";
-    private static final String NBT_UNIQUE    = "RangerUniqueTag";
+    public static final String NBT_ID_KEY   = "RangerID";
+    public static final String NBT_TIER_KEY = "RangerTier";
+    private static final String NBT_UNIQUE  = "RangerUniqueTag";
 
     private final String id;
     private final Item baseItem;
@@ -34,15 +34,38 @@ public class RangerItemDefinition {
     private final TextFormatting tierColor;
     private final String displayName;
     private final List<IFormattableTextComponent> defaultLore;
+    private final boolean stackable;
 
     /**
+     * Constructor principal.
+     *
      * @param id            Identificador único (ej. "ticket_super")
      * @param baseItem      Ítem vanilla que se reutiliza (ej. Items.MAP)
      * @param tier          Tier al que pertenece (COMUN, RARO, EPICO, etc.)
      * @param tierColor     Color de texto para el nombre (TextFormatting)
      * @param displayName   Nombre legible que verá el jugador (ej. "Ticket Épico")
      * @param defaultLore   Lista de líneas de lore (componentes de texto) que se mostrarán
+     * @param stackable     true si este ítem debe poder stackear; false para romper stacking con UUID
      */
+    public RangerItemDefinition(
+            String id,
+            Item baseItem,
+            Tier tier,
+            TextFormatting tierColor,
+            String displayName,
+            List<IFormattableTextComponent> defaultLore,
+            boolean stackable
+    ) {
+        this.id = id;
+        this.baseItem = baseItem;
+        this.tier = tier;
+        this.tierColor = tierColor;
+        this.displayName = displayName;
+        this.defaultLore = defaultLore;
+        this.stackable = stackable;
+    }
+
+    // Si hay lugares que llaman al constructor antiguo, podrías añadir un overload asumiendo stackable=false:
     public RangerItemDefinition(
             String id,
             Item baseItem,
@@ -51,12 +74,7 @@ public class RangerItemDefinition {
             String displayName,
             List<IFormattableTextComponent> defaultLore
     ) {
-        this.id           = id;
-        this.baseItem     = baseItem;
-        this.tier         = tier;
-        this.tierColor    = tierColor;
-        this.displayName  = displayName;
-        this.defaultLore  = defaultLore;
+        this(id, baseItem, tier, tierColor, displayName, defaultLore, false);
     }
 
     public String getId() { return id; }
@@ -64,25 +82,30 @@ public class RangerItemDefinition {
     public Tier getTier() { return tier; }
     public TextFormatting getTierColor() { return tierColor; }
     public String getDisplayName() { return displayName; }
+    public boolean isStackable() { return stackable; }
 
     /**
      * Crea un ItemStack que:
-     *  - Siempre tiene count = 1.
+     *  - Si stackable==true: count = amount.
+     *  - Si stackable==false: count = 1 y añade UUID único para romper stacking.
      *  - Incluye ID, tier, lore, hideflags.
      *  - Aplica tierColor al nombre.
-     *  - Añade un UUID único para romper stacking.
      */
     public ItemStack createStack(int amount) {
-        // 1) Base stack de 1
         ItemStack stack = new ItemStack(baseItem);
-        stack.setCount(1);
+        if (stackable) {
+            // permitimos hasta el máximo natural del item; asumimos amount <= maxStackSize externo
+            stack.setCount(Math.max(1, amount));
+        } else {
+            stack.setCount(1);
+        }
 
-        // 2) Tag NBT inicial
+        // Tag NBT inicial
         CompoundNBT tag = stack.getOrCreateTag();
         tag.putString(NBT_ID_KEY, id);
         tag.putString(NBT_TIER_KEY, tier.name());
 
-        // 3) Nombre coloreado con tierColor y degradado de Tier
+        // Nombre coloreado con tierColor y degradado de Tier
         IFormattableTextComponent nombre = tier
                 .applyGradient(displayName)
                 .withStyle(style -> style
@@ -91,7 +114,7 @@ public class RangerItemDefinition {
                 );
         stack.setHoverName(nombre);
 
-        // 4) Lore por defecto (si lo hay)
+        // Lore por defecto (si lo hay)
         if (defaultLore != null && !defaultLore.isEmpty()) {
             CompoundNBT display = tag.contains("display")
                     ? tag.getCompound("display")
@@ -105,13 +128,17 @@ public class RangerItemDefinition {
             tag.put("display", display);
         }
 
-        // 5) Ocultar atributos/encantos/etc.
+        // Ocultar atributos/encantos/etc.
         NBTUtils.applyAllHideFlags(tag);
 
-        // 6) Tag único para romper stacking
-        tag.putUUID(NBT_UNIQUE, UUID.randomUUID());
+        // Si NO es stackable, añadimos UUID para romper stacking
+        if (!stackable) {
+            tag.putUUID(NBT_UNIQUE, UUID.randomUUID());
+        } else {
+            // Si es stackable, aseguramos no llevar tag único
+            tag.remove(NBT_UNIQUE);
+        }
 
-        // 7) Guardar NBT y devolver
         stack.setTag(tag);
         return stack;
     }

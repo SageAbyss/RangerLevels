@@ -10,6 +10,7 @@ import rl.sage.rangerlevels.items.sacrificios.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.Supplier;
 
 public class AltarAlmasRegistry {
@@ -36,8 +37,11 @@ public class AltarAlmasRegistry {
         registerNucleoU();
         registerIVsLUniversal();
         registerIVsUUniversal();
+        registerEsencias();
+        registerConcentradoXBoss();
         // … añade aquí más invocaciones ligadas al mismo altar
     }
+    private static final Random RNG = new Random();
 
     private static void registerNatureModifierL() {
         Map<String,Integer> ingredients = new HashMap<>();
@@ -49,7 +53,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorNaturaleza.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_naturaleza_l"),
+                new ResourceLocation("rangerlevels", "modificador_naturaleza_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de Naturaleza ✦"),
@@ -67,7 +71,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorNaturaleza.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_naturaleza_u"),
+                new ResourceLocation("rangerlevels", "modificador_naturaleza_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de Naturaleza ✦"),
@@ -85,7 +89,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorNaturalezaUniversal.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_naturaleza_universal_l"),
+                new ResourceLocation("rangerlevels", "modificador_naturaleza_universal_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de Naturaleza Universal ✦"),
@@ -103,7 +107,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorNaturalezaUniversal.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_naturaleza_universal_u"),
+                new ResourceLocation("rangerlevels", "modificador_naturaleza_universal_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de Naturaleza Universal ✦"),
@@ -121,7 +125,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorTamano.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_tamano_l"),
+                new ResourceLocation("rangerlevels", "modificador_altura_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de Tamaño ✦"),
@@ -139,7 +143,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorTamano.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_tamano_u"),
+                new ResourceLocation("rangerlevels", "modificador_altura_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de Tamaño ✦"),
@@ -157,7 +161,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorTamanoUniversal.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_tamano_universal_l"),
+                new ResourceLocation("rangerlevels", "modificador_altura_universal_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de Tamaño Universal ✦"),
@@ -175,7 +179,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorTamanoUniversal.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_tamano_universal_u"),
+                new ResourceLocation("rangerlevels", "modificador_altura_universal_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de Tamaño Universal ✦"),
@@ -193,7 +197,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorShiny.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_shiny_l"),
+                new ResourceLocation("rangerlevels", "modificador_shiny_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador Shiny ✦"),
@@ -211,7 +215,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorShinyUniversal.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_shiny_universal_l"),
+                new ResourceLocation("rangerlevels", "modificador_shiny_universal_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador Shiny Universal ✦"),
@@ -229,7 +233,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorShinyUniversal.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_shiny_universal_u"),
+                new ResourceLocation("rangerlevels", "modificador_shiny_universal_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador Shiny Universal ✦"),
@@ -247,7 +251,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorShiny.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_shiny_u"),
+                new ResourceLocation("rangerlevels", "modificador_shiny_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador Shiny ✦"),
@@ -265,7 +269,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorIVs.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_ivs_l"),
+                new ResourceLocation("rangerlevels", "modificador_ivs_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de IVS ✦"),
@@ -283,7 +287,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorIVsUniversal.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_ivs_universal_l"),
+                new ResourceLocation("rangerlevels", "modificador_ivs_universal_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de IVS Universal ✦"),
@@ -301,7 +305,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorIVsUniversal.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_ivs_universal_u"),
+                new ResourceLocation("rangerlevels", "modificador_ivs_universal_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador de IVS Universal ✦"),
@@ -319,7 +323,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ModificadorIVs.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_modificador_ivs_u"),
+                new ResourceLocation("rangerlevels", "modificador_ivs_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Modificador IVS ✦"),
@@ -337,7 +341,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ConcentradoDeAlmas.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_concentrado_almas_l"),
+                new ResourceLocation("rangerlevels", "concentrado_de_almas_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Concentrado de Almas ✦"),
@@ -355,7 +359,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(ConcentradoDeAlmas.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_concentrado_almas_u"),
+                new ResourceLocation("rangerlevels", "concentrado_de_almas_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Concentrado de Almas ✦"),
@@ -372,7 +376,7 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(NucleoDeSacrificio.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_nucleo_l"),
+                new ResourceLocation("rangerlevels", "nucleo_sacrificio_l"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Núcleo de Sacrificio ✦"),
@@ -389,11 +393,51 @@ public class AltarAlmasRegistry {
                 CustomItemRegistry.create(NucleoDeSacrificio.ID, 1);
 
         AltarRecipe recipe = new AltarRecipe(
-                new ResourceLocation("rangerlevels", "invocacion_nucleo_u"),
+                new ResourceLocation("rangerlevels", "nucleo_sacrificio_u"),
                 ingredients,
                 result,
                 Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Núcleo de Sacrificio ✦"),
                 new StringTextComponent("§cNo cumples los requisitos para invocar el Núcleo de Sacrificio.")
+        );
+        InvocationCraftHelper.registerRecipe(AltarAlmas.ID, recipe);
+    }
+    private static void registerEsencias() {
+        Map<String,Integer> ingredients = new HashMap<>();
+        ingredients.put(EsenciaBoss.ID, 12);
+        ingredients.put(NucleoDeSacrificio.ID, 1);
+
+        Supplier<ItemStack> result = () -> {
+            if (RNG.nextDouble() < 0.5) {
+                return CustomItemRegistry.create(EsenciaUltraente.ID, 1);
+            } else {
+                return CustomItemRegistry.create(EsenciaLegendaria.ID, 1);
+            }
+        };
+
+        AltarRecipe recipe = new AltarRecipe(
+                new ResourceLocation("rangerlevels", "esencia_aleatoria"),
+                ingredients,
+                result,
+                Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó una Esencia ✦"),
+                new StringTextComponent("§cNo cumples los requisitos para invocar Esencias.")
+        );
+        InvocationCraftHelper.registerRecipe(AltarAlmas.ID, recipe);
+    }
+    private static void registerConcentradoXBoss() {
+        Map<String,Integer> ingredients = new HashMap<>();
+        ingredients.put(EsenciaBoss.ID, 64);
+        ingredients.put("minecraft:nether_star", 1);
+        ingredients.put(NucleoDeSacrificio.ID, 2);
+
+        Supplier<ItemStack> result = () ->
+                CustomItemRegistry.create(ConcentradoDeAlmas.ID, 1);
+
+        AltarRecipe recipe = new AltarRecipe(
+                new ResourceLocation("rangerlevels", "concentrado_almas_por_boss"),
+                ingredients,
+                result,
+                Tier.LEGENDARIO.applyGradient("✦ Activaste el Altar de Almas y materializó el Concentrado de Almas ✦"),
+                new StringTextComponent("§cNo cumples los requisitos para invocar el Concentrado de Almas.")
         );
         InvocationCraftHelper.registerRecipe(AltarAlmas.ID, recipe);
     }

@@ -14,7 +14,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.EnderChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.RegistryKey;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.Util;
@@ -23,7 +22,6 @@ import net.minecraft.util.text.ChatType;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.World;
 import net.minecraft.world.gen.Heightmap;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.TickEvent;
@@ -43,37 +41,6 @@ public class SpawnBoxesHandler {
 
     private static final Random RNG = new Random();
 
-    // Map de cofres no reclamados → info con tick de spawn y dueño
-    private static final Map<WorldPos, BoxInfo> unclaimed = new HashMap<>();
-
-    // Último tick en que comprobamos spawn periódico
-    private static long lastSpawnCheck = 0;
-
-    // Clase auxiliar para dimensión + posición
-    private static class WorldPos {
-        final RegistryKey<World> dimension;
-        final BlockPos pos;
-        WorldPos(RegistryKey<World> dim, BlockPos pos) {
-            this.dimension = dim;
-            this.pos = pos;
-        }
-        @Override public int hashCode() { return Objects.hash(dimension, pos); }
-        @Override public boolean equals(Object o) {
-            if (!(o instanceof WorldPos)) return false;
-            WorldPos w = (WorldPos) o;
-            return dimension.equals(w.dimension) && pos.equals(w.pos);
-        }
-    }
-
-    private static class BoxInfo {
-        final long spawnTick;
-        final UUID ownerUuid;
-        BoxInfo(long spawnTick, UUID ownerUuid) {
-            this.spawnTick = spawnTick;
-            this.ownerUuid  = ownerUuid;
-        }
-    }
-
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent event) {
         if (event.phase != ServerTickEvent.Phase.END) return;
@@ -82,38 +49,42 @@ public class SpawnBoxesHandler {
         if (server == null) return;
 
         SpawnBoxesConfig cfg = MysteryBoxesConfig.get().spawnBoxes;
-        long now = server.getTickCount();
+        ServerWorld primary = server.overworld();
+        long now = primary.getGameTime();
 
-        // 1) Expirar cofres no reclamados en TODOS los mundos
-        long timeoutTicks = cfg.unclaimedMinutes * 60L * 20L;
-        Iterator<Map.Entry<WorldPos, BoxInfo>> it = unclaimed.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<WorldPos, BoxInfo> entry = it.next();
-            WorldPos wp = entry.getKey();
-            BoxInfo info = entry.getValue();
-            if (now - info.spawnTick < timeoutTicks) continue;
-
-            ServerWorld sw = server.getLevel(wp.dimension);
-            if (sw != null && sw.isLoaded(wp.pos)) {
-                sw.removeBlock(wp.pos, false);
+        // Por cada dimensión cargada:
+        for (ServerWorld world : server.getAllLevels()) {
+            UnclaimedBoxesData data = UnclaimedBoxesData.get(world);
+            Iterator<UnclaimedBoxesData.Entry> it = data.getEntries().iterator();
+            while (it.hasNext()) {
+                UnclaimedBoxesData.Entry entry = it.next();
+                // Comprobar si coincide la dimensión:
+                if (!entry.dimension.equals(world.dimension())) continue;
+                if (now - entry.spawnTick < cfg.unclaimedMinutes * 60L * 20L) continue;
+                BlockPos pos = entry.pos;
+                if (world.isLoaded(pos)) {
+                    world.removeBlock(pos, false);
+                }
+                ServerPlayerEntity owner = server.getPlayerList().getPlayer(entry.ownerUuid);
+                if (owner != null) {
+                    owner.sendMessage(
+                            new StringTextComponent(TextFormatting.RED + "No encontraste la caja a tiempo. Desapareció."),
+                            owner.getUUID()
+                    );
+                    PlayerSoundUtils.playSoundToPlayer(owner, SoundEvents.ITEM_PICKUP, SoundCategory.MASTER, 1.f, 0.8f);
+                }
+                it.remove();
+                data.setDirty();
             }
-            ServerPlayerEntity owner = server.getPlayerList().getPlayer(info.ownerUuid);
-            if (owner != null) {
-                owner.sendMessage(
-                        new StringTextComponent(TextFormatting.RED
-                                + "No encontraste la caja a tiempo. Desapareció."),
-                        owner.getUUID()
-                );
-                PlayerSoundUtils.playSoundToPlayer(owner, SoundEvents.ITEM_PICKUP, SoundCategory.MASTER, 1.f, 0.8f);
-
-            }
-            it.remove();
         }
+
 
         // 2) Spawn periódico
         long intervalTicks = cfg.intervalMinutes * 60L * 20L;
-        if (now - lastSpawnCheck < intervalTicks) return;
-        lastSpawnCheck = now;
+        SpawnBoxesTimerData timerData = SpawnBoxesTimerData.get(primary);
+        long last = timerData.getLastSpawnCheck();
+        if (now - last < intervalTicks) return;
+        timerData.setLastSpawnCheck(now);
 
         // 3) Tirada global
         if (RNG.nextDouble() * 100.0 >= cfg.globalSpawnChance) return;
@@ -190,11 +161,11 @@ public class SpawnBoxesHandler {
                 data.putUUID("RangerBoxOwner", player.getUUID());
             }
         }
+        MeteorImpactEffects.spawnMeteorImpact(world, pos);
 
         // Guardamos en el mapa de no reclamados
-        unclaimed.put(new WorldPos(world.dimension(), pos),
-                new BoxInfo(now, player.getUUID()));
-
+        UnclaimedBoxesData data = UnclaimedBoxesData.get(world);
+        data.addEntry(world.dimension(), pos, now, player.getUUID());
 
         // 9) Efectos
         world.playSound(null, pos, SoundEvents.BEACON_DEACTIVATE,
@@ -209,18 +180,10 @@ public class SpawnBoxesHandler {
                     SoundCategory.MASTER, 2.5f, 0.5f);
             PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.ENDER_DRAGON_DEATH, SoundCategory.MASTER, 0.5f, 0.5f);
             PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.GENERIC_EXPLODE, SoundCategory.MASTER, 1.0f, 0.5f);
-        }, 40);
+        }, 20);
+
         // 10) Broadcast
-        String sep = TextFormatting.DARK_GRAY + "" + TextFormatting.STRIKETHROUGH
-                + "                                                                      \n";
-        IFormattableTextComponent msg = new StringTextComponent("")
-                .append(new StringTextComponent(sep))
-                .append(GradientText.of("¡Se estrelló una Caja Misteriosa cerca de "
-                        + player.getName().getString() + "!\n", "#FF7F50", "#FFD700"))
-                .append(new StringTextComponent("\n"))
-                .append(GradientText.of("                          ["+
-                        pos.getX()+","+pos.getY()+","+pos.getZ()+"]\n","#FF5151","#FF5151"))
-                .append(new StringTextComponent(sep));
+        IFormattableTextComponent msg = BroadcastMessageUtil.getBroadcast(player, pos);
         server.getPlayerList().broadcastMessage(msg, ChatType.SYSTEM, Util.NIL_UUID);
 
         // 11) Títulos

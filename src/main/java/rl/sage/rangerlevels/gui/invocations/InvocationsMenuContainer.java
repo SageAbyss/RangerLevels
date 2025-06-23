@@ -140,6 +140,27 @@ public class InvocationsMenuContainer extends BaseMenuContainer6 {
                         AltarDeAlmasMenu.open(player)
                 );
                 break;
+            case "catalizadorAlmas":
+                player.sendMessage(new StringTextComponent("§8§m                                                          "), player.getUUID());
+                player.sendMessage(
+                        new StringTextComponent("§7◈ Invocación: §4Catalizador de Almas"),
+                        player.getUUID()
+                );
+                player.sendMessage(new StringTextComponent("§7✧ Un artefacto forjado con la esencia ancestral."), player.getUUID());
+                player.sendMessage(new StringTextComponent("§7✧ Haz clic derecho sobre un Pokémon Legendario"), player.getUUID());
+                player.sendMessage(new StringTextComponent("§7   o Ultraente de tu equipo para sacrificarlo."), player.getUUID());
+                player.sendMessage(new StringTextComponent(" "), player.getUUID());
+                player.sendMessage(new StringTextComponent("§7✧ El sacrificio extrae la Esencia específica"), player.getUUID());
+                player.sendMessage(new StringTextComponent("§7   que luego sirve para crear modificadores"), player.getUUID());
+                player.sendMessage(new StringTextComponent("§7   de ADN únicos para ese Pokémon."), player.getUUID());
+                player.sendMessage(new StringTextComponent(" "), player.getUUID());
+                player.sendMessage(new StringTextComponent("§7✧ También extrae la Esencia de Jefes,"), player.getUUID());
+                player.sendMessage(new StringTextComponent("§7   las cuales sirven para usarlas en el Altar"), player.getUUID());
+                player.sendMessage(new StringTextComponent("§7   para intercambiarlas por Esencias."), player.getUUID());
+                player.sendMessage(new StringTextComponent(" "), player.getUUID());
+                player.sendMessage(new StringTextComponent("§7▶ Tier: ").append(Tier.ESTELAR.getColor()), player.getUUID());
+                player.sendMessage(new StringTextComponent("§8§m                                                          "), player.getUUID());
+                break;
             case "back":
                 player.closeContainer();
                 Objects.requireNonNull(player.getServer(), "MinecraftServer es nulo").execute(() ->

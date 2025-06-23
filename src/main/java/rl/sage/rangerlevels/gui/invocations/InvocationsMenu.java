@@ -135,10 +135,42 @@ public class InvocationsMenu {
                 ),
                 PixelmonItems.curry_seasoned,
                 "sangreQuetzal",
+                20
+
+        );
+        inv.setItem(20, decorateGlowy(inv5));
+
+        ItemStack inv6 = MenuItemBuilder.createButton(
+                "§7◈ Invocación: §4Ticket Pase Master Temporal",
+                Arrays.asList(
+                        "§7Ingredientes requeridos:",
+                        " §f• x2 Ticket Pase Super Temporal",
+                        " §f• x1 Ticket Pase Ultra Temporal",
+                        " §f• x1 Génesis ⚶ Arcano"
+                ),
+                PixelmonItems.rainbow_pass,
+                "masterPass",
+                24
+
+        );
+        inv.setItem(24, decorateGlowy(inv6));
+
+        ItemStack inv7 = MenuItemBuilder.createButton(
+                "§7◈ Invocación: §4Catalizador de Almas Infinito",
+                Arrays.asList(
+                        "§7Ingredientes requeridos:",
+                        " §f• x4 Esencia Legendaria",
+                        " §f• x4 Esencia UltraEnte",
+                        " §f• x32 Esencia Boss",
+                        " §f• x2 Génesis ⚶ Arcano"
+
+                ),
+                PixelmonItems.professors_mask,
+                "catalizadorAlmas",
                 22
 
         );
-        inv.setItem(22, decorateGlowy(inv5));
+        inv.setItem(22, decorateGlowy(inv7));
 
         // Botón Volver en esquina inferior derecha (slot 53)
         ItemStack botonBack = MenuItemBuilder.createButton(

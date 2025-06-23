@@ -1,13 +1,19 @@
 package rl.sage.rangerlevels.gui;
 
+import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.container.SimpleNamedContainerProvider;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import rl.sage.rangerlevels.util.EnchantUtils;
+import rl.sage.rangerlevels.util.NBTUtils;
 import rl.sage.rangerlevels.util.PlayerSoundUtils;
 
 import java.util.Arrays;
@@ -17,6 +23,12 @@ import java.util.Arrays;
  * Coloca en cada posición los botones con su NBT “MenuButtonID” y “MenuSlot”.
  */
 public class MainMenu {
+    private static ItemStack decorateGlowy(ItemStack stack) {
+        CompoundNBT tag = stack.getOrCreateTag();
+        NBTUtils.applyAllHideFlags(tag);
+        stack.setTag(tag);
+        return stack;
+    }
 
     public static void open(ServerPlayerEntity player) {
         // Reproducir sonido al abrir
@@ -39,30 +51,30 @@ public class MainMenu {
         inv.setItem(12, MenuItemBuilder.createButton(
                 "§bRecompensas",
                 Arrays.asList("§7Haz clic para ver tus recompensas"),
-                Items.CHEST,
+                Items.ENDER_CHEST,
                 "rewards",
                 12
         ));
 
         // – Ayuda (slot 14)
-        inv.setItem(14, MenuItemBuilder.createButton(
+        inv.setItem(14, decorateGlowy(MenuItemBuilder.createButton(
                 "§eAyuda",
                 Arrays.asList("§7Información sobre RangerLevels"),
-                Items.BOOK,
+                PixelmonItems.quest_editor,
                 "help",
                 14
-        ));
+        )));
 
         // – Comprar Pase (slot 16)
         inv.setItem(16, MenuItemBuilder.createButton(
-                "§aComprar Pase",
-                Arrays.asList("§7Ver beneficios y opciones de compra"),
-                Items.EMERALD,
-                "buy",
+                "§6Tienda Rotativa",
+                Arrays.asList("§7Haz clic para ver la rotación actual"),
+                PixelmonItems.coin_case,
+                "shop",
                 16
         ));
 
-        ITextComponent title = new StringTextComponent("§8෴҉ Ranger Levels ҉෴");
+        ITextComponent title = new StringTextComponent("§6෴҉ Ranger Levels ҉෴");
         player.openMenu(new SimpleNamedContainerProvider(
                 (windowId, playerInv, p) -> new MainMenuContainer(windowId, playerInv, inv),
                 title

@@ -85,7 +85,6 @@ public class HelpButtonUtils {
     }
     public static ITextComponent buildInvocaciones() {
         IFormattableTextComponent hover = new StringTextComponent("");
-        hover.append(new StringTextComponent("§7 Altar de Invocaciones\n"));
         hover.append(new StringTextComponent("§f▶ §7Tiene el poder de invocar artefactos míticos.\n"));
         hover.append(new StringTextComponent("§f▶ §7Cada invocación requiere determinados ingredientes.\n"));
         hover.append(new StringTextComponent("§f▶ §7Usar el Altar sin preparación puede llevar al caos...\n"))
@@ -102,7 +101,11 @@ public class HelpButtonUtils {
         hover.append(new StringTextComponent("§f(1) §7Entra al enlace del pase que quieras adquirir\n"));
         hover.append(new StringTextComponent("§f(2) §7Sigue las instrucciones de compra de la página\n"));
         hover.append(new StringTextComponent("§f(3) §7En menos de 10 minutos recibirás el pase\n"));
-        hover.append(new StringTextComponent("§f(4) §7Revisa tu pase con /rlv pass info"));
+        hover.append(new StringTextComponent("§f(4) §7Revisa tu pase con /rlv pass info\n\n"));
+        hover.append(new StringTextComponent("§6▶ §eExtra §6◀\n"));
+        hover.append(new StringTextComponent("§f• §7Se pueden obtener pases temporales en\n"));
+        hover.append(new StringTextComponent("§7  Cajas Misteriosas\n\n"));
+        hover.append(new StringTextComponent("§7Clic para enlaces de compra"));
         return hover;
     }
 

@@ -117,10 +117,7 @@ public class TicketNivelHandler {
                 );
             }
 
-            // 7) Consumir el ticket (si no está en creativo)
-            if (!serverPlayer.isCreative()) {
-                held.shrink(1);
-            }
+            held.shrink(1);
 
             // 8) Sonido de activación de “ticket”
             serverPlayer.level.playSound(

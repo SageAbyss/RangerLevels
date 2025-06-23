@@ -4,6 +4,7 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import rl.sage.rangerlevels.gui.help.HelpMenu;
+import rl.sage.rangerlevels.gui.modificadores.ShopMenu;
 import rl.sage.rangerlevels.gui.pass.BuyPassMenu;
 import rl.sage.rangerlevels.gui.rewards.RewardsMenu;
 
@@ -34,16 +35,11 @@ public class MainMenuContainer extends BaseMenuContainer {
                     RewardsMenu.open(player);
                 });
                 break;
-            case "buy":
+            case "shop":
                 player.closeContainer();
                 player.getServer().execute(() -> {
-                    BuyPassMenu.open(player);
+                    ShopMenu.open(player);
                 });
-                break;
-            case "info":
-                // Ejemplo, si tuvieras InfoMenu:
-                // player.closeContainer();
-                // InfoMenu.open(player);
                 break;
             default:
                 break;

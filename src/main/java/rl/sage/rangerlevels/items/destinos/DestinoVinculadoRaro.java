@@ -1,5 +1,5 @@
 // File: rl/sage/rangerlevels/items/randoms/DestinoVinculadoRaro.java
-package rl.sage.rangerlevels.items.randoms;
+package rl.sage.rangerlevels.items.destinos;
 
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import net.minecraft.item.ItemStack;

@@ -2,6 +2,7 @@
 package rl.sage.rangerlevels.items.tickets;
 
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
@@ -10,6 +11,7 @@ import net.minecraft.util.text.TextFormatting;
 import rl.sage.rangerlevels.items.CustomItemRegistry;
 import rl.sage.rangerlevels.items.RangerItemDefinition;
 import rl.sage.rangerlevels.items.Tier;
+import rl.sage.rangerlevels.util.EnchantUtils;
 import rl.sage.rangerlevels.util.NBTUtils;
 
 import java.util.Arrays;
@@ -32,7 +34,7 @@ public class TicketSuper extends RangerItemDefinition {
                 PixelmonItems.rainbow_pass,
                 Tier.EPICO,
                 null,                               // Color sólido ya no se usa
-                "✦ Ticket Pase Super ✦",
+                "✦ Ticket Pase Super Temporal ✦",
                 null                                // Lore se asigna en createStack()
         );
         CustomItemRegistry.register(this);
@@ -40,25 +42,16 @@ public class TicketSuper extends RangerItemDefinition {
 
     @Override
     public ItemStack createStack(int amount) {
-        // 1) Creamos el ItemStack base
         ItemStack stack = super.createStack(amount);
-
-        // 2) Asignamos el hover-name con degradado pastel de Tier.EPICO
         stack.setHoverName(Tier.EPICO.applyGradient(getDisplayName()));
 
-        // 3) Creamos el lore con la línea de Tier en degradado
         List<IFormattableTextComponent> generatedLore = Arrays.asList(
-                // 3.1) Viñeta “✧” + descripción genérica
                 new StringTextComponent("§7✧ Usa este Ticket para ventajas de pase."),
-                // 3.2) Viñeta “✧” + caducidad en 24 horas
                 new StringTextComponent("§7✧ Caduca en §e24 §7horas"),
                 new StringTextComponent("§7✧ Click para activar"),
                 new StringTextComponent(" "),
-                // 3.3) “▶ Tier:” en gris + “EPICO” en degradado pastel
                 new StringTextComponent("§7▶ Tier: ").append(Tier.EPICO.getColor())
         );
-
-        // 4) Insertamos el lore en NBT
         CompoundNBT tag = stack.getOrCreateTag();
         CompoundNBT display = tag.contains("display")
                 ? tag.getCompound("display")
@@ -70,10 +63,8 @@ public class TicketSuper extends RangerItemDefinition {
         }
         display.put("Lore", loreList);
         tag.put("display", display);
-
-        // 5) Ocultamos atributos innecesarios (HideFlags bit 32)
+        EnchantUtils.addEnchantment(stack, Enchantments.UNBREAKING, 1);
         NBTUtils.applyAllHideFlags(tag);
-
         stack.setTag(tag);
         return stack;
     }

@@ -7,19 +7,15 @@ import net.minecraft.inventory.container.SimpleNamedContainerProvider;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.Style;
 import rl.sage.rangerlevels.gui.MenuItemBuilder;
 import rl.sage.rangerlevels.items.altar.AltarRecipe;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class InvocationSelectionMenu {
     public static void open(ServerPlayerEntity player, List<AltarRecipe> matches) {
-        // Sonido de apertura opcional
-        // PlayerSoundUtils.playSoundToPlayer(player, SoundEvents.NOTE_BLOCK_PLING, SoundCategory.MASTER, 1f, 1f);
-
-        // Determinar tamaño de inventario: múltiplo de 9, >= matches.size(), max 54.
         int needed = matches.size() + 1;
         int size = 9;
         while (size < matches.size()) {
@@ -36,9 +32,17 @@ public class InvocationSelectionMenu {
             AltarRecipe recipe = matches.get(i);
             ItemStack iconStack = recipe.getResultSupplier().get().copy();
             iconStack.setCount(1);
+
             String raw = recipe.getId().getPath();
-            String display = toFriendlyName(raw);
-            List<String> lore = Collections.singletonList("§7Haz clic para invocar: " + display);
+            String friendly = toFriendlyName(raw);
+
+            // Prefijo reset/color para evitar cursiva por defecto:
+            // Aquí uso §r (reset) + §f (blanco), ajusta color si quieres otro:
+            String display = "§r§f" + friendly;
+
+            List<String> lore = Collections.singletonList("§7Haz clic para invocar: " + friendly);
+            // El lore empieza con §7, que es color gris y resetea formatos previos.
+
             inv.setItem(i, MenuItemBuilder.createButton(
                     display,
                     lore,
@@ -49,15 +53,20 @@ public class InvocationSelectionMenu {
         }
         // Botón cancelar en la última casilla útil
         int cancelSlot = size - 1;
+        String cancelName = "§r§cCancelar"; // §r reset, §c rojo, sin cursiva
+        List<String> cancelLore = Collections.singletonList("§7No invocar nada");
         inv.setItem(cancelSlot, MenuItemBuilder.createButton(
-                "§cCancelar",
-                Collections.singletonList("§7No invocar nada"),
+                cancelName,
+                cancelLore,
                 net.minecraft.item.Items.BARRIER,
                 "cancel",
                 cancelSlot
         ));
 
-        ITextComponent title = new StringTextComponent("✦ Elige invocación ✦");
+        // Título sin cursiva:
+        ITextComponent title = new StringTextComponent("✦ Elige invocación ✦")
+                .withStyle(style -> style.withItalic(false));
+
         player.openMenu(new SimpleNamedContainerProvider(
                 (wid, pinv, pl) -> new InvocationSelectionContainer(wid, pinv, inv, matches),
                 title
@@ -65,7 +74,6 @@ public class InvocationSelectionMenu {
     }
 
     private static String toFriendlyName(String raw) {
-        // Ejemplo: reemplazar '_' por espacio, capitalizar palabras
         String[] parts = raw.split("_");
         StringBuilder sb = new StringBuilder();
         for (String p : parts) {
@@ -75,25 +83,5 @@ public class InvocationSelectionMenu {
                     .append(" ");
         }
         return sb.toString().trim();
-    }
-
-    private static ItemStack decorateButton(ItemStack stack) {
-        // Opcional: aplicar flags de ocultar nbt o efecto glow
-        // Por ejemplo:
-        // CompoundNBT tag = stack.getOrCreateTag();
-        // NBTUtils.applyAllHideFlags(tag);
-        // stack.setTag(tag);
-        return stack;
-    }
-
-    private static ItemStack ItemStackButton(ItemStack icon, String name, List<String> lore, String buttonId, int slot) {
-        // Usa tu MenuItemBuilder
-        return MenuItemBuilder.createButton(
-                name,
-                lore,
-                icon.getItem(),
-                buttonId,
-                slot
-        );
     }
 }

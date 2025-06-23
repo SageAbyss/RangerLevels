@@ -74,6 +74,7 @@ public class ItemGlowHandler {
             case LEGENDARIO: return TextFormatting.GOLD;
             case ESTELAR:    return TextFormatting.AQUA;
             case MITICO:     return TextFormatting.GREEN;
+            case SINGULAR:     return TextFormatting.DARK_RED;
             default:         return null;
         }
     }

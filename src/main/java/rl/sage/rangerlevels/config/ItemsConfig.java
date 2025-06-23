@@ -33,6 +33,7 @@ public class ItemsConfig {
     public AxeBonusConfig axeBonus = AxeBonusConfig.createDefault();
     public PickBonusConfig pickBonus = PickBonusConfig.createDefault();
     public BloodConfig blood = BloodConfig.createDefault();
+    public VolatileCapsuleConfig volatilCapsule = VolatileCapsuleConfig.createDefault();
 
     // =======================
     // Carga y acceso singleton
@@ -72,6 +73,7 @@ public class ItemsConfig {
                     root.put("axeBonus", INSTANCE.axeBonus);
                     root.put("pickBonus", INSTANCE.pickBonus);
                     root.put("blood", INSTANCE.blood);
+                    root.put("volatilCapsule", INSTANCE.volatilCapsule);
                     yaml.dump(root, w);
                 }
                 LOGGER.info("ItemsConfig.yml creado con valores por defecto.");
@@ -252,6 +254,25 @@ public class ItemsConfig {
             c.estelarDurationMinutes      = 30;
             c.miticoPercent               = 100.0;
             c.miticoDurationMinutes       = 60;
+            return c;
+        }
+    }
+    // =======================
+    // f) Cápsula Volátil de EXP
+    // =======================
+    public static class VolatileCapsuleConfig {
+        /** Mínimo EXP que puede otorgar al usar la cápsula */
+        public int expMin;
+        /** Máximo EXP que puede otorgar al usar la cápsula */
+        public int expMax;
+        /** Probabilidad de fallo (0.0 a 1.0) al usar la cápsula */
+        public double failChance;
+
+        public static VolatileCapsuleConfig createDefault() {
+            VolatileCapsuleConfig c = new VolatileCapsuleConfig();
+            c.expMin = 10;
+            c.expMax = 50;
+            c.failChance = 0.5;
             return c;
         }
     }
